@@ -1,0 +1,22 @@
+# Python bytecode from the test tooling (render-screen.py, screen-cells.py, rec-frame.py)
+__pycache__/
+*.pyc
+
+# Flight recordings: demo/callout-demo.bash records every run to FT_RECORD (default
+# /tmp/callout-last.rec) and keeps the previous one as .prev. If one is ever captured inside the
+# tree, it is evidence for a single bug report, not source.
+*.rec
+*.rec.meta
+*.rec.prev
+*.bin
+
+# Run-loop-stripped demo copies. Tests and probes make these (`sed '/^ft-run app/d' …`) and remove
+# them by trap; a killed run can leave one behind, and a stray copy of a demo is a demo that
+# silently stops tracking the real one.
+demo/.*.bash
+
+# Editor and OS leavings
+*~
+*.orig
+*.bak
+.DS_Store

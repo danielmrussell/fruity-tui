@@ -1,0 +1,36 @@
+
+
+
+                        ╔════════════════ ft-textfield — readline text input ════════════════╗
+                        ║                                                                    ║
+                        ║ Type to edit.  ←/→ or Ctrl+B/F move.  Home/End or Ctrl+A/E jump.   ║
+                        ║ Backspace/Ctrl+H and Del/Ctrl+D delete.  Ctrl+K/U/W kill.          ║
+                        ║ Insert toggles insert (bar caret) vs overwrite (block caret).      ║
+                        ║ The Notes box (rows=5) is the SAME class: Enter makes a new line,  ║
+                        ║ Up/Down walk the wrapped lines. Tab moves between fields.          ║
+                        ║                                                                    ║
+                        ║           ┌────────────────────────┐                               ║
+                        ║ Username  │admin                   │                               ║
+                        ║           └────────────────────────┘                               ║
+                        ║                                                                    ║
+                        ║           ┌────────────────────────┐                               ║
+                        ║ Hostname  │e.g. dc1.example.com    │                               ║
+                        ║           └────────────────────────┘                               ║
+                        ║                                                                    ║
+                        ║ Notes     ┌────────────────────────────────────────┐               ║
+                        ║           │aaaq                                    ▊               ║
+                        ║           │bbb                                     ▊               ║
+                        ║           │ccc                                     │               ║
+                        ║           │ddd                                     │               ║
+                        ║           │eee                                     │               ║
+                        ║           └────────────────────────────────────────┘               ║
+                        ║                                                                    ║
+                        ║ user = "admin"                                                     ║
+                        ║ host = ""                                                          ║
+                        ║ login: admin@                                                      ║
+                        ║                                                                    ║
+                        ║ (nothing saved yet)                                                ║
+                        ║                                                                    ║
+                        ║  Save    Clear    Quit                                             ║
+                        ║                                                                    ║
+                        ╚════════════════════════════════════════════════════════════════════╝

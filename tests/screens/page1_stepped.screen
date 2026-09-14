@@ -1,0 +1,40 @@
+           ╔══════════════════════ The Fruity CSS engine — 1 · Inheritance  (1/10) ══════════════════════╗
+           ║                                                                                             ║
+           ║  CSS styles CONTROLS the same way it styles HTML elements: by a #id (unique) or a .class    ║
+           ║  (shared). The first big idea is INHERITANCE — set a property once on a container and       ║
+           ║  everything inside picks it up, so you never repeat yourself. Below, ONLY the outer box     ║
+           ║  names a colour; the text box and label inside simply inherit it.                           ║
+           ║                                                                                             ║
+           ║ The CSS                                        The bash — how it's built                    ║
+           ║ ┌──────────────────────────────────────────┐   ┌──────────────────────────────────────────┐ ║
+           ║ │/* the app stylesheet — authored once, lik│   │ft_stylesheet name=demo style="$DEMO_CSS" │ ║
+           ║ │#inhbox { color: crimson; }   /* the conta│   │ft-div name=inhbox                    # th│ ║
+           ║ │#spec   { }                   /* the box n│   │    ft-textfield name=spec value=…    # #s│ ║
+           ║ │                                          │   │end_ft_div                                │ ║
+           ║ │                                          │   │# ── the dropdown changes the PARENT, live│ ║
+           ║ │                                          │   │ft-modify inhbox color=dodgerblue     #  ▸│ ║
+           ║ └━━━━━━━━━━━━━━━━━━━━━━━━━─────────────────┘   └━━━━━━━━━━━━━━━━━━━━━━━━──────────────────┘ ║
+           ║                                                                                             ║
+           ║                                                                                             ║
+           ║                                                                                             ║
+           ║                                                                                             ║
+           ║                      ┌──────────────────────────────────────────────┐                       ║
+           ║                      │The quick brown fox jumps over the lazy dog ↩ ▊                       ║
+           ║                      │— a long line that soft-wraps.              ¶ │                       ║
+           ║                      └──────────────────────────────────────────────┘                       ║
+           ║                           ↑ this label inherits the same crimson                            ║
+           ║                                                                                             ║
+           ║                            Parent colour: ▾ Crimson ◀──╮ ] Bold                             ║
+           ║                                                        │ ╭③────────────────────▶⊠╮          ║
+           ║                                                        ╰─┤ Change #inhbox's      │          ║
+           ║                                                          │ colour here — #spec   │          ║
+           ║                                                          │ and the label follow. │          ║
+           ║                                    ◀    Step 3 of 4    ▶ │ That is inheritance,  │          ║
+           ║                                                          │ live.                 │          ║
+           ║                                    Back    Okay    Quit  ╰───────────────────────╯          ║
+           ║                                                                                             ║
+           ╚═════════════════════════════════════════════════════════════════════════════════════════════╝
+╭───────╮         ╭───╮            ╭───╮            ╭───╮       ╭───╮              ╭───╮
+│ Enter │ Scroll  │ < │ Prev step  │ > │ Next step  │ O │ Bold  │ B │ Back ← page  │ K │ Okay → next page
+╰───────╯         ╰───╯            ╰───╯            ╰───╯       ╰───╯              ╰───╯
+Page 1 of 10 — 1 · Inheritance    ·    ◀ ▶ step through · Okay / Back = page · Q quit

@@ -1,0 +1,75 @@
+tgtTop    place=auto  text=SHORT  -> side=right box= 0,65.. 2,79  15x3  inner=11  lines=1
+tgtTop    place=auto  text=MEDIUM -> side=below box=11,41..15,78  38x5  inner=34  lines=3
+tgtTop    place=auto  text=LONG   -> side=below box=11,42..19,77  36x9  inner=32  lines=7
+tgtTop    place=above text=SHORT  -> side=right box= 0,65.. 2,79  15x3  inner=11  lines=1
+tgtTop    place=above text=MEDIUM -> side=below box=11,41..15,78  38x5  inner=34  lines=3
+tgtTop    place=above text=LONG   -> side=below box=11,42..19,77  36x9  inner=32  lines=7
+tgtTop    place=below text=SHORT  -> side=below box= 7, 5.. 9,19  15x3  inner=11  lines=1
+tgtTop    place=below text=MEDIUM -> side=below box=11,41..15,78  38x5  inner=34  lines=3
+tgtTop    place=below text=LONG   -> side=below box=11,42..19,77  36x9  inner=32  lines=7
+tgtTop    place=left  text=SHORT  -> side=right box= 0,65.. 2,79  15x3  inner=11  lines=1
+tgtTop    place=left  text=MEDIUM -> side=below box=11,41..15,78  38x5  inner=34  lines=3
+tgtTop    place=left  text=LONG   -> side=below box=11,42..19,77  36x9  inner=32  lines=7
+tgtTop    place=right text=SHORT  -> side=right box= 0,65.. 2,79  15x3  inner=11  lines=1
+tgtTop    place=right text=MEDIUM -> side=below box=11,41..15,78  38x5  inner=34  lines=3
+tgtTop    place=right text=LONG   -> side=below box=11,42..19,77  36x9  inner=32  lines=7
+tgtMiddle place=auto  text=SHORT  -> side=right box= 4,65.. 6,79  15x3  inner=11  lines=1
+tgtMiddle place=auto  text=MEDIUM -> side=above box= 2,60.. 8,79  20x7  inner=16  lines=5
+tgtMiddle place=auto  text=LONG   -> side=below box=11,21..19,56  36x9  inner=32  lines=7
+tgtMiddle place=above text=SHORT  -> side=right box= 4,65.. 6,79  15x3  inner=11  lines=1
+tgtMiddle place=above text=MEDIUM -> side=above box= 2,60.. 8,79  20x7  inner=16  lines=5
+tgtMiddle place=above text=LONG   -> side=below box=11,21..19,56  36x9  inner=32  lines=7
+tgtMiddle place=below text=SHORT  -> side=below box=11, 2..13,16  15x3  inner=11  lines=1
+tgtMiddle place=below text=MEDIUM -> side=below box=11,20..15,57  38x5  inner=34  lines=3
+tgtMiddle place=below text=LONG   -> side=below box=11,21..19,56  36x9  inner=32  lines=7
+tgtMiddle place=left  text=SHORT  -> side=left  box= 7, 2.. 9,16  15x3  inner=11  lines=1
+tgtMiddle place=left  text=MEDIUM -> side=above box= 2,60.. 8,79  20x7  inner=16  lines=5
+tgtMiddle place=left  text=LONG   -> side=below box=11,21..19,56  36x9  inner=32  lines=7
+tgtMiddle place=right text=SHORT  -> side=right box= 4,65.. 6,79  15x3  inner=11  lines=1
+tgtMiddle place=right text=MEDIUM -> side=above box= 2,60.. 8,79  20x7  inner=16  lines=5
+tgtMiddle place=right text=LONG   -> side=below box=11,21..19,56  36x9  inner=32  lines=7
+tgtLow    place=auto  text=SHORT  -> side=right box= 8,65..10,79  15x3  inner=11  lines=1
+tgtLow    place=auto  text=MEDIUM -> side=below box=15,20..19,57  38x5  inner=34  lines=3
+tgtLow    place=auto  text=LONG   -> side=below box=15,21..23,56  36x9  inner=32  lines=7
+tgtLow    place=above text=SHORT  -> side=above box= 2,32.. 4,46  15x3  inner=11  lines=1
+tgtLow    place=above text=MEDIUM -> side=below box=15,20..19,57  38x5  inner=34  lines=3
+tgtLow    place=above text=LONG   -> side=below box=15,21..23,56  36x9  inner=32  lines=7
+tgtLow    place=below text=SHORT  -> side=below box=15,32..17,46  15x3  inner=11  lines=1
+tgtLow    place=below text=MEDIUM -> side=below box=15,20..19,57  38x5  inner=34  lines=3
+tgtLow    place=below text=LONG   -> side=below box=15,21..23,56  36x9  inner=32  lines=7
+tgtLow    place=left  text=SHORT  -> side=left  box= 6, 0.. 8,14  15x3  inner=11  lines=1
+tgtLow    place=left  text=MEDIUM -> side=below box=15,20..19,57  38x5  inner=34  lines=3
+tgtLow    place=left  text=LONG   -> side=below box=15,21..23,56  36x9  inner=32  lines=7
+tgtLow    place=right text=SHORT  -> side=right box= 8,65..10,79  15x3  inner=11  lines=1
+tgtLow    place=right text=MEDIUM -> side=below box=15,20..19,57  38x5  inner=34  lines=3
+tgtLow    place=right text=LONG   -> side=below box=15,21..23,56  36x9  inner=32  lines=7
+sideA     place=auto  text=SHORT  -> side=right box= 2,24.. 4,38  15x3  inner=11  lines=1
+sideA     place=auto  text=MEDIUM -> side=right box= 2,60.. 8,79  20x7  inner=16  lines=5
+sideA     place=auto  text=LONG   -> side=below box=11, 0..19,35  36x9  inner=32  lines=7
+sideA     place=above text=SHORT  -> side=right box= 2,24.. 4,38  15x3  inner=11  lines=1
+sideA     place=above text=MEDIUM -> side=right box= 2,60.. 8,79  20x7  inner=16  lines=5
+sideA     place=above text=LONG   -> side=below box=11, 0..19,35  36x9  inner=32  lines=7
+sideA     place=below text=SHORT  -> side=below box= 6, 1.. 8,15  15x3  inner=11  lines=1
+sideA     place=below text=MEDIUM -> side=below box=11, 0..15,37  38x5  inner=34  lines=3
+sideA     place=below text=LONG   -> side=below box=11, 0..19,35  36x9  inner=32  lines=7
+sideA     place=left  text=SHORT  -> side=right box= 2,24.. 4,38  15x3  inner=11  lines=1
+sideA     place=left  text=MEDIUM -> side=right box= 2,60.. 8,79  20x7  inner=16  lines=5
+sideA     place=left  text=LONG   -> side=below box=11, 0..19,35  36x9  inner=32  lines=7
+sideA     place=right text=SHORT  -> side=right box= 2,24.. 4,38  15x3  inner=11  lines=1
+sideA     place=right text=MEDIUM -> side=right box= 2,60.. 8,79  20x7  inner=16  lines=5
+sideA     place=right text=LONG   -> side=right box=11,42..19,77  36x9  inner=32  lines=7
+footer    place=auto  text=SHORT  -> side=below box=16,30..18,44  15x3  inner=11  lines=1
+footer    place=auto  text=MEDIUM -> side=below box=16,18..20,55  38x5  inner=34  lines=3
+footer    place=auto  text=LONG   -> side=below box=16,19..24,54  36x9  inner=32  lines=7
+footer    place=above text=SHORT  -> side=above box= 3,60.. 5,74  15x3  inner=11  lines=1
+footer    place=above text=MEDIUM -> side=above box= 1,60.. 7,79  20x7  inner=16  lines=5
+footer    place=above text=LONG   -> side=below box=16,19..24,54  36x9  inner=32  lines=7
+footer    place=below text=SHORT  -> side=below box=16,30..18,44  15x3  inner=11  lines=1
+footer    place=below text=MEDIUM -> side=below box=16,18..20,55  38x5  inner=34  lines=3
+footer    place=below text=LONG   -> side=below box=16,19..24,54  36x9  inner=32  lines=7
+footer    place=left  text=SHORT  -> side=below box=16,30..18,44  15x3  inner=11  lines=1
+footer    place=left  text=MEDIUM -> side=below box=16,18..20,55  38x5  inner=34  lines=3
+footer    place=left  text=LONG   -> side=below box=16,19..24,54  36x9  inner=32  lines=7
+footer    place=right text=SHORT  -> side=below box=16,30..18,44  15x3  inner=11  lines=1
+footer    place=right text=MEDIUM -> side=below box=16,18..20,55  38x5  inner=34  lines=3
+footer    place=right text=LONG   -> side=below box=16,19..24,54  36x9  inner=32  lines=7
