@@ -453,15 +453,44 @@ _ft_textfield_can_scroll() {           # name → 0 if the content exceeds the v
     _ft_textfield_can_hscroll "$n"
 }
 # Horizontal overflow: only a NON-wrapping field can pan (a wrapping one reflows instead), and
-# only when the value is genuinely wider than the text well. Measured in display COLUMNS, not
+# only when something is genuinely wider than the text well. Measured in display COLUMNS, not
 # characters — a CJK value is twice as wide as its length (see reference: columns vs characters).
-_ft_textfield_can_hscroll() {          # name → 0 if the value is wider than the well
+#
+# A TEXT BOX IS AS WIDE AS ITS WIDEST LINE, NOT AS LONG AS ITS VALUE. This measured the whole
+# value, newlines and all, so a non-wrapping box of three short lines — "alpha beta", "gamma
+# delta", "epsilon", each well inside twenty columns — counted as 29 columns of overflow. ENTER
+# stopped at `scrolling` on a box with no scrollbar and nothing to pan, and a second ENTER was
+# needed to type. The textarea draw decides its bar from the widest laid-out line, so this asks
+# _ft_textfield_widest_line too. (A one-line field has one line, and its draw measures the
+# value, so that branch is unchanged.)
+_ft_textfield_can_hscroll() {          # name → 0 if a line is wider than the well
     local n=$1
     _ft_textfield_wrapping "$n" && return 1
     _ft_textfield_textw "$n"; local well=$FT_RET
     (( well > 0 )) || return 1
-    ft_resolved_prop "$n" value ""; ft_display_width "$FT_RET"
-    (( FT_DISPLAY_WIDTH > well ))
+    if _ft_textfield_multiline "$n"; then
+        _ft_textfield_layout "$n" "$well"; _ft_textfield_widest_line
+        (( FT_RET > well ))
+    else
+        ft_resolved_prop "$n" value ""; ft_display_width "$FT_RET"
+        (( FT_DISPLAY_WIDTH > well ))
+    fi
+}
+# _ft_textfield_widest_line → FT_RET: the widest line of the CURRENT layout
+# (FT_TEXTFIELD_LINES_TEXT, filled by _ft_textfield_layout), in display columns. One answer for
+# the draw that sizes the horizontal bar and the predicate that decides ENTER's rung. The ASCII
+# test is inlined rather than calling ft_display_width per line: that call is ~25µs, and a
+# thousand-line document cannot afford it on every frame.
+_ft_textfield_widest_line() {          # → FT_RET
+    local i line width widest=0
+    for (( i=0; i<${#FT_TEXTFIELD_LINES_TEXT[@]}; i++ )); do
+        line=${FT_TEXTFIELD_LINES_TEXT[i]}
+        if [[ "$line" == *[![:ascii:]]* || "$line" == *$'\t'* || "$line" == *$'\e'* ]]; then
+            ft_display_width "$line"; width=$FT_DISPLAY_WIDTH
+        else width=${#line}; fi
+        (( width > widest )) && widest=$width
+    done
+    FT_RET=$widest
 }
 # ENTER while poised: climb ONE rung. Into `scrolling` when there is something to
 # scroll, otherwise straight into editing — an ordinary one-line field still takes a
@@ -2860,14 +2889,7 @@ _ft_draw_textfield_multi() {    # name — a word-wrapping textarea
         # measures it), while `cc` is a character offset. The inlined ASCII test is the
         # same one ft_display_width uses: a per-line function call is ~25µs, which a
         # thousand-line document cannot afford on every frame.
-        local _i _l _w                                # widest line drives the h-scrollbar
-        for (( _i=0; _i<total; _i++ )); do
-            _l=${FT_TEXTFIELD_LINES_TEXT[_i]}
-            if [[ "$_l" == *[![:ascii:]]* || "$_l" == *$'\t'* || "$_l" == *$'\e'* ]]; then
-                ft_display_width "$_l"; _w=$FT_DISPLAY_WIDTH
-            else _w=${#_l}; fi
-            (( _w > hmax )) && hmax=$_w
-        done
+        _ft_textfield_widest_line; hmax=$FT_RET       # widest line drives the h-scrollbar
         hmaxscroll=$(( hmax - textw )); (( hmaxscroll < 0 )) && hmaxscroll=0
         _ft_tf_hoff "$name"; hscroll=$FT_RET
         ft_display_col "${FT_TEXTFIELD_LINES_TEXT[$cr]:-}" "$cc"; local cccol=$FT_RET

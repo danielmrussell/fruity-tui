@@ -806,10 +806,16 @@ ft-form name=scrollagree width=120 height=40
     ft-textfield name=agPan1  rows=1 size=20 wrap=false \
                  value="a single line far wider than its box will ever be, on and on and on"
     ft-textfield name=agPlain rows=1 size=30 value="short"
+    # …and the shape that asked the wrong question: a NON-WRAPPING box whose lines each fit but
+    # whose value, newlines and all, is longer than the box is wide. No bar, and ENTER stopped at
+    # `scrolling` anyway — the predicate measured the value, the draw the widest line.
+    ft-textfield name=agLinesFit   rows=4 size=20 wrap=false value=$'alpha beta\ngamma delta\nepsilon'
+    ft-textfield name=agLinesFitRo rows=4 size=20 wrap=false readOnly=true value=$'alpha beta\ngamma delta\nepsilon'
+    ft-textfield name=agOneTooWide rows=4 size=20 wrap=false value=$'alpha beta gamma delta epsilon\nb'
 end_ft_form
 ft_layout scrollagree
 FT_OUT=""; _ft_redraw_walk scrollagree
-for _f in agTall agFits agPanRo agPan1 agPlain; do
+for _f in agTall agFits agPanRo agPan1 agPlain agLinesFit agLinesFitRo agOneTooWide; do
     FT_OUT=""; ft_draw_one "$_f"                       # publish this field's bars
     _want=no
     [[ -n "${FT_TEXTFIELD_VBAR[$_f]:-}" || -n "${FT_TEXTFIELD_HBAR[$_f]:-}" ]] && _want=YES
@@ -819,6 +825,9 @@ done
 check "a sideways-panning viewer can scroll"   "$(_ft_textfield_can_scroll agPanRo && echo YES)" YES
 check "…and so can a one-line panning field"   "$(_ft_textfield_can_scroll agPan1  && echo YES)" YES
 check "an ordinary short input still cannot"   "$(_ft_textfield_can_scroll agPlain || echo no)"  no
+# Anti-vacuity for the new pair: the same box with ONE line too wide must draw its bar, or the two
+# "no bar" verdicts above would pass on a draw that never draws one.
+check "a box with one line too wide draws a bar" "${FT_TEXTFIELD_HBAR[agOneTooWide]:+YES}" YES
 
 # ── Enter-to-commit asks the LISTENER REGISTRY, not a function name ──────────
 # docs/api-naming.md: "There is NO name-convention magic: a function named <name>_on_<event>
