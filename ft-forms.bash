@@ -269,6 +269,17 @@ _ft_stamp_prop() {              # name prop value
     return 0
 }
 
+# THE GENERATION CLOCK. Every per-control generation — `_fti_<name>__writegen`, `__textgen` — takes
+# its next value from this one counter, never from its own old value plus one. A cache keyed on
+# "name + generation" is only sound if a value, once used, is never used again, and a per-control
+# counter broke that the moment a control was removed: ft_remove unsets the counter, the control
+# rebuilt under the same name — which is the documented rebuild idiom, `ft-empty` then the same
+# stable names — counted up from zero again, and after one write each its key equalled the dead
+# control's. A text area on page two then drew page one's lines, while `ft_get … value` answered
+# page two (the textfield layout memo, _FT_TEXTFIELD_LINES_CACHE_KEY, is the one that showed it).
+# CONTRIBUTING §3 says "bump a version, never unset it"; this is how the unset stays harmless.
+# The same one statement per bump as before — only the source of the number changed.
+_FT_GENERATION_CLOCK=0
 _ft_setprop() {                 # name prop value
     local name=$1 prop val=$3
     # onEvent=fn SUGAR: `onActivate=fn` (constructor or ft-modify) registers fn as an event
@@ -464,11 +475,11 @@ _ft_setprop() {                 # name prop value
     # same shape the reconciler below uses and for the same reason. An empty list then falls to
     # the "declares nothing" arm, which is the conservative answer.
     local _genvar="_fti_${name}__writegen" _tprops=""
-    printf -v "$_genvar" '%s' $(( ${!_genvar:-0} + 1 ))
+    printf -v "$_genvar" '%s' $(( ++_FT_GENERATION_CLOCK ))
     [[ -n "$_ty" ]] && _tprops=${FT_CLASS_TEXT_PROPS[$_ty]:-}
     case " $_tprops " in
         "  "|*" $prop "*) _genvar="_fti_${name}__textgen"
-                          printf -v "$_genvar" '%s' $(( ${!_genvar:-0} + 1 )) ;;
+                          printf -v "$_genvar" '%s' $(( ++_FT_GENERATION_CLOCK )) ;;
     esac
     # Every property lives in the shell variable  _ftp_<control>_<property>.
     #
@@ -620,11 +631,11 @@ ft_remove_attribute() {         # NAME PROP
     # always moves; __textgen moves when the class has not narrowed itself or has named this
     # property. Same predicate, same route.
     local _genvar="_fti_${name}__writegen" _rty=${FT_TYPE[$name]:-} _tprops=""
-    printf -v "$_genvar" '%s' $(( ${!_genvar:-0} + 1 ))
+    printf -v "$_genvar" '%s' $(( ++_FT_GENERATION_CLOCK ))
     [[ -n "$_rty" ]] && _tprops=${FT_CLASS_TEXT_PROPS[$_rty]:-}   # ${ASSOC[""]} is a stderr error
     case " $_tprops " in
         "  "|*" $pk "*) _genvar="_fti_${name}__textgen"
-                        printf -v "$_genvar" '%s' $(( ${!_genvar:-0} + 1 )) ;;
+                        printf -v "$_genvar" '%s' $(( ++_FT_GENERATION_CLOCK )) ;;
     esac
     # Removing it also cancels any join it was owed (see _ft_setprop) — otherwise the next
     # read would materialise the line store back into a property that was just deleted.
@@ -3616,7 +3627,7 @@ _ft_lines_locate() {            # name offset → FT_LINE_IDX / FT_LINE_COL / FT
 _ft_lines_touched() {           # name
     local name=$1
     local genvar="_fti_${name}__textgen"
-    local nextgen=$(( ${!genvar:-0} + 1 ))
+    local nextgen=$(( ++_FT_GENERATION_CLOCK ))
     printf -v "$genvar" '%s' "$nextgen"
     printf -v "_fti_${name}__linesgen" '%s' "$nextgen"
     unset "_fti_${name}__rowsw0" "_fti_${name}__rowsw1"

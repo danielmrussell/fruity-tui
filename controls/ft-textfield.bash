@@ -935,7 +935,7 @@ _ft_textfield_apply() {                # name off delcount instext newcaret → 
     local oc=${FT_TEXTFIELD_CARET[$name]:-0}
     _ft_textfield_undo_record "$name" "$off" "$del" "$ins" "$oc" "$nc"   # history BEFORE it lands
 
-    local fromgen=${!tgv:-0} nextgen=$(( ${!tgv:-0} + 1 ))
+    local fromgen=${!tgv:-0} nextgen=$(( ++_FT_GENERATION_CLOCK ))   # see _FT_GENERATION_CLOCK
     printf -v "$tgv" '%s' "$nextgen"        # the generation every cache is keyed on
     _ft_lines_splice "$name" "$off" "$dc" "$ins"
     printf -v "$lgv" '%s' "$nextgen"

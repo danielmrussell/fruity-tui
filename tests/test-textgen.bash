@@ -141,4 +141,56 @@ ft_remove tf
 check "removal clears the write generation" "$(_wg tf)" "0"
 check "…and the text generation"            "$(_tg tf)" "0"
 
+note "a control REBUILT under the same name never inherits the dead one's picture"
+# Removal clears the counters — and a cache keyed on "name + generation" is only sound if a value
+# is never used twice. Counted per control, the rebuilt control started again from zero, matched
+# the dead one's key after one write, and a text area on page two drew page one's lines while
+# `ft_get value` answered page two. Every generation now comes from _FT_GENERATION_CLOCK.
+#
+# Asked the way an app meets it: the documented rebuild idiom (ft-empty, the same stable names,
+# ft_refresh), then an ordinary WARM repaint — the one an app actually gets — compared cell for
+# cell with a cold one. One assertion per control type, because the stale key was a textfield's
+# today and any type's cache keyed on a generation is one rebuild away from the same thing.
+_rb_screen() {                  # → FT_RET the frame's cells, _RB_TEXT its glyphs row by row
+    FT_OUT=""; _ft_redraw_walk rb >/dev/null 2>&1; printf '%s' "$FT_OUT" > "$_RB_D/frame"; FT_OUT=""
+    FT_RET=$(python3 "$here/tools/screen-cells.py" "$_RB_D/frame" "$FT_ROWS" "$FT_COLS")
+    # screen-cells prints ONE CELL PER LINE, so a word is never a substring of its output —
+    # joined per row, it is (the first run of this check could not find "ONE" on a screen showing it).
+    _RB_TEXT=$(printf '%s\n' "$FT_RET" | awk -F'\t' '{split($1,a,","); r=a[1]+0; t[r]=t[r] $2} END {for (i in t) print t[i]}')
+}
+_rb_page() {                    # type page
+    ft-empty rb
+        case $1 in
+            textarea)  ft-textfield name=rbx rows=3 size=24 value="$2 notes"$'\n'"$2 again" ;;
+            textfield) ft-textfield name=rbx size=24 value="$2 answer" ;;
+            wrapped)   ft-label name=rbx width=12 text="$2 is a label long enough to wrap" ;;
+            label)     ft-label name=rbx text="$2 label" ;;
+            button)    ft-button name=rbx "$2 button" ;;
+            checkbox)  ft-checkbox name=rbx "$2 checkbox" ;;
+            select)    ft-select name=rbx size=2
+                           ft-option value=a "$2 first"
+                           ft-option value=b "$2 second"
+                       end_ft_select ;;
+        esac
+    end_ft_form
+    ft_refresh; ft_layout rb
+}
+_RB_D=$(mktemp -d); trap 'rm -rf "$_RB_D"' EXIT
+ft-form name=rb width=60 height=20
+end_ft_form
+FT_ROOT=rb
+for _ty in textarea textfield wrapped label button checkbox select; do
+    _rb_page "$_ty" ONE; _rb_screen; _one=$_RB_TEXT
+    _rb_page "$_ty" TWO; _rb_screen; _warm=$FT_RET; _warm_text=$_RB_TEXT
+    go_cold;             _rb_screen; _cold=$FT_RET
+    if [[ "$_warm_text" == *TWO* && "$_warm_text" != *ONE* ]]; then _verdict="page two"
+    elif [[ "$_warm_text" == *ONE* ]]; then _verdict="PAGE ONE STILL SHOWING"
+    else _verdict="nothing recognisable"; fi
+    check "$_ty: rebuilt under the same name, the warm repaint shows page two" "$_verdict" "page two"
+    check "$_ty: …cell for cell what a cold repaint shows" "$([[ "$_warm" == "$_cold" ]] && echo same || echo DIFFERENT)" same
+    # ANTI-VACUITY: page one really did paint its own text, or "not ONE" above means nothing.
+    check "$_ty: …and page one had painted page one" "$([[ "$_one" == *ONE* ]] && echo yes)" yes
+done
+FT_ROOT=app
+
 summary
