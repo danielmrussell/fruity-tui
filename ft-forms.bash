@@ -640,31 +640,6 @@ ft_remove_attribute() {         # NAME PROP
     elif declare -F _ft_css_inval_prop >/dev/null 2>&1; then
         _ft_css_inval_prop "$name" "$pk"       # same predicate, same route — see _ft_setprop
     fi
-    # REMOVING A PROPERTY IS SETTING IT, so the same repaint is owed. ft-modify acts on the
-    # property's KIND — layout reflows, an INHERITED one repaints the subtree that inherits it,
-    # anything else dirties the control — and this route, its twin and the DOM's
-    # removeAttribute, used to do none of that: it marked the control alone. So dropping an
-    # explicit `width` left the old geometry on screen until something else forced a reflow,
-    # and dropping a container's `color` repainted the container but not the labels inheriting
-    # it. Same predicate, both routes.
-    ft_prop_kind "$pk"
-    if [[ "$FT_RET" == layout ]]; then
-        ft_reflow "$name"
-    elif [[ "$pk" == --* || -n "${FT_INHERITED_PROP[$pk]:-}" ]]; then
-        ft_dirty_subtree "$name"
-    else
-        ft_dirty "$name"
-    fi
-    # …and the properties that decide whether focus may rest here get the same check ft-modify
-    # makes, in both directions: a control revealed by the removal can take focus again, and
-    # one hidden by it must not keep it (and owes back the cells it painted).
-    case "$pk" in
-        display|visibility|disabled)
-            _ft_disp "$name"
-            [[ "$FT_RET" == none ]] && ft_damage_subtree "$name"
-            [[ -n "${FT_FOCUS:-}" ]] && _ft_focus_skippable "$FT_FOCUS" && ft_focus_move 1
-            ;;
-    esac
     # AND THE CLASS RECONCILER, which this route did not call — the sixth "same predicate, one
     # route" in this function's own list, inside the mechanism built to end them.
     #
@@ -687,7 +662,17 @@ ft_remove_attribute() {         # NAME PROP
             "$_recon" "$name" "$pk" "$FT_RET" "$_rprev"
         fi
     fi
-    return 0
+    # REMOVING A PROPERTY IS SETTING IT, so the same repaint is owed — and it is owed by the SAME
+    # function ft-modify pays through (_ft_prop_owed, above ft-modify). This route used to carry
+    # its own copy: acting on the kind, then a display/visibility/disabled arm for damage and
+    # focus. Dropping an explicit `width` once left the old geometry on screen, dropping a
+    # container's `color` left the inheriting labels in the old colour, and dropping `position`
+    # left a sibling where the absolute control had let it slide — each a repair to the copy.
+    # Called AFTER the reconciler, as ft-modify's is (_ft_setprop reconciles before returning).
+    local _ft_owed="" _ft_owed_keys="" rejected=0
+    _ft_prop_owed "$name" "$pk" || rejected=1       # `parent` is refused on this route too
+    _ft_prop_owed_pay "$name"
+    return $rejected
 }
 # ft_get NAME PROP [OUTVAR] — local-only read (no inherit), FORK-FREE. It
 # NEVER echoes (echoing forced callers into `$(...)`, a subshell fork on
@@ -2349,10 +2334,172 @@ form_on_children_complete() { ft_focus_ring_build "$1"; }
 # (see ft_reflow). Values identical to the current one are ignored entirely —
 # re-setting the same text costs nothing. A trailing `keymap k=a ...` section
 # updates the instance overlay as at construction.
+# ── What a changed property is owed ──────────────────────────────────────────
+# ONE ANSWER FOR EVERY ROUTE THAT CHANGES A PROPERTY. ft-modify and ft_remove_attribute each
+# carried their own copy of this case, and the copy in ft_remove_attribute is the one that kept
+# drifting — its own comments counted six repairs, each "same predicate, same route". The
+# seventh was `position`: ft-modify knows that a control leaving or rejoining the flow MOVES
+# its siblings and re-arranges the parent, while removing `position` ran the size-only reflow,
+# which found the control's own box unchanged and stopped — the sibling stayed wherever the
+# absolute control had let it slide until something else laid the page out. The same copy had
+# also never re-registered an accelerator, refreshed the focusable or draw table, armed or
+# cancelled a transition, or told the class (REPROP). Found by tests/test-incremental.bash.
+#
+# _ft_prop_owed NAME KEY does what cannot wait for that one property (a registration, a hide's
+# damage) and RECORDS the rest in the CALLER's `_ft_owed`; _ft_prop_owed_pay NAME then pays it
+# once, so a write of five properties still reflows once. Caller-scoped rather than global on
+# purpose: a class reconciler may itself call ft-modify, and a nested write must not clear the
+# debts of the write it is nested in. The caller declares `local _ft_owed="" _ft_owed_keys=""`.
+_ft_prop_owed() {               # name key → 1 if the change is refused (the property is put back)
+    local name=$1 key=$2
+    _ft_owed_keys+="$key "
+    case "$key" in
+        left|top|position) _ft_owed+=" moved" ;;
+        draw) _ft_get_raw "$name" draw; FT_DRAW[$name]=$FT_RET; _ft_owed+=" paint" ;;
+        # `focusable` has a TABLE behind it, exactly as `draw` does, and the ring is built
+        # from that table rather than from the property. Writing only the property left
+        # `ft-modify x focusable=false` completely inert — the control stayed in the ring
+        # and stayed focusable. Same normalisation as construction, because a rule enforced
+        # on one route and not its sibling is how the two drift apart.
+        # `parent` NAMES THE TREE, AND THE TREE IS NOT A PROPERTY. At construction it says
+        # "attach me here" and ft_new wires FT_PARENT and the parent's FT_KIDS from it.
+        # Written afterwards it moved NOTHING: the property said one container, FT_PARENT
+        # and FT_KIDS said another, and layout, the focus ring, clipping and ft-state all
+        # walk the tables. ft-state was the sharp end — it serialises properties, so a
+        # restore would have put the control in the container the stale property named.
+        #
+        # Refused rather than performed, because that is what the DOM does: `parentNode` is
+        # read-only and you move a node with a verb. api-naming.md already maps it to a
+        # READER (`ft_parent`). The verb is ft_append, which also refuses the cycles a
+        # property write could not even detect.
+        parent)
+            printf 'ft: %s: parent is not settable — use ft_append PARENT %s to move it\n' \
+                   "$name" "$name" >&2
+            _ft_setprop "$name" parent "${FT_PARENT[$name]:-}"   # put the honest value back
+            return 1
+            ;;
+        # An accelerator is a REGISTRATION, and the underline the control draws comes from
+        # this property — so changing it here without re-registering leaves the key bound to
+        # the OLD letter while the label advertises the new one. Unregister first: it reads
+        # the registry rather than this property, which has already been written.
+        accessKey)
+            _ft_accel_unregister "$name"
+            _ft_accel_register "$name"
+            # `;;&` — DO THE REGISTRATION, THEN LET THE GENERAL RULE DECIDE THE REPAINT.
+            # This arm used to end `need_paint=1  # the underline moved`, which is true and
+            # not the whole truth: _ft_preferred_width_button, _radio and _multitoggle all
+            # append " (X)" when the accelerator letter is not already in the label, so the
+            # control has to WIDEN to hold its own accelerator. Measured: a Save button
+            # stayed six columns after accessKey=Z and drew its accelerator into somebody
+            # else's cells. A named arm that answers a general question for itself is this
+            # codebase's most frequently logged root cause; the classification lives in
+            # exactly one place at the bottom of this case, and this arm now falls into it.
+            ;;&
+        focusable)
+            _ft_get_raw "$name" focusable
+            _ft_focusable_apply "$name" "${FT_TYPE[$name]:-}" "$FT_RET"
+            _ft_owed+=" focus"
+            # The ring is a list of names, so a control joining or leaving it needs the
+            # ring rebuilt — the same signal a newly declared control raises.
+            _ft_enclosing_form_of "$name"
+            [[ -n "$FT_RET" ]] && FT_PENDING_FOCUS[$FT_RET]="${FT_PENDING_FOCUS[$FT_RET]:-}${FT_PENDING_FOCUS[$FT_RET]:+ }$name"
+            ;;
+        visibility)
+            # visibility inherits, so this is the general rule below plus a focus check;
+            # it stays named only because of the focus part.
+            _ft_owed+=" focus subtree"
+            ;;
+        disabled|display)
+            _ft_owed+=" focus"
+            ft_prop_kind "$key"
+            # `disabled` INHERITS (the engine dims a disabled control's whole subtree in
+            # _ft_compose_sgr), so like any inherited paint property it repaints the
+            # subtree, not the node — a disabled container with a still-bright label was
+            # the visible gap. `display` is layout-kind and reflows.
+            if [[ "$FT_RET" == layout ]]; then _ft_owed+=" reflow"
+            else _ft_owed+=" subtree"; fi
+            # SHOWING AND HIDING ARE THE WHOLE TRANSITION API. An application changes
+            # `display` and the engine does the rest, because that is how CSS behaves: you
+            # change a style and the transition happens because a stylesheet asked for it.
+            # Nothing is invoked. (See ft-transition.bash, "The automatic path".)
+            #
+            # Arming cannot happen HERE — it needs the control's settled box, and inside an
+            # input burst the reflow is still pending — so the intent is recorded and
+            # ft_redraw_dirty arms it once layout has run.
+            if [[ "$key" == display ]]; then
+                _ft_disp "$name"
+                if [[ "$FT_RET" == none ]]; then
+                    # …AND HIDING REPAIRS ITSELF. A control that stops being drawn leaves
+                    # cells nothing else knows were ever touched — most visibly an
+                    # absolutely-positioned overlay, which owns cells outside every other
+                    # control's box. This is the automatic damage rendering-damage.md always
+                    # said `display:none` owes, and it is a bug with or without transitions:
+                    # the demo was hand-rolling FT_PAINT_RECT bookkeeping to work around it.
+                    if declare -F ft_transition_cancel >/dev/null 2>&1; then
+                        ft_transition_cancel "$name" >/dev/null 2>&1 || :
+                    fi
+                    ft_damage_subtree "$name"
+                elif declare -F ft_transition_pending >/dev/null 2>&1; then
+                    ft_transition_pending "$name"
+                fi
+            fi
+            ;;
+        *)
+            # SETTING A PROPERTY IS ALL AN APPLICATION SHOULD HAVE TO DO. In CSS you change
+            # a value; you do not then tell the renderer to repaint. ft-modify already
+            # knows each property's KIND, so it acts on it: layout → reflow, paint → dirty.
+            #
+            # AN INHERITED PROPERTY CHANGES THE CHILDREN TOO, and that is the part apps
+            # were hand-rolling. `ft-modify inhbox color=X` repaints inhbox; every label
+            # inside it still shows the old colour, because it inherits one that just
+            # changed. So demo/css-demo.bash carried
+            #     ft-modify inhbox color="$1"; ft_dirty_subtree inhbox
+            # on three separate handlers. FT_INHERITED_PROP already knows which properties
+            # do this — including every --custom property, which inherits by definition —
+            # so the engine can and now does.
+            ft_prop_kind "$key"
+            if [[ "$FT_RET" == layout ]]; then _ft_owed+=" reflow"
+            else
+                _ft_propkey "$key"
+                if [[ "$FT_RET" == --* || -n "${FT_INHERITED_PROP[$FT_RET]:-}" ]]
+                then _ft_owed+=" subtree"
+                else _ft_owed+=" paint"; fi
+            fi
+            ;;
+    esac
+    return 0
+}
+_ft_prop_owed_pay() {           # name — settle what _ft_prop_owed recorded
+    local name=$1 owed=" $_ft_owed " keys=$_ft_owed_keys moved=0
+    local _ty=${FT_TYPE[$name]:-}
+    [[ "$owed" == *" moved "* ]] && moved=1
+    # The class gets told what changed BEFORE the repaint is scheduled, so anything it does in
+    # response (arming an animation, resizing an internal buffer) is part of the same frame.
+    # `-n "$_ty"` FIRST: ft-modify is reachable for a control that has no type (removed by an
+    # earlier handler in the same burst), and ${ASSOC[""]} is a bash error on stderr — which in
+    # a TUI is the alt screen. tests/test-reach.bash exists to catch exactly this and did.
+    if [[ -n "$keys" && -n "$_ty" && -n "${FT_CLASS_REPROP[$_ty]:-}" ]]; then
+        "${FT_CLASS_REPROP[$_ty]}" "$name" "$keys"
+    fi
+    if (( moved )) || [[ "$owed" == *" reflow "* ]]; then
+        ft_reflow "$name" "$moved"
+    elif [[ "$owed" == *" subtree "* ]]; then
+        ft_dirty_subtree "$name"
+    elif [[ "$owed" == *" paint "* ]]; then
+        ft_dirty "$name"
+    fi
+    # If this change made the CURRENTLY-FOCUSED control unfocusable (disabled or
+    # hidden), don't leave focus stranded on it — advance to the next focusable.
+    if [[ "$owed" == *" focus "* && -n "${FT_FOCUS:-}" ]] && _ft_focus_skippable "$FT_FOCUS"; then
+        ft_focus_move 1
+    fi
+    return 0
+}
+
 ft-modify() {                   # name args...
     local name=$1; shift
-    local inkeymap=0 arg key val need_paint=0 need_reflow=0 moved=0 touched_focus=0 need_subtree=0 rejected=0
-    local changed_keys=""
+    local inkeymap=0 arg key val rejected=0
+    local _ft_owed="" _ft_owed_keys=""
     # A control removed by an earlier handler has NO TYPE, and ${ASSOC[""]} is a bash error
     # on stderr — the alt screen, in a TUI. Read the type first, subscript with it.
     local _ty=${FT_TYPE[$name]:-} textprop=text
@@ -2374,140 +2521,9 @@ ft-modify() {                   # name args...
         # effects and report it — silently returning 0 would leave the caller believing
         # a change landed when the property was never written.
         _ft_setprop "$name" "$key" "$val" || { rejected=1; continue; }
-        changed_keys+="$key "
-        case "$key" in
-            left|top|position) moved=1 ;;
-            draw) FT_DRAW[$name]=$val; need_paint=1 ;;
-            # `focusable` has a TABLE behind it, exactly as `draw` does, and the ring is built
-            # from that table rather than from the property. Writing only the property left
-            # `ft-modify x focusable=false` completely inert — the control stayed in the ring
-            # and stayed focusable. Same normalisation as construction, because a rule enforced
-            # on one route and not its sibling is how the two drift apart.
-            # `parent` NAMES THE TREE, AND THE TREE IS NOT A PROPERTY. At construction it says
-            # "attach me here" and ft_new wires FT_PARENT and the parent's FT_KIDS from it.
-            # Written afterwards it moved NOTHING: the property said one container, FT_PARENT
-            # and FT_KIDS said another, and layout, the focus ring, clipping and ft-state all
-            # walk the tables. ft-state was the sharp end — it serialises properties, so a
-            # restore would have put the control in the container the stale property named.
-            #
-            # Refused rather than performed, because that is what the DOM does: `parentNode` is
-            # read-only and you move a node with a verb. api-naming.md already maps it to a
-            # READER (`ft_parent`). The verb is ft_append, which also refuses the cycles a
-            # property write could not even detect.
-            parent)
-                printf 'ft: %s: parent is not settable — use ft_append PARENT %s to move it\n' \
-                       "$name" "$name" >&2
-                _ft_setprop "$name" parent "${FT_PARENT[$name]:-}"   # put the honest value back
-                rejected=1
-                ;;
-            # An accelerator is a REGISTRATION, and the underline the control draws comes from
-            # this property — so changing it here without re-registering leaves the key bound to
-            # the OLD letter while the label advertises the new one. Unregister first: it reads
-            # the registry rather than this property, which has already been written.
-            accessKey)
-                _ft_accel_unregister "$name"
-                _ft_accel_register "$name"
-                # `;;&` — DO THE REGISTRATION, THEN LET THE GENERAL RULE DECIDE THE REPAINT.
-                # This arm used to end `need_paint=1  # the underline moved`, which is true and
-                # not the whole truth: _ft_preferred_width_button, _radio and _multitoggle all
-                # append " (X)" when the accelerator letter is not already in the label, so the
-                # control has to WIDEN to hold its own accelerator. Measured: a Save button
-                # stayed six columns after accessKey=Z and drew its accelerator into somebody
-                # else's cells. A named arm that answers a general question for itself is this
-                # codebase's most frequently logged root cause; the classification lives in
-                # exactly one place at the bottom of this case, and this arm now falls into it.
-                ;;&
-            focusable)
-                _ft_focusable_apply "$name" "${FT_TYPE[$name]:-}" "$val"
-                touched_focus=1
-                # The ring is a list of names, so a control joining or leaving it needs the
-                # ring rebuilt — the same signal a newly declared control raises.
-                _ft_enclosing_form_of "$name"
-                [[ -n "$FT_RET" ]] && FT_PENDING_FOCUS[$FT_RET]="${FT_PENDING_FOCUS[$FT_RET]:-}${FT_PENDING_FOCUS[$FT_RET]:+ }$name"
-                ;;
-            visibility)
-                # visibility inherits, so this is the general rule below plus a focus check;
-                # it stays named only because of the focus part.
-                touched_focus=1; need_subtree=1
-                ;;
-            disabled|display)
-                touched_focus=1
-                ft_prop_kind "$key"
-                # `disabled` INHERITS (the engine dims a disabled control's whole subtree in
-                # _ft_compose_sgr), so like any inherited paint property it repaints the
-                # subtree, not the node — a disabled container with a still-bright label was
-                # the visible gap. `display` is layout-kind and reflows.
-                if [[ "$FT_RET" == layout ]]; then need_reflow=1
-                else need_subtree=1; fi
-                # SHOWING AND HIDING ARE THE WHOLE TRANSITION API. An application changes
-                # `display` and the engine does the rest, because that is how CSS behaves: you
-                # change a style and the transition happens because a stylesheet asked for it.
-                # Nothing is invoked. (See ft-transition.bash, "The automatic path".)
-                #
-                # Arming cannot happen HERE — it needs the control's settled box, and inside an
-                # input burst the reflow is still pending — so the intent is recorded and
-                # ft_redraw_dirty arms it once layout has run.
-                if [[ "$key" == display ]]; then
-                    if [[ "$val" == none ]]; then
-                        # …AND HIDING REPAIRS ITSELF. A control that stops being drawn leaves
-                        # cells nothing else knows were ever touched — most visibly an
-                        # absolutely-positioned overlay, which owns cells outside every other
-                        # control's box. This is the automatic damage rendering-damage.md always
-                        # said `display:none` owes, and it is a bug with or without transitions:
-                        # the demo was hand-rolling FT_PAINT_RECT bookkeeping to work around it.
-                        if declare -F ft_transition_cancel >/dev/null 2>&1; then
-                            ft_transition_cancel "$name" >/dev/null 2>&1 || :
-                        fi
-                        ft_damage_subtree "$name"
-                    elif declare -F ft_transition_pending >/dev/null 2>&1; then
-                        ft_transition_pending "$name"
-                    fi
-                fi
-                ;;
-            *)
-                # SETTING A PROPERTY IS ALL AN APPLICATION SHOULD HAVE TO DO. In CSS you change
-                # a value; you do not then tell the renderer to repaint. ft-modify already
-                # knows each property's KIND, so it acts on it: layout → reflow, paint → dirty.
-                #
-                # AN INHERITED PROPERTY CHANGES THE CHILDREN TOO, and that is the part apps
-                # were hand-rolling. `ft-modify inhbox color=X` repaints inhbox; every label
-                # inside it still shows the old colour, because it inherits one that just
-                # changed. So demo/css-demo.bash carried
-                #     ft-modify inhbox color="$1"; ft_dirty_subtree inhbox
-                # on three separate handlers. FT_INHERITED_PROP already knows which properties
-                # do this — including every --custom property, which inherits by definition —
-                # so the engine can and now does.
-                ft_prop_kind "$key"
-                if [[ "$FT_RET" == layout ]]; then need_reflow=1
-                else
-                    _ft_propkey "$key"
-                    if [[ "$FT_RET" == --* || -n "${FT_INHERITED_PROP[$FT_RET]:-}" ]]
-                    then need_subtree=1
-                    else need_paint=1; fi
-                fi
-                ;;
-        esac
+        _ft_prop_owed "$name" "$key" || rejected=1
     done
-    # The class gets told what changed BEFORE the repaint is scheduled, so anything it does in
-    # response (arming an animation, resizing an internal buffer) is part of the same frame.
-    # `-n "$_ty"` FIRST: ft-modify is reachable for a control that has no type (removed by an
-    # earlier handler in the same burst), and ${ASSOC[""]} is a bash error on stderr — which in
-    # a TUI is the alt screen. tests/test-reach.bash exists to catch exactly this and did.
-    if [[ -n "$changed_keys" && -n "$_ty" && -n "${FT_CLASS_REPROP[$_ty]:-}" ]]; then
-        "${FT_CLASS_REPROP[$_ty]}" "$name" "$changed_keys"
-    fi
-    if (( need_reflow || moved )); then
-        ft_reflow "$name" "$moved"
-    elif (( need_subtree )); then
-        ft_dirty_subtree "$name"
-    elif (( need_paint )); then
-        ft_dirty "$name"
-    fi
-    # If this change made the CURRENTLY-FOCUSED control unfocusable (disabled or
-    # hidden), don't leave focus stranded on it — advance to the next focusable.
-    if (( touched_focus )) && [[ -n "${FT_FOCUS:-}" ]] && _ft_focus_skippable "$FT_FOCUS"; then
-        ft_focus_move 1
-    fi
+    _ft_prop_owed_pay "$name"
     return $rejected
 }
 
