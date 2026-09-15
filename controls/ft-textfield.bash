@@ -241,8 +241,8 @@ ft_class_textfield() {
     ft_prop_kind_set wrap        paint     # textarea: wrap long lines vs scroll H
     ft_prop_kind_set rows        layout    # >1 turns the field into a textarea
     ft_prop_kind_set wrapIndicator  layout # textarea: ↩ glyph on soft-wrapped lines
-    ft_prop_kind_set newlineIndicator layout# textarea: ¶ glyph where a hard \n ends a line
-    ft_prop_kind_set showLineNumbers layout# textarea: line numbers down the left
+    ft_prop_kind_set newlineIndicator layout # textarea: ¶ glyph where a hard \n ends a line
+    ft_prop_kind_set showLineNumbers layout  # textarea: line numbers down the left
     ft_prop_kind_set currentLineHighlight paint # textarea: lift the row the caret is on
     ft_prop_kind_set acceptsTab     paint   # auto (default) | true | false — see _ft_textfield_tab_inserts
     ft_prop_kind_set keymode        paint   # emacs (default, readline keys) | vi (reserved)

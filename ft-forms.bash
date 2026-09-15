@@ -1435,6 +1435,13 @@ ft_prop_kind()     { [[ -z "$1" ]] && { FT_RET=layout; return 0; }
 # else needs reflowed is not an authoring error to shout about — it is a difference of opinion,
 # and the conservative opinion wins by construction rather than by everyone remembering.
 ft_prop_kind_set() { [[ -z "$1" ]] && return 1
+                     # TWO KINDS, AND A THIRD IS A TYPO. `ft_prop_kind_set showLineNumbers layout#
+                     # comment` — no space before the `#` — stored the kind "layout#", which every
+                     # reader tests `== layout` against and so read as paint: toggling line numbers
+                     # widened the box's preferred size and nothing reflowed it. Refused loudly now.
+                     case $2 in paint|layout) : ;;
+                         *) printf 'ft: ft_prop_kind_set %s: kind must be paint or layout, got "%s"\n' "$1" "$2" >&2
+                            return 1 ;; esac
                      _ft_propkey "$1"
                      [[ "$2" == paint && "${FT_PROP_KIND[$FT_RET]:-}" == layout ]] && return 0
                      FT_PROP_KIND[$FT_RET]=$2; }

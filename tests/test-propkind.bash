@@ -114,6 +114,17 @@ check "forwards and backwards give the same table" "$_fwd" "$_rev"
 check "…and the table is not empty"        "$(( $(printf '%s\n' "$_fwd" | grep -c .) > 60 ))" "1"
 check "…and holds the names under test"    "$(printf '%s\n' "$_fwd" | grep -cE '^(text|title|orientation) layout$')" "3"
 
+note "a kind is paint or layout — nothing else gets into the table"
+# `ft_prop_kind_set showLineNumbers layout# comment` (no space before the #) stored "layout#", which
+# every reader compares with `== layout` and so treated as paint: toggling a textarea's line numbers
+# widened its preferred size and nothing reflowed it. Every class's kinds, read back whole:
+check "every kind in the table is paint or layout" \
+      "$(printf '%s\n' "$_fwd" | awk '$2 != "paint" && $2 != "layout" {printf "%s=%s ", $1, $2}')" ""
+ft_prop_kind_set _pkProbeTypo 'layout#' 2>/dev/null
+check "…and a kind that is neither is refused" "$?" "1"
+ft_prop_kind _pkProbeTypo
+check "…leaving the name unclassified (the layout default)" "$FT_RET" "layout"
+
 note "no property a MEASURE function reads is paint-only"
 # A class's registered preferredWidth/height function decides the control's intrinsic size, so
 # whatever it reads is an input to that size. Asked at RUNTIME rather than by grepping the
