@@ -65,11 +65,42 @@ ft_class_label() {
     # which runs for EACH class in the chain as its constructor fires, so `button` inherits
     # label's height and overrides only the draw and width it has of its own.
     ft_runlevels scrolling=ft_keymap_label_scrolling
-    ft_class extends=ft_control focusable=true keymap=label \
+    ft_class extends=ft_control focusable=true keymap=label mouse=label \
         focusSkip=_ft_label_focus_skip \
         wheelProbe=_ft_label_wheel_probe \
         defaults="display=inline-block overflowY=auto" \
         defaults="importance=minor"
+}
+
+# THE LABEL'S OWN SCROLLBAR TAKES THE MOUSE. A scrolling label paints its bar in its own last
+# column (the draw below), and nothing handled a press there: the engine's gutter grab claims bars
+# in RESERVED gutters, which a label does not use, so pressing the thumb only focused the label.
+# Press anywhere on the bar and the thumb centres on the pointer; drag and it follows, and it keeps
+# following off the bar column until release, as a desktop scrollbar does. The mapping is the
+# scrollbar control's (ft_scrollbar_pos_from_point), which sizes the thumb exactly as the draw does.
+# A grab also steps the label onto its `scrolling` rung (_ft_runlevel_grab), so the arrows go on
+# scrolling what was just dragged.
+declare -A _FT_LABEL_BAR_GRAB=()
+_ft_destroy_label() { unset "_FT_LABEL_BAR_GRAB[$1]"; }    # removed mid-drag: forget the grab
+_ft_mouse_label() {             # name action relx rely
+    local n=$1 act=$2
+    case $act in
+        release) unset "_FT_LABEL_BAR_GRAB[$n]"; return 0 ;;
+        drag)    [[ -n "${_FT_LABEL_BAR_GRAB[$n]:-}" ]] || return 0 ;;
+        press)   unset "_FT_LABEL_BAR_GRAB[$n]"
+                 _ft_label_metrics "$n"
+                 (( LBL_GUTTER && $3 == ${FT_MEASURED_WIDTH[$n]:-0} - 1 )) || return 0
+                 _FT_LABEL_BAR_GRAB[$n]=1
+                 _ft_runlevel_grab "$n" ;;
+        *)       return 0 ;;
+    esac
+    ft_get "$n" scrollHeight; local total=${FT_RET:-0}
+    ft_get "$n" clientHeight; local client=${FT_RET:-0}
+    (( total > client && client > 0 )) || return 0
+    ft_scrollbar_pos_from_point "$n" "${FT_ABSOLUTE_Y[$n]:-0}" "$client" "$total" "$client" \
+                                $(( ${FT_ABSOLUTE_Y[$n]:-0} + $4 ))
+    ft-modify "$n" scrollTop="$FT_RET"
+    return 0
 }
 
 # Alt+C on a focused (scrollable) label copies its whole text to the terminal

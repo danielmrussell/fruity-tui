@@ -171,6 +171,29 @@ _click 0 m "$(( ${FT_ABSOLUTE_X[g4ta]} + 2 ))" "$(( ${FT_ABSOLUTE_Y[g4ta]} + 1 )
 check "a plain click on the text only focuses"               "$(_rl g4ta)" "poised"
 ft_remove app4
 
+note "a LABEL's scrollbar can be grabbed too — and grabbing it steps in the same way"
+# A label paints its bar in its own last column, outside any reserved gutter, and nothing handled a
+# press there: pressing the thumb only focused the label, and dragging did nothing at all.
+ft-form name=app5 width=40 height=12 display=flex flexDirection=column alignItems=start
+  ft-button name=g5other "Other"
+  ft-label  name=g5lab width=20 height=4 text=$'l1\nl2\nl3\nl4\nl5\nl6\nl7\nl8\nl9\nl10\nl11\nl12'
+  ft-label  name=g5fits width=20 "short"
+end_ft_form
+ft_layout app5; FT_ROOT=app5; FT_OUT=""; _ft_redraw_walk app5; FT_OUT=""; ft_focus g5other
+_g5x=$(( ${FT_ABSOLUTE_X[g5lab]} + ${FT_MEASURED_WIDTH[g5lab]} - 1 )); _g5y=${FT_ABSOLUTE_Y[g5lab]}
+_click 0 M "$_g5x" "$_g5y"
+check "grabbing a label's bar steps it in"                    "$(_rl g5lab)/$FT_FOCUS" "scrolling/g5lab"
+_click 32 M "$(( _g5x + 5 ))" "$(( _g5y + 3 ))"                 # down to the bottom, off the bar column
+check "…dragging follows the pointer to the end, off the bar"  "$(_voff g5lab)" "8"
+_click 0 m "$(( _g5x + 5 ))" "$(( _g5y + 3 ))"
+_click 32 M "$_g5x" "$_g5y"                                     # a drag with no grab moves nothing
+check "…and release ends the grab"                             "$(_voff g5lab)" "8"
+ft_dispatch_event UP
+check "…the next Up scrolls the label, not the focus"          "$FT_FOCUS:$(_voff g5lab)" "g5lab:7"
+_click 0 M "$(( ${FT_ABSOLUTE_X[g5lab]} + 1 ))" "$_g5y"; _click 0 m "$(( ${FT_ABSOLUTE_X[g5lab]} + 1 ))" "$_g5y"
+check "…while a press on its TEXT scrolls nothing"             "$(_voff g5lab)" "7"
+ft_remove app5
+
 note "a beacon overlay is TRANSPARENT to the mouse — clicks pass through to the control beneath"
 FT_ROOT=app2; FT_FOCUS=""
 ft-beacon name=bov target=dd variant=frame parent=app2       # a real child, declared AFTER dd
