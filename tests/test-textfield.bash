@@ -812,10 +812,13 @@ ft-form name=scrollagree width=120 height=40
     ft-textfield name=agLinesFit   rows=4 size=20 wrap=false value=$'alpha beta\ngamma delta\nepsilon'
     ft-textfield name=agLinesFitRo rows=4 size=20 wrap=false readOnly=true value=$'alpha beta\ngamma delta\nepsilon'
     ft-textfield name=agOneTooWide rows=4 size=20 wrap=false value=$'alpha beta gamma delta epsilon\nb'
+    # …and a ONE-LINE field has nothing to wrap: a long value draws its bar whatever `wrap` says,
+    # so ENTER must stop at `scrolling` for it too — where the arrows then have to pan it.
+    ft-textfield name=agLongLine rows=1 size=12 value="someone.with.a.long.address@example.com"
 end_ft_form
 ft_layout scrollagree
 FT_OUT=""; _ft_redraw_walk scrollagree
-for _f in agTall agFits agPanRo agPan1 agPlain agLinesFit agLinesFitRo agOneTooWide; do
+for _f in agTall agFits agPanRo agPan1 agPlain agLinesFit agLinesFitRo agOneTooWide agLongLine; do
     FT_OUT=""; ft_draw_one "$_f"                       # publish this field's bars
     _want=no
     [[ -n "${FT_TEXTFIELD_VBAR[$_f]:-}" || -n "${FT_TEXTFIELD_HBAR[$_f]:-}" ]] && _want=YES
@@ -828,6 +831,18 @@ check "an ordinary short input still cannot"   "$(_ft_textfield_can_scroll agPla
 # Anti-vacuity for the new pair: the same box with ONE line too wide must draw its bar, or the two
 # "no bar" verdicts above would pass on a draw that never draws one.
 check "a box with one line too wide draws a bar" "${FT_TEXTFIELD_HBAR[agOneTooWide]:+YES}" YES
+check "a long one-line field draws a bar"         "${FT_TEXTFIELD_HBAR[agLongLine]:+YES}" YES
+FT_FOCUS=agLongLine; _ft_setprop agLongLine runlevel poised; ft_textfield_engage agLongLine
+check "ENTER on it stops at scrolling"            "$(ft_get agLongLine runlevel; printf %s "$FT_RET")" scrolling
+ft_textfield_idle_right agLongLine; ft_textfield_idle_right agLongLine
+check "…where Right pans it"                      "$(_ft_get_raw agLongLine scrollLeft; printf %s "$FT_RET")" 2
+for _i in $(seq 1 60); do ft_textfield_idle_right agLongLine; done
+_ft_textfield_hscroll_max agLongLine; _agmax=$FT_RET
+check "…never past the last column"               "$(_ft_get_raw agLongLine scrollLeft; printf %s "$FT_RET")" "$_agmax"
+check "…which is value minus well (39 - 12)"      "$_agmax" 27
+ft_textfield_idle_left agLongLine
+check "…and Left pans back"                       "$(_ft_get_raw agLongLine scrollLeft; printf %s "$FT_RET")" 26
+FT_FOCUS=""
 
 # ── Enter-to-commit asks the LISTENER REGISTRY, not a function name ──────────
 # docs/api-naming.md: "There is NO name-convention magic: a function named <name>_on_<event>

@@ -345,11 +345,11 @@ _ft_textfield_vscroll_by() {           # name delta — scroll a viewer vertical
     (( v < 0 )) && v=0; (( v > maxv )) && v=$maxv
     _ft_tf_voff_set "$n" "$v"; ft_dirty "$n"; return 0
 }
-_ft_textfield_hscroll_by() {           # name delta — scroll a non-wrapping viewer sideways
-    local n=$1 d=$2 len
-    _ft_tf_hoff "$n"; local v=$(( FT_RET + d )); (( v < 0 )) && v=0
-    ft_resolved_prop "$n" value ""; ft_display_width "$FT_RET"; len=$FT_DISPLAY_WIDTH  # a pan is COLUMNS
-    (( v > len )) && v=$len
+_ft_textfield_hscroll_by() {           # name delta — pan the view sideways, clamped
+    local n=$1 d=$2
+    _ft_textfield_hscroll_max "$n"; local max=$FT_RET               # a pan is COLUMNS
+    _ft_tf_hoff "$n"; local v=$(( FT_RET + d ))
+    (( v > max )) && v=$max; (( v < 0 )) && v=0
     _ft_tf_hoff_set "$n" "$v"; ft_dirty "$n"; return 0
 }
 _ft_textfield_pagerows()  { local n=$1; local vh=$(( ${FT_MEASURED_HEIGHT[$n]:-3} - 2 )); (( vh < 2 )) && vh=2; FT_RET=$(( vh - 1 )); }
@@ -392,9 +392,8 @@ ft_textfield_idle_end()  { local n=$1
 # Horizontal: a non-wrapping box pans sideways. Consumed at the ends for the same reason
 # as the vertical pair — a wrapping box has no sideways to go, and Left/Right there must
 # still not eject you from a control you asked to be inside.
-ft_textfield_idle_left()  { local n=$1; _ft_tf_hoff "$n"
-                            if ! _ft_textfield_wrapping "$n" && (( FT_RET > 0 )); then _ft_textfield_hscroll_by "$n" -1; fi; return 0; }
-ft_textfield_idle_right() { local n=$1; if ! _ft_textfield_wrapping "$n" && _ft_textfield_multiline "$n"; then _ft_textfield_hscroll_by "$n" 1; fi; return 0; }
+ft_textfield_idle_left()  { _ft_textfield_hscroll_by "$1" -1; }     # the clamp is the whole rule:
+ft_textfield_idle_right() { _ft_textfield_hscroll_by "$1" 1; }      # nothing to pan → nothing moves
 
 _ft_destroy_textfield() {       # release per-instance transient state on rebuild
     local n=$1
@@ -452,29 +451,32 @@ _ft_textfield_can_scroll() {           # name → 0 if the content exceeds the v
     fi
     _ft_textfield_can_hscroll "$n"
 }
-# Horizontal overflow: only a NON-wrapping field can pan (a wrapping one reflows instead), and
-# only when something is genuinely wider than the text well. Measured in display COLUMNS, not
-# characters — a CJK value is twice as wide as its length (see reference: columns vs characters).
+# _ft_textfield_hscroll_max NAME → FT_RET: how far the view can pan sideways, in display COLUMNS
+# (a CJK value is twice as wide as its length) — 0 when nothing is wider than the text well.
+# ONE ANSWER for the three places that ask: ENTER deciding whether to stop at `scrolling`, the
+# arrows panning there, and — through the same measures — the draws deciding to put a bar on
+# the box. Each used to answer for itself, and they disagreed twice:
 #
-# A TEXT BOX IS AS WIDE AS ITS WIDEST LINE, NOT AS LONG AS ITS VALUE. This measured the whole
-# value, newlines and all, so a non-wrapping box of three short lines — "alpha beta", "gamma
-# delta", "epsilon", each well inside twenty columns — counted as 29 columns of overflow. ENTER
-# stopped at `scrolling` on a box with no scrollbar and nothing to pan, and a second ENTER was
-# needed to type. The textarea draw decides its bar from the widest laid-out line, so this asks
-# _ft_textfield_widest_line too. (A one-line field has one line, and its draw measures the
-# value, so that branch is unchanged.)
-_ft_textfield_can_hscroll() {          # name → 0 if a line is wider than the well
+#  · A TEXT BOX IS AS WIDE AS ITS WIDEST LINE, NOT AS LONG AS ITS VALUE. The value was measured
+#    whole, newlines and all, so a non-wrapping box of three short lines counted as overflow and
+#    ENTER stopped at `scrolling` on a box with no bar.
+#  · A ONE-LINE FIELD HAS NOTHING TO WRAP. Its draw puts a bar on the bottom border whenever the
+#    value is wider than the well, whatever `wrap` says; ENTER asked `wrap` first and skipped
+#    `scrolling` on a field showing a bar — and the arrows there refused to pan it at all.
+_ft_textfield_hscroll_max() {          # name → FT_RET
     local n=$1
-    _ft_textfield_wrapping "$n" && return 1
     _ft_textfield_textw "$n"; local well=$FT_RET
-    (( well > 0 )) || return 1
     if _ft_textfield_multiline "$n"; then
+        if _ft_textfield_wrapping "$n"; then FT_RET=0; return 0; fi    # a wrapping box reflows
         _ft_textfield_layout "$n" "$well"; _ft_textfield_widest_line
-        (( FT_RET > well ))
     else
-        ft_resolved_prop "$n" value ""; ft_display_width "$FT_RET"
-        (( FT_DISPLAY_WIDTH > well ))
+        ft_resolved_prop "$n" value ""; ft_display_width "$FT_RET"; FT_RET=$FT_DISPLAY_WIDTH
     fi
+    FT_RET=$(( FT_RET - well )); (( FT_RET < 0 )) && FT_RET=0
+    return 0
+}
+_ft_textfield_can_hscroll() {          # name → 0 if something is wider than the well
+    _ft_textfield_hscroll_max "$1"; (( FT_RET > 0 ))
 }
 # _ft_textfield_widest_line → FT_RET: the widest line of the CURRENT layout
 # (FT_TEXTFIELD_LINES_TEXT, filled by _ft_textfield_layout), in display columns. One answer for
