@@ -3084,6 +3084,18 @@ _ft_beacon_judge_finalists
 # the engine knows what `effect` means. demo/callout-demo.bash used to call _ft_beacon_arm
 # itself after every `ft-modify … effect=…`, which is the app doing the class's job.
 _ft_beacon_reprop() {           # name "key key …"
+    # ANY WRITE MAY MOVE ALL OF IT. A beacon finds its placement by searching during the draw —
+    # a longer text, another number, a different variant each land the box and leader somewhere
+    # else — so nothing before the draw can say which cells it will leave. Give back the whole
+    # footprint it last inked; the settle refills it and repaints what was underneath, and the
+    # beacon composites on top.
+    #
+    # EXCEPT WHILE A DRAG HOLDS IT. The drag writes parkedTop/parkedLeft through ft-modify on
+    # every move and then damages exactly the cells it vacated — a bounding box per move is what
+    # once cost 1862ms of a 2100ms drag — so for the gesture's lifetime the drag owns this
+    # beacon's damage. Measured before this guard existed (tools/bench-drag.bash, four runs):
+    # the worst frame 31ms → 42ms, every run.
+    [[ "${_FT_BEACON_GRAB%% *}" == "$1" ]] || _ft_ink_beacon "$1"
     case " $2 " in
         *" effect "*|*" lifetime "*|*" variant "*) _ft_beacon_arm "$1" ;;
     esac

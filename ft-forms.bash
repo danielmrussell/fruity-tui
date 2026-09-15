@@ -2405,9 +2405,13 @@ _ft_prop_owed() {               # name key → 1 if the change is refused (the p
             [[ -n "$FT_RET" ]] && FT_PENDING_FOCUS[$FT_RET]="${FT_PENDING_FOCUS[$FT_RET]:-}${FT_PENDING_FOCUS[$FT_RET]:+ }$name"
             ;;
         visibility)
-            # visibility inherits, so this is the general rule below plus a focus check;
-            # it stays named only because of the focus part.
+            # visibility inherits, so this is the general rule below plus a focus check —
+            # and a hide's damage: a hidden control paints a blank over its BOX, and whatever it
+            # inked outside the box (a callout, its leader) would stay. Hiding gives those cells
+            # back, as display:none below does.
             _ft_owed+=" focus subtree"
+            ft_resolve "$name" visibility
+            [[ "$FT_RET" == hidden ]] && ft_damage_subtree "$name"
             ;;
         disabled|display)
             _ft_owed+=" focus"
@@ -5108,9 +5112,13 @@ ft_draw_one() {                 # name
     ft_resolved_prop "$1" visibility visible
     if [[ "$FT_RET" == hidden ]]; then
         local _r _rows=${FT_MEASURED_HEIGHT[$1]:-0} _cols=${FT_MEASURED_WIDTH[$1]:-0}
+        # WHAT SHOWS THROUGH A HIDDEN BOX IS WHAT IS BEHIND IT — the parent's ground, not the
+        # frame-body grey. On the root form that is the cleared screen, and a hidden table there
+        # stamped a grey column that its own draw, once shown again, never painted over.
+        _ft_effective_bg "${FT_PARENT[$1]:-}"; local _ground=$FT_RET
         ft_fit "" "$_cols"
         for (( _r=0; _r<_rows; _r++ )); do
-            ft_print_at_width $(( ${FT_ABSOLUTE_Y[$1]:-0} + _r )) "${FT_ABSOLUTE_X[$1]:-0}" "$FT_COLOR_BODY$FT_FIT$FT_COLOR_RESET" "$_cols"
+            ft_print_at_width $(( ${FT_ABSOLUTE_Y[$1]:-0} + _r )) "${FT_ABSOLUTE_X[$1]:-0}" "$_ground$FT_FIT$FT_COLOR_RESET" "$_cols"
         done
         ft_clip_reset
         FT_RETAINED_BLOCK[$1]=$FT_BLOCK_BEING_DRAWN; FT_RETAINED_TOKEN[$1]=$_rtok
