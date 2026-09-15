@@ -5765,14 +5765,50 @@ _ft_redraw_walk() {
     for kid in ${FT_KIDS[$name]}; do _ft_redraw_walk "$kid"; done
 }
 
-# Partial redraw: repaint only dirty controls, ancestors before descendants
-# (a container repaints its rectangle; a dirty descendant must land on top).
-_ft_depth() {                   # name → FT_RET (distance from root)
-    local name=$1 d=0
-    local p="${FT_PARENT[$name]:-}"
-    while [[ -n "$p" ]]; do (( d++ )); p="${FT_PARENT[$p]:-}"; done
-    FT_RET=$d
+# _ft_paint_order NAME… → FT_PAINT_ORDER: the controls a partial redraw paints, in the order the
+# FULL walk would paint them, and without the ones the full walk would never reach.
+#
+# THE ORDER IS THE WALK'S, NOT MERELY "ANCESTORS FIRST". This used to sort by depth, and within
+# one depth the order was whatever the associative array's hash gave back. Nothing notices while
+# siblings keep to their own cells, and everything does once two overlap — a control that has
+# just become position:absolute sits on the sibling that slid into its place, and _ft_redraw_walk
+# paints the later sibling on top while the partial redraw painted whichever hashed last.
+#
+# AND IT STOPS WHERE THE WALK STOPS. _ft_redraw_walk never descends into a display:none subtree,
+# but a partial redraw paints controls one at a time, and ft_draw_one can only answer for the
+# control itself: a label inside a hidden tab body has a `display` of its own that is not none.
+# Switching tabs dirtied both bodies, and the hidden one painted over the one just shown.
+# (visibility:hidden is not this: it paints a blank, and ft_draw_one handles it.)
+#
+# So it IS the walk, pruned: mark the path from each name to its root, then walk only the marked
+# branches in FT_KIDS order. One function, two callers — the redraw and the transition's ground
+# capture used to carry an insertion sort each (tests/test-incremental.bash found both defects).
+_ft_paint_order() {             # name… → FT_PAINT_ORDER
+    local -A _ft_order_wanted=() _ft_order_marked=()
+    local -a roots=()
+    local name n
+    for name in "$@"; do
+        _ft_order_wanted[$name]=1
+        n=$name
+        while [[ -z "${_ft_order_marked[$n]:-}" ]]; do     # stop at a path already marked
+            _ft_order_marked[$n]=1
+            [[ -n "${FT_PARENT[$n]:-}" ]] || { roots+=("$n"); break; }
+            n=${FT_PARENT[$n]}
+        done
+    done
+    FT_PAINT_ORDER=()
+    for n in "${roots[@]}"; do _ft_paint_order_walk "$n"; done
 }
+_ft_paint_order_walk() {        # node — reads the caller's _ft_order_wanted / _ft_order_marked
+    local node=$1 kid
+    _ft_disp "$node"; [[ "$FT_RET" == none ]] && return 0       # exactly where the walk stops
+    [[ -n "${_ft_order_wanted[$node]:-}" ]] && FT_PAINT_ORDER+=("$node")
+    for kid in ${FT_KIDS[$node]:-}; do
+        [[ -n "${_ft_order_marked[$kid]:-}" ]] && _ft_paint_order_walk "$kid"
+    done
+    return 0
+}
+FT_PAINT_ORDER=()
 # ── Overlay compositing ──────────────────────────────────────────────────────
 # position:absolute OVERLAYS (beacons/callouts) paint OUTSIDE their own layout box
 # and must stay ON TOP of every other control. But they are ordinary tree children,
@@ -6319,29 +6355,20 @@ ft_redraw_dirty() {
     # REPAIR, NOT DIRTY: the children's content has not changed, only their cells were painted
     # over, and a retained block re-emits in a fraction of a derive. A container with no draw
     # paints nothing and covers nobody. Found by tests/test-incremental.bash.
-    local name i j tn td
+    local name
     for name in "${!FT_DIRTY[@]}"; do
         [[ -n "${FT_KIDS[$name]:-}" ]] || continue
         _ft_resolve_draw "$name"; [[ -n "$FT_RET" ]] && _ft_repair_subtree "$name"
     done
-    local -a names=() depths=()
     # The paint set is the UNION of the two: content that changed and cells that were taken
     # away. ft_draw_one tells them apart by itself — a dirtied control has no retained entry
     # left to serve — so this loop does not have to.
-    for name in "${!FT_DIRTY[@]}"; do
-        names+=("$name"); _ft_depth "$name"; depths+=("$FT_RET")
-    done
+    local -a names=("${!FT_DIRTY[@]}")
     for name in "${!FT_REPAIR[@]}"; do
-        [[ -n "${FT_DIRTY[$name]:-}" ]] && continue          # already in, and by the stronger claim
-        names+=("$name"); _ft_depth "$name"; depths+=("$FT_RET")
+        [[ -n "${FT_DIRTY[$name]:-}" ]] || names+=("$name")   # a dirty one is in by the stronger claim
     done
-    for (( i=1; i<${#names[@]}; i++ )); do          # insertion sort: sets are small
-        tn=${names[i]}; td=${depths[i]}; j=$(( i-1 ))
-        while (( j >= 0 )) && (( depths[j] > td )); do
-            names[j+1]=${names[j]}; depths[j+1]=${depths[j]}; (( j-- ))
-        done
-        names[j+1]=$tn; depths[j+1]=$td
-    done
+    _ft_paint_order "${names[@]}"
+    names=("${FT_PAINT_ORDER[@]}")
     local _tp2=""
     [[ -n "${FT_BURST_LOG:-}" ]] && { ft_now_ms; _tp2=$FT_RET; }
     # AN OVERLAY IN THE DIRTY SET WOULD PAINT TWICE: once here in depth order, then again when

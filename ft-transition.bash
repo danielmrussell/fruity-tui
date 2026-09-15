@@ -275,22 +275,12 @@ _ft_transition_capture_ground() {   # top left bottom right → FT_RET bytes
     _FT_DD_T=("$top"); _FT_DD_L=("$left"); _FT_DD_B=("$bottom"); _FT_DD_R=("$right"); _FT_DD_N=1
     [[ -n "${FT_ROOT:-}" ]] && _ft_damage_enlist "$FT_ROOT"
     _FT_DFILL_BUILT=0
-    local name i j swap_name swap_depth
-    local -a names=() depths=()
+    local name
     # The enlisted set is FT_REPAIR now, not FT_DIRTY — the repair says "your cells were painted
     # over", which is the claim ft_draw_one can answer from the retained block. Reading the wrong
     # set here would capture a ground with nothing in it but the refill.
-    for name in "${!FT_REPAIR[@]}"; do
-        names+=("$name"); _ft_depth "$name"; depths+=("$FT_RET")
-    done
-    for (( i=1; i<${#names[@]}; i++ )); do          # ancestors before descendants
-        swap_name=${names[i]}; swap_depth=${depths[i]}; j=$(( i-1 ))
-        while (( j >= 0 )) && (( depths[j] > swap_depth )); do
-            names[j+1]=${names[j]}; depths[j+1]=${depths[j]}; (( j-- ))
-        done
-        names[j+1]=$swap_name; depths[j+1]=$swap_depth
-    done
-    for name in "${names[@]}"; do ft_draw_one "$name"; done
+    _ft_paint_order "${!FT_REPAIR[@]}"
+    for name in "${FT_PAINT_ORDER[@]}"; do ft_draw_one "$name"; done
     _ft_composite_overlays
     ft_clip_band_reset
     FT_DAMAGE_NARROW=$was_narrow
