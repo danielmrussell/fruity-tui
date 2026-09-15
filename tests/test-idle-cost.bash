@@ -39,6 +39,12 @@ trap 'rm -f "$noloop"' EXIT
 source "$noloop"
 exec {FT_TTY}>/dev/null
 FT_COLOR_MODE=256; FT_ROWS=34; FT_COLS=120
+# THE DEMO BUILDS ITS FORM AT THE TERMINAL'S SIZE, measured when it is sourced (ft_term_size), and
+# assigning FT_ROWS/FT_COLS afterwards does not resize a form that already exists. So this file
+# tested whatever size its terminal happened to be: green from a wide window, red with no terminal
+# at all, where the fallback is 80x24 and page 1's text box is squeezed to one row — too short for
+# its border, so it painted nothing. The demo's own resize handler makes the size the test's.
+_resize >/dev/null 2>&1
 
 # Page 8 is the @keyframes page — the one that leaves an animation running.
 PAGE=8; _show_page >/dev/null 2>&1

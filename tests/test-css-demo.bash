@@ -21,6 +21,12 @@ trap 'rm -f "$noloop"' EXIT
 source "$noloop"
 exec {FT_TTY}>/dev/null
 FT_COLOR_MODE=256; FT_ROWS=34; FT_COLS=120
+# THE DEMO BUILDS ITS FORM AT THE TERMINAL'S SIZE, measured when it is sourced (ft_term_size), and
+# assigning FT_ROWS/FT_COLS afterwards does not resize a form that already exists. So this file
+# tested whatever size its terminal happened to be: green from a wide window, red with no terminal
+# at all, where the fallback is 80x24 and page 1's text box is squeezed to one row — too short for
+# its border, so it painted nothing. The demo's own resize handler makes the size the test's.
+_resize >/dev/null 2>&1
 
 note "Page 1 — inheritance: the text box inherits its container's colour"
 PAGE=1; _show_page >/dev/null 2>&1
