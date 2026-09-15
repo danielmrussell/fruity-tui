@@ -292,8 +292,7 @@ _ft_draw_tabs() {               # name
     ft_print_at_width "$hr2Row" "$col" "$bd$edge$rst" "$cols"
 }
 # The tabs fill their whole background, so a repaint of the tabs NODE ALONE (a
-# focus change dirties only the focused control) would erase every child. The
-# focus machinery calls _ft_focus_dirty, which — because the class declares
-# `fillsBackground=true` — dirties the whole SUBTREE instead, so redraw paints the bodies
-# back over the fill (and a tab SWITCH already dirties the subtree via its
-# reflow). No per-draw child re-walk, so nothing is drawn twice.
+# focus change dirties only the focused control) would erase every child. ft_redraw_dirty
+# repairs the children of every dirty container it paints, so redraw puts the bodies back
+# over the fill (and a tab SWITCH already dirties the subtree via its reflow). No per-draw
+# child re-walk, so nothing is drawn twice.

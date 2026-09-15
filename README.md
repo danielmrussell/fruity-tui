@@ -237,7 +237,7 @@ Keys:
 | `textProp=` | which property a bare DSL argument lands in (`text`, or `title` for a frame) |
 | `noHit=` | `true` = `pointer-events:none`; clicks pass through |
 | `setProp=` | fn NAME PROP VALUE — reconcile a late property write |
-| `fillsBackground=` | `true` = its draw paints its whole box, so repaints dirty the subtree |
+| `fillsBackground=` | `true` = its draw paints its whole box, so a damage repair skips it (the refill already restored its ground) |
 | `borderSgr=` | fn NAME → the SGR its border wears |
 | `defaults=` | property defaults applied before user args — **appends** to the inherited set |
 

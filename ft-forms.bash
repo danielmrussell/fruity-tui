@@ -4799,9 +4799,10 @@ ft_set_mode_hint() {            # message ("" = navigation mode)
     for c in "${!FT_TYPE[@]}"; do case "${FT_TYPE[$c]}" in statusbar|keylegend) ft_dirty "$c" ;; esac; done
 }
 
-# Class types whose draw fills their WHOLE box (form, tabs). Repainting such a
-# node alone would erase its children, so a focus change on one must repaint the
-# subtree. Populated by the class (e.g. ft-tabs sets FT_CLASS_FILLS_BACKGROUND[tabs]=1).
+# Class types whose draw fills their WHOLE box (form, tabs). The damage repair skips such a node:
+# the refill has already put its ground back, and repainting it would blank every sibling the
+# rect never touched. (Children painted over by an ordinary repaint are repaired in
+# ft_redraw_dirty for every container with a draw, declared here or not.)
 declare -A FT_CLASS_FILLS_BACKGROUND=()
 # Per-class property RECONCILER: <fn> NAME PROP VALUE, run by _ft_setprop after the property is
 # stored, for classes whose real state lives in another property (see the checkbox note there).
@@ -4824,8 +4825,7 @@ _ft_focus_dirty() {             # name — dirty a control for a focus change
     [[ -z "$1" ]] && return
     local _ty=${FT_TYPE[$1]:-}          # separate line: an EMPTY subscript is a bash error,
     [[ -z "$_ty" ]] && return           # and a removed control can still be named as old focus
-    if (( ${FT_CLASS_FILLS_BACKGROUND[$_ty]:-0} == 1 )); then ft_dirty_subtree "$1"
-    else ft_dirty "$1"; fi
+    ft_dirty "$1"                       # ft_redraw_dirty repairs the children a container covers
 }
 
 # ── Draw ─────────────────────────────────────────────────────────────────────
@@ -6104,7 +6104,14 @@ declare -A FT_REPAIR=()
 _ft_repair_subtree() {          # name — the container repaints its whole interior, so its
     local n=$1 kid                  # children go with it (see the note above ft_dirty_subtree)
     FT_REPAIR[$n]=1
-    for kid in ${FT_KIDS[$n]:-}; do _ft_repair_subtree "$kid"; done
+    for kid in ${FT_KIDS[$n]:-}; do
+        # A NODE WITH NO BOX OWNS NO CELLS to be painted over. A table's rows, a select's options
+        # and a tree's nodes are children in the tree and data to their control — 0x0, no draw —
+        # and a painted container now repairs its subtree on every dirty frame, so a table of a
+        # thousand rows must not cost a thousand no-op draws per cursor move.
+        (( ${FT_MEASURED_WIDTH[$kid]:-0} > 0 && ${FT_MEASURED_HEIGHT[$kid]:-0} > 0 )) || continue
+        _ft_repair_subtree "$kid"
+    done
 }
 _ft_damage_enlist() {           # node   (was _ft_damage_dirty_multi, which named the wrong set)
     local n=$1 kid
@@ -6269,7 +6276,22 @@ ft_redraw_dirty() {
         if (( ${#_FT_DMG_LAST[@]} )); then _ft_composite_overlays_touching; ft_flush; fi
         return
     fi
+    # A CONTROL THAT PAINTS ITS BOX PAINTS OVER ITS CHILDREN, so a dirty container repairs every
+    # child it is about to cover. The damage path has always done this (_ft_damage_enlist, "a
+    # container that IS enlisted repaints its whole interior") and the dirty path did not: a
+    # frame's borderColor, a tab strip's focus, any paint-kind write on anything with children
+    # repainted the container and left its children blank. The focus route had a copy of the
+    # rule, keyed on the class declaring fillsBackground — which frame never did, so moving focus
+    # onto a frame blanked it too. One rule, here, where every dirty paint passes.
+    #
+    # REPAIR, NOT DIRTY: the children's content has not changed, only their cells were painted
+    # over, and a retained block re-emits in a fraction of a derive. A container with no draw
+    # paints nothing and covers nobody. Found by tests/test-incremental.bash.
     local name i j tn td
+    for name in "${!FT_DIRTY[@]}"; do
+        [[ -n "${FT_KIDS[$name]:-}" ]] || continue
+        _ft_resolve_draw "$name"; [[ -n "$FT_RET" ]] && _ft_repair_subtree "$name"
+    done
     local -a names=() depths=()
     # The paint set is the UNION of the two: content that changed and cells that were taken
     # away. ft_draw_one tells them apart by itself — a dirtied control has no retained entry
