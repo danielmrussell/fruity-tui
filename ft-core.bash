@@ -693,7 +693,7 @@ ft_on_winch() { FT_WINCH=1; }   # flag; the host loop recomputes layout + redraw
 # resize only — never in the draw path.
 FT_ROWS=24; FT_COLS=80
 ft_term_size() {
-    local sz; sz=$(stty size </dev/tty 2>/dev/null)
+    local sz; sz=$(stty size 2>/dev/null </dev/tty)   # stderr FIRST: a failed </dev/tty is reported before a later 2> applies
     if [[ "$sz" =~ ^([0-9]+)\ ([0-9]+)$ ]]; then
         FT_ROWS=${BASH_REMATCH[1]}; FT_COLS=${BASH_REMATCH[2]}
     else
