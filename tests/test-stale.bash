@@ -34,83 +34,22 @@ FT_COLOR_MODE=256; FT_ROWS=30; FT_COLS=100
 FT_USE_UTF8=1
 tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
 
-# Throw away everything the framework remembers between frames. NOT a framework function on
-# purpose — it reaches into internals a control never should, and only a test wants it.
-_go_cold() {
-    local n
-    # A store-backed property may be DEFERRED (the line store is the only copy of the text).
-    # Materialise those first: dropping the store while it is authoritative would not be a
-    # cold cache, it would be data loss, and every scene would "differ" for the wrong reason.
-    for n in "${!_FT_TEXT_STALE[@]}"; do _ft_text_join "$n"; done
-    for n in "${!FT_TYPE[@]}"; do
-        unset "_fti_${n}__wrapkey0" "_fti_${n}__wraplines0" "_fti_${n}__wrapkey1" \
-              "_fti_${n}__wraplines1" "_fti_${n}__wrapnext" \
-              "_fti_${n}__extkey" "_fti_${n}__exttw" "_fti_${n}__extth" "_fti_${n}__extgen" \
-              "_fti_${n}__lines" "_fti_${n}__linesgen" "_fti_${n}__linesprop" \
-              "_fti_${n}__maxw" "_fti_${n}__nchars" \
-              "_fti_${n}__rows0" "_fti_${n}__rows1" "_fti_${n}__rowsw0" "_fti_${n}__rowsw1" \
-              "_fti_${n}__rowsnext" "_fti_${n}__lochintidx" "_fti_${n}__lochintacc" \
-              "_fti_${n}__lochintgen" "_fti_${n}__sig" \
-              "_fti_${n}__fitw" "_fti_${n}__fitkey"
-        # __fitw/__fitkey ARE a derivation — a table's column widths fitted to the box it
-        # got — so they belong above. Everything the key forgets shows up here as a warm
-        # frame that differs from the cold one: the box width, the natural widths, and
-        # whether the width was the author's or the content's.
-        #
-        # NOT cleared, though they live under the same _fti_ prefix and look like caches:
-        #   __cells  a table's row data — content, not a derivation
-        #   __colw   a table's measured column widths. These are STATE despite the name: drop
-        #            them and the table renders short forever, because nothing re-measures
-        #            (verified — a re-layout does not restore them). Nothing in the framework
-        #            unsets them either, so this is a note about the naming, not a live bug;
-        #            a test that cleared them would be reporting its own damage as a finding.
-    done
-    # THE RETAINED DISPLAY LIST — the largest cache in the framework, and the one this file is
-    # the natural gate for: warm serves each control's stored block, cold re-derives it, and
-    # "identical cell by cell" is precisely the claim retention makes. Both tables go; the
-    # entries ARE the values, so unsetting them is a miss and never a collision (the version
-    # counters that must be BUMPED rather than unset are _FT_RESOLVE_VERSION's, below).
-    FT_RETAINED_BLOCK=(); FT_RETAINED_TOKEN=()
-    FT_SHEEN_FROZEN=(); FT_SHEEN_FROZEN_SIGNATURE=(); FT_SHEEN_LIT_CELL=()
-    _FT_TEXTFIELD_LINES_CACHE_KEY=""; _FT_TEXTFIELD_EDIT_FIELD=""
-    _FT_STYLE_C=(); _FT_CSS_Q_C=(); _FT_CSS_QPE_C=(); _FT_SGR_CACHE=(); FT_COERCED=()
-    # The clip memo. Its generation counter is bumped by hand at every route that can move a
-    # rect (tests/test-clip.bash drives each one), so the interesting question here is the one
-    # this file asks of everything: does the frame come out the same with the table empty?
-    _FT_CLIP_CACHE=()
-    # The resolved-property memo. Its VALUES go and its VERSIONS stay: _FT_RESOLVE_VERSION and
-    # _FT_RESOLVE_GENERATION are what stop a rebuilt control reading a dead one's answer, and
-    # resetting them here would be this file manufacturing the very collision it exists to catch.
-    _FT_RESOLVED_PROP_MEMO=(); _FT_RESOLVED_PROP_MEMO_AT=()
-    # The animated foreground. It is asked twice a frame — once to NAME the frame so an
-    # unchanged one is never drawn, once by the paint that draws it — and the memo is what
-    # makes the second ask free. Values and token both go: the entries ARE the answers.
-    _FT_CSS_ANIM_FG=(); _FT_CSS_ANIM_FG_AT=()
-    # The two pure memos in ft-core. Neither can go stale — a character's width and a
-    # colour's nearest index are functions of their inputs alone — so dropping them is not
-    # about correctness of the CACHE, it is about making the cold pass actually COMPUTE.
-    # Left in place, the "cold" frame would be measured entirely from the warm run's tables
-    # and this file would be comparing a memo against itself.
-    _FT_CHAR_COLS_MEMO=(); _FT_RGB256_MEMO=(); _FT_RGB256_MEMO_N=0
-    _FT_CSS_EPOCH=$(( ${_FT_CSS_EPOCH:-0} + 1 ))
-}
-
 # ── THE LIST ABOVE IS HAND-MAINTAINED, SO IT IS CHECKED ──────────────────────
 # A cache this file does not drop is a cache this file CANNOT SEE: the "cold" frame gets
 # resolved out of the very table under test, and warm==cold means nothing. That is not
 # hypothetical — an inheritance memo added on a branch had its invalidation deliberately broken
-# at all five of its routes and this file still scored 63/63, because `_go_cold` had never heard
+# at all five of its routes and this file still scored 63/63, because `go_cold` had never heard
 # of it. Every entry above was correct on the day it was written; the failure mode is the NEXT
 # cache, and no reviewer reliably remembers this file exists.
 #
 # So the gate detects its own blind spot: enumerate the associative arrays whose names say they
-# are caches, and require each one to appear in `_go_cold`'s body. Adding `_FT_FOO_C` without
+# are caches, and require each one to appear in `go_cold`'s body. Adding `_FT_FOO_C` without
 # listing it now fails HERE, with the name, instead of silently hollowing out the file.
 #
 # Read from `declare -f`, not from the file, so re-indenting or moving the function cannot make
 # the check pass by accident.
 note "the cold pass can see every cache there is"
-_cold_body=$(declare -f _go_cold)
+_cold_body=$(declare -f go_cold)
 _cache_names=()
 while read -r _nm; do
     case "$_nm" in
@@ -128,8 +67,8 @@ _unseen=""
 for _nm in "${_cache_names[@]}"; do
     [[ "$_cold_body" == *"$_nm"* ]] || _unseen+=" $_nm"
 done
-check "…and _go_cold drops every one of them" "$_unseen" ""
-[[ -n "$_unseen" ]] && echo "         ↑ add these to _go_cold, or the warm-vs-cold comparison is
+check "…and go_cold drops every one of them" "$_unseen" ""
+[[ -n "$_unseen" ]] && echo "         ↑ add these to go_cold (tests/_harness.bash), or the warm-vs-cold comparison is
          resolving the cold frame out of the table it is meant to be testing."
 unset _cold_body _cache_names _unseen _nm
 
@@ -184,7 +123,7 @@ _warm_vs_cold() {               # root
     # COLD = the same state with every derived value thrown away. Deliberately WITHOUT a
     # re-layout: laying out again perturbs the very state under test (it re-clamps a label's
     # scrollTop, for one), so the comparison would be against a different app, not a colder one.
-    _go_cold
+    go_cold
     _paint "$1"; printf '%s' "$FT_OUT" > "$tmp/cold"
     COLD_CELLS=$(_cells "$tmp/cold")
     if [[ "$WARM_CELLS" == "$COLD_CELLS" ]]; then WARM_COLD_VERDICT=same
@@ -551,7 +490,7 @@ _FT_SGR_CACHE[g1]="$_teeth_token"$'\x1f'$'\e[38;5;93m'
 # THE RETAINED BLOCK SITS IN FRONT OF EVERY CACHE BELOW IT, so poisoning an inner one and
 # painting proves nothing while the outer one hits: the warm frame is g1's stored bytes and no
 # style is resolved at all. That is not a hole in the gate — a valid retained block means the
-# inner answer was never consulted, and _go_cold drops the blocks, so a block whose own token
+# inner answer was never consulted, and go_cold drops the blocks, so a block whose own token
 # is wrong still shows up as warm != cold (and has its own teeth, below). It IS a hole in this
 # sabotage, so make the poisoned control derive.
 unset "FT_RETAINED_TOKEN[g1]" "FT_RETAINED_BLOCK[g1]"

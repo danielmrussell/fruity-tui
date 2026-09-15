@@ -744,7 +744,7 @@ ft_term_size() {
 # is inside _ft_input_producer, which is a COPROC — a separate process, whose environment
 # cannot reach this table. ft-state's two `local LC_ALL=C` scopes are a `${#1}` and a `read`;
 # neither measures a width. ft-filedialog borrows LC_COLLATE only. tests/test-charwidth.bash
-# pins all of that, and _go_cold in tests/test-stale.bash drops this table so the warm/cold
+# pins all of that, and go_cold in tests/_harness.bash drops this table so the warm/cold
 # comparison proves a hit renders the same pixels as a compute.
 FT_CHAR_WIDTH=1
 declare -A _FT_CHAR_COLS_MEMO=()

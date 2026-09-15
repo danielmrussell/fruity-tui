@@ -170,7 +170,7 @@ Rules for caches:
   every route that can change the answer. If you cannot enumerate them, do not build it.
 - **Invalidate by bumping a version, never by unsetting it** — an unset version and a fresh one
   compare equal, and a rebuilt control will read a dead one's answer.
-- **Add the table to `_go_cold` in `tests/test-stale.bash`.** That gate now fails by name if you
+- **Add the table to `go_cold` in `tests/_harness.bash`.** `tests/test-stale.bash` fails by name if you
   forget, because a cache the cold pass cannot drop is a cache it cannot test.
 - **A property written FROM A DRAW must be written only when it changes.** The retained display
   list decides a block is stale from the control's write generation, and `_ft_setprop` bumps that
