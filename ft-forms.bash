@@ -1144,6 +1144,36 @@ ft_runlevel_deeper() {          # name
     ft_runlevel_next_rung "$1" || return 1
     _ft_setprop "$1" runlevel "$FT_RET"
 }
+# _ft_runlevel_first_rung NAME → FT_RET: the first rung past the two free ones — the
+# scrolling/browsing rung every ladder starts with — or "" (and 1) when the control has none.
+_ft_runlevel_first_rung() {     # name → FT_RET
+    _ft_runlevels_of "$1"; local rungs=" $FT_RET "
+    FT_RET=""
+    [[ "$rungs" == *" poised "* ]] || return 1
+    FT_RET=${rungs#*" poised "}; FT_RET=${FT_RET%% *}
+    [[ -n "$FT_RET" ]]
+}
+# A DIRECT GRAB ON A CONTROL'S OWN SCROLLBAR STEPS INTO IT. Enter is how the KEYBOARD asks to
+# be inside a control, because the keyboard has no other way to say which control it means; a
+# press on the thumb already said, and said what for. It used to scroll the view and leave the
+# control `poised`, so the drag worked and the very next arrow key — not yet the control's —
+# walked focus off to a neighbour. The grab now lands on the first rung, where the arrows go on
+# scrolling what was just dragged: the same rung the wheel resolves against, without the wheel's
+# restraint, because the wheel only points and a grab takes hold.
+#
+# Never DOWN: a field already editing or perusing keeps its caret; grabbing its bar is scrolling
+# inside a control you are already in.
+_ft_runlevel_grab() {           # name — a press has landed on NAME's own scrollbar
+    local n=$1 rung
+    ft_runlevel_engaged "$n" && return 0
+    _ft_runlevel_first_rung "$n" || return 0
+    rung=$FT_RET
+    # The free rungs are the focus machinery's (see below), so focus comes first and `poised`
+    # with it; a control that refuses focus (disabled, hidden) is not stepped into either.
+    if [[ "${FT_FOCUS:-}" != "$n" ]]; then ft_focus "$n" || return 0; fi
+    _ft_setprop "$n" runlevel "$rung"
+    ft_dirty "$n"; _ft_legend_dirty
+}
 ft_runlevel_out() {             # name — Esc: out of the insides, in one press, from any rung
     local n=$1
     ft_runlevel_engaged "$n" || return 1        # already outside — decline, let Esc bubble
@@ -8036,11 +8066,9 @@ _ft_mouse_activate() { [[ "$2" == release ]] && ft_activate "$1"; return 0; }  #
 _ft_wheel_dispatch() {          # name token
     local n=$1 tok=$2
     local type=${FT_TYPE[$n]:-}         # NB: separate line — same-statement `local` reads the OLD $n
-    _ft_runlevels_of "$n"; local rungs=$FT_RET
     # The first rung PAST the free two — the scrolling/browsing one every ladder starts with.
-    if [[ -n "$rungs" && "$rungs" == *" poised "* ]]; then
-        local first=${rungs#*" poised "}; first=${first%% *}
-        _ft_runlevel_keymap_of "$n" "$first"; local km=$FT_RET
+    if _ft_runlevel_first_rung "$n"; then
+        _ft_runlevel_keymap_of "$n" "$FT_RET"; local km=$FT_RET
         if [[ -n "$km" ]] && _ft_keymap_lookup "$km" "$tok"; then
             _ft_run_action "$FT_RET" "$n" "$tok"
             return 0

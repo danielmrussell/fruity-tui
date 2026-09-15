@@ -703,12 +703,18 @@ _ft_mouse_textfield() {         # name action relx rely
     if [[ "$act" == press ]]; then
         unset "FT_TEXTFIELD_SBDRAG[$n]"                     # a fresh press starts a fresh capture
         local -a vb=(${FT_TEXTFIELD_VBAR[$n]:-}) hb=(${FT_TEXTFIELD_HBAR[$n]:-}); local tl grab
-        if (( ${#vb[@]} == 6 )) && (( ax == vb[0] && ay >= vb[3] && ay < vb[3] + vb[4] )); then
+        local onbar=""
+        if   (( ${#vb[@]} == 6 )) && (( ax == vb[0] && ay >= vb[3] && ay < vb[3] + vb[4] )); then onbar=v
+        elif (( ${#hb[@]} == 6 )) && (( ay == hb[0] && ax >= hb[3] && ax < hb[3] + hb[4] )); then onbar=h
+        fi
+        # Either bar, grabbed directly, steps the field in (_ft_runlevel_grab says why).
+        [[ -n "$onbar" ]] && _ft_runlevel_grab "$n"
+        if [[ "$onbar" == v ]]; then
             tl=$(( vb[2] - vb[1] + 1 )); grab=$(( ay - vb[1] )); (( grab < 0 )) && grab=0; (( grab >= tl )) && grab=$(( tl - 1 ))
             FT_TEXTFIELD_SBDRAG[$n]="v $grab ${vb[3]} ${vb[4]} $tl ${vb[5]}"
             _ft_textfield_sbdrag "$n" "$ax" "$ay"; return 0
         fi
-        if (( ${#hb[@]} == 6 )) && (( ay == hb[0] && ax >= hb[3] && ax < hb[3] + hb[4] )); then
+        if [[ "$onbar" == h ]]; then
             tl=$(( hb[2] - hb[1] + 1 )); grab=$(( ax - hb[1] )); (( grab < 0 )) && grab=0; (( grab >= tl )) && grab=$(( tl - 1 ))
             FT_TEXTFIELD_SBDRAG[$n]="h $grab ${hb[3]} ${hb[4]} $tl ${hb[5]}"
             _ft_textfield_sbdrag "$n" "$ax" "$ay"; return 0

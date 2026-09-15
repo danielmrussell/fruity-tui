@@ -130,6 +130,47 @@ check "the drag keeps scrolling even off the bar column" "$(_voff ta)" "${VB[5]}
 _click 0  m "${VB[0]}" 0
 check "release ends the capture" "${FT_TEXTFIELD_SBDRAG[ta]:-none}" none
 
+note "grabbing a scrollbar DIRECTLY steps into the field — the arrows then scroll what you dragged"
+# A press on the thumb already says which control and what for, so it lands on the first rung
+# (`scrolling`) the way a keyboard user's Enter would. It used to scroll the view and leave the
+# field `poised`, and the next arrow walked focus off to a neighbour.
+ft_remove app3
+ft-form name=app4 width=40 height=12 display=flex flexDirection=column alignItems=start
+  ft-button    name=g4other "Other"
+  ft-textfield name=g4ta rows=3 size=20 value=$'l1\nl2\nl3\nl4\nl5\nl6\nl7\nl8'
+  ft-textfield name=g4wide rows=2 size=10 wrap=false value="a line far wider than its ten-column box"
+end_ft_form
+ft_layout app4; FT_ROOT=app4
+_rl() { ft_get "$1" runlevel; printf '%s' "$FT_RET"; }
+_g4bars() { FT_OUT=""; ft_draw_one g4ta; ft_draw_one g4wide; FT_OUT=""
+            read -ra VB <<< "${FT_TEXTFIELD_VBAR[g4ta]:-}"; read -ra HB <<< "${FT_TEXTFIELD_HBAR[g4wide]:-}"; }
+_g4bars
+check "…the fixture has both bars to grab" "${#VB[@]}/${#HB[@]}" "6/6"
+for _start in unfocused poised; do
+    ft_focus g4other; _ft_setprop g4ta runlevel unfocused; _ft_setprop g4ta scrollTop 0
+    [[ $_start == poised ]] && ft_focus g4ta
+    _g4bars
+    check "from $_start: the field starts where it should"    "$(_rl g4ta)" "$_start"
+    _click 0 M "${VB[0]}" "${VB[1]}"
+    check "from $_start: grabbing the thumb steps in"          "$(_rl g4ta)/$FT_FOCUS" "scrolling/g4ta"
+    _click 32 M "${VB[0]}" "$(( VB[1] + 1 ))"; _click 0 m "${VB[0]}" "$(( VB[1] + 1 ))"
+    _before=$(_voff g4ta); ft_dispatch_event DOWN
+    check "from $_start: …and the next Down scrolls the field" "$FT_FOCUS:$(( $(_voff g4ta) > _before ))" "g4ta:1"
+done
+ft_focus g4other; _g4bars
+_click 0 M "${HB[1]}" "${HB[0]}"; _click 0 m "${HB[1]}" "${HB[0]}"
+check "the horizontal bar steps in too"                      "$(_rl g4wide)" "scrolling"
+# Never DOWN a rung: a field you are typing in keeps its caret while you drag its bar.
+ft_focus g4ta; _ft_setprop g4ta runlevel editing; _g4bars
+_click 0 M "${VB[0]}" "${VB[1]}"; _click 0 m "${VB[0]}" "${VB[1]}"
+check "an editing field stays editing when its bar is grabbed" "$(_rl g4ta)" "editing"
+# …and only the BAR does it: a plain click on the text is still a selection, as above.
+ft_focus g4other; _ft_setprop g4ta runlevel unfocused; _g4bars
+_click 0 M "$(( ${FT_ABSOLUTE_X[g4ta]} + 2 ))" "$(( ${FT_ABSOLUTE_Y[g4ta]} + 1 ))"
+_click 0 m "$(( ${FT_ABSOLUTE_X[g4ta]} + 2 ))" "$(( ${FT_ABSOLUTE_Y[g4ta]} + 1 ))"
+check "a plain click on the text only focuses"               "$(_rl g4ta)" "poised"
+ft_remove app4
+
 note "a beacon overlay is TRANSPARENT to the mouse — clicks pass through to the control beneath"
 FT_ROOT=app2; FT_FOCUS=""
 ft-beacon name=bov target=dd variant=frame parent=app2       # a real child, declared AFTER dd
