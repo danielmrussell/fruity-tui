@@ -5176,13 +5176,19 @@ ft_draw_one() {                 # name
     _ft_resolve_draw "$1"
     if [[ -n "$FT_RET" ]]; then
         local _fn=$FT_RET
-        local _oldpr=${FT_PAINT_RECT[$1]:-}
         unset "FT_PAINT_RECT[$1]"          # the draw may publish a bigger one (it paints outside)
         "$_fn" "$1"                        # …under the clip resolved at the top of this function
         ft_clip_reset
-        # Record what this control actually occupies now. If it MOVED, the cells it used to
-        # cover are stale — damage them, so the next repair refills and repaints them. This is
-        # what makes a moved overlay self-healing without the caller tracking footprints.
+        # Record what this control actually occupies now, so ft_damage_subtree can give those cells
+        # back when it is hidden or removed.
+        #
+        # (Damaging the OLD rect here whenever a draw published a different one was the other half,
+        # and it sat behind FT_DAMAGE_AUTO — a switch nothing set, after the note at
+        # ft_damage_subtree recorded the gate as gone. Deleted rather than switched on: every way a
+        # control moves already gives its old cells back where the move is known — a reflow erases
+        # the boxes it re-lays, a beacon's reprop its footprint, a drag the exact cells it vacated —
+        # and enabling it here would add a bounding-box repair to every one of those frames, the
+        # cost the beacon's drag notes record at 1862ms of a 2100ms drag.)
         if [[ -z "${FT_PAINT_RECT[$1]:-}" ]]; then
             local _py=${FT_ABSOLUTE_Y[$1]:-} _px=${FT_ABSOLUTE_X[$1]:-}
             if [[ -n "$_py" && -n "$_px" ]]; then
@@ -5191,8 +5197,6 @@ ft_draw_one() {                 # name
                     FT_PAINT_RECT[$1]="$_py $_px $(( _py+_ph-1 )) $(( _px+_pw-1 ))"
             fi
         fi
-        (( ${FT_DAMAGE_AUTO:-0} )) && [[ -n "$_oldpr" && "$_oldpr" != "${FT_PAINT_RECT[$1]:-}" ]] && \
-            ft_damage $_oldpr
     fi
     # A scrollable container paints its bar(s) in the reserved gutter (see _ft_inset4) — after
     # its own draw, and regardless of whether the class has one (divs/panels often don't).
