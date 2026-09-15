@@ -4646,6 +4646,14 @@ _ft_reflow_now() {              # name [moved]
         [[ -z "$p" ]] && p=$name
         # erase where the moving control WAS, then re-arrange + redraw.
         _ft_erase_rect "${FT_ABSOLUTE_X[$name]:-0}" "${FT_ABSOLUTE_Y[$name]:-0}" "${FT_MEASURED_WIDTH[$name]:-0}" "${FT_MEASURED_HEIGHT[$name]:-0}" "$name"
+        # …AND WHERE ITS SIBLINGS WERE. A control leaving the flow (position=absolute) or
+        # rejoining it re-arranges every sibling, and a container without a draw repaints no
+        # vacated cell: `beside` slid one column left and its last letter stayed standing in the
+        # column it had left. The size-change path below has always erased the old box of
+        # everything it re-lays; this is the same promise for the parent this path re-arranges.
+        # (The control's own old box can lie outside the parent's, so both are erased — the
+        # parent's to the ground behind IT, for the reason given on the unchanged-size path below.)
+        [[ "$p" != "$name" ]] && _ft_erase_rect "${FT_ABSOLUTE_X[$p]:-0}" "${FT_ABSOLUTE_Y[$p]:-0}" "${FT_MEASURED_WIDTH[$p]:-0}" "${FT_MEASURED_HEIGHT[$p]:-0}" "${FT_PARENT[$p]:-$p}"
         _ft_pass_arrange "$p" "${FT_ABSOLUTE_X[$p]:-0}" "${FT_ABSOLUTE_Y[$p]:-0}"
         ft_dirty_subtree "$p"
         return
@@ -4676,6 +4684,14 @@ _ft_reflow_now() {              # name [moved]
         _ft_pass_height "$name" "${FT_AVAILABLE_HEIGHT[$name]:-}"
         if [[ "${FT_MEASURED_WIDTH[$name]:-}" == "$oldw" && "${FT_MEASURED_HEIGHT[$name]:-}" == "$oldh" ]]; then
             _ft_pass_arrange "$name" "${FT_ABSOLUTE_X[$name]:-0}" "${FT_ABSOLUTE_Y[$name]:-0}"
+            # THE BOX KEPT ITS SIZE; ITS CHILDREN DID NOT KEEP THEIR PLACES. `alignItems=center`
+            # on a column moves every child inside an unchanged box, and a container paints no
+            # vacated cell — the button's old cells stayed standing beside the centred one. The
+            # bounded path below erases the old box of whatever it re-lays; this path re-arranges
+            # just as much and owes the same. (A leaf's own draw covers its box.)
+            # Erased to the ground BEHIND the box (the parent's): nothing in a full repaint paints
+            # a container's own backgroundColor across cells its children leave empty.
+            [[ -n "${FT_KIDS[$name]:-}" ]] && _ft_erase_rect "${FT_ABSOLUTE_X[$name]:-0}" "${FT_ABSOLUTE_Y[$name]:-0}" "$oldw" "$oldh" "${FT_PARENT[$name]:-$name}"
             ft_dirty_subtree "$name"
             return
         fi
