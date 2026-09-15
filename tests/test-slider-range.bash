@@ -32,11 +32,14 @@ ft_layout app
 FT_ROOT=app
 
 _prop() { ft_get sl value; printf '%s' "${FT_RET:-<unset>}"; }
-_shown() {                      # the number the control actually DRAWS (showValue text)
-    FT_OUT=""; ft_dirty sl; ft_draw_one sl >/dev/null 2>&1
+_drawn() {                      # NAME → the number the control actually DRAWS (showValue text)
+    FT_OUT=""; ft_dirty "$1"; ft_draw_one "$1" >/dev/null 2>&1
     local p=$FT_OUT; FT_OUT=""
-    printf '%s' "$p" | sed -E $'s/\x1b\\[[0-9;]*[A-Za-z]//g' | tr -d '\n' | sed -E 's/^.* //'
+    # The readout is padded to the width the track reserved for the widest value, so the
+    # number is the last WORD, not the last thing painted.
+    printf '%s' "$p" | sed -E $'s/\x1b\\[[0-9;]*[A-Za-z]//g' | tr -d '\n' | sed -E 's/ +$//; s/^.* //'
 }
+_shown() { _drawn sl; }
 _knob() {                       # 0-based column of the knob within the painted track
     FT_OUT=""; ft_dirty sl; ft_draw_one sl >/dev/null 2>&1
     local p=$FT_OUT; FT_OUT=""
@@ -197,11 +200,6 @@ ft-form name=app3 width=70 height=24 display=flex flexDirection=column
     ft-slider name=plain width=24 showValue=true                # no min or max either
 end_ft_form
 ft_layout app3
-_drawn() {                      # the number a named slider paints
-    FT_OUT=""; ft_dirty "$1"; ft_draw_one "$1" >/dev/null 2>&1
-    local p=$FT_OUT; FT_OUT=""
-    printf '%s' "$p" | sed -E $'s/\x1b\\[[0-9;]*[A-Za-z]//g' | tr -d '\n' | sed -E 's/^.* //'
-}
 check "min=10 max=20 → the midpoint"        "$(ft_get bare value; printf %s "${FT_RET:-<unset>}")" "15"
 check "…and that is what it PAINTS"         "$(_drawn bare)" "15"
 check "…and what its own sanitizer says"    "$(_ft_slider_sanitize bare ""; printf %s "$FT_RET")" "15"
@@ -239,11 +237,8 @@ for _s in wSmall wBig wNeg; do
     check "$_s paints inside its own 24 columns" "$(( FT_RET <= 24 ))" "1"
 done
 # …and the number itself is still all there — a track one column shorter, not a clipped value.
-_drawn2() { FT_OUT=""; ft_dirty "$1"; ft_draw_one "$1" >/dev/null 2>&1
-            local p=$FT_OUT; FT_OUT=""
-            printf '%s' "$p" | sed -E $'s/\x1b\\[[0-9;]*[A-Za-z]//g' | tr -d '\n' | sed -E 's/^.* //'; }
-check "…and the four-digit value is drawn whole"  "$(_drawn2 wBig)" "1500"
-check "…and a negative one too"                   "$(_drawn2 wNeg)" "-750"
+check "…and the four-digit value is drawn whole"  "$(_drawn wBig)" "1500"
+check "…and a negative one too"                   "$(_drawn wNeg)" "-750"
 # The INTRINSIC width grows with the readout, so an auto-sized slider is not one column short.
 # (Asked of the width function, because a flex column stretches both of these to the container.)
 _ft_preferred_width_slider wNone; _pwNone=$FT_RET

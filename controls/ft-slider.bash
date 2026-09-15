@@ -259,6 +259,13 @@ _ft_draw_slider() {                      # name
     _ft_slider_track "$name" "$cols"; local track=$FT_RET
     local vtxt=""
     [[ "$showv" == true ]] && vtxt=" $v"
+    # THE READOUT OWNS EVERY COLUMN THE TRACK LEFT IT, and paints all of them. The track makes
+    # room for the WIDEST value (_ft_slider_value_columns), so " 9" in a slider reserved for
+    # " 20" used to paint two of its three columns and leave the third to whatever was there
+    # before — "11" stepping down to 9 showed "91", and turning showValue on kept the old rail's
+    # ┤ standing in the last column. A full repaint hid it by clearing first; the incremental
+    # path does not (tests/test-incremental.bash).
+    (( cols > track )) && { ft_fit "$vtxt" $(( cols - track )); vtxt=$FT_FIT; }
     local span=$(( mx - mn )); (( span < 1 )) && span=1
     local pos=$(( (v - mn) * (track - 1) / span ))
 
