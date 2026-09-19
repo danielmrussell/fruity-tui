@@ -20,3 +20,6 @@ demo/.*.bash
 *.orig
 *.bak
 .DS_Store
+
+# Claude Code local settings (permission allowlist) — personal, not part of the library
+.claude/
