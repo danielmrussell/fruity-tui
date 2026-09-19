@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Unit tests for keymap-centric event dispatch: the focused-leaf→root cascade
 # over per-control keymap chains (instance overlay → shared keymap=NAME ref →
-# class default), a focused scrollbar shadowing the form's arrows, actions
+# prototype default), a focused scrollbar shadowing the form's arrows, actions
 # with arguments, ft_activate + <name>_on_activate, accessKey= sugar (auto form
 # binding + ft_remove cleanup), and drop defaults.
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
@@ -261,10 +261,10 @@ check "…and says nothing on screen" "$(<"$f")" ""
 note "LEAVING a control ends its activation — for every class, not just ones that opted in"
 # Runlevel decides what the arrows MEAN: at rest they move between controls, activated they
 # belong to the control. _ft_focus_blur only ever called an optional _ft_blur_<type> hook and
-# no class defined one, so activation survived Tabbing away: come back to a slider and the
+# no prototype defined one, so activation survived Tabbing away: come back to a slider and the
 # arrows still dragged it, come back to a field and you were still mid-edit — with nothing on
 # screen saying so. The reset is the ENGINE's now, and because runlevel is an ordinary
-# property it fires each class's runlevel-exit script for free.
+# property it fires each prototype's runlevel-exit script for free.
 ft-form name=blurapp width=60 height=14 display=flex flexDirection=column
     ft-slider    name=blSlider min=0 max=100 value=40
     ft-textfield name=blField  value="hello"

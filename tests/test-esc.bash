@@ -67,7 +67,7 @@ ft_get tf runlevel; check "still in edit mode after clearing selection" "$FT_RET
 # In EDIT mode with nothing to cancel, Esc leaves edit mode (back to idle)
 ft_textfield_esc tf
 # POISED, because `tf` still has focus (line 41). Esc leaves the INSIDES of the control, not
-# the control — the same landing ft_runlevel_out gives every other class. This asserted
+# the control — the same landing ft_runlevel_out gives every other prototype. This asserted
 # `unfocused` and was pinning a defect: a text box went two rungs down where everything else
 # went one, and the field claimed to be unfocused while FT_FOCUS still named it.
 ft_get tf runlevel; check "Esc with nothing to cancel exits edit mode" "$FT_RET" "poised"

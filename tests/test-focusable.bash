@@ -2,21 +2,21 @@
 # ─────────────────────────────────────────────────────────────────────────────
 #  `focusable` IS A BOOLEAN, AND A BOOLEAN IS 1 OR 0 WHOEVER WROTE IT.
 #
-#  ft-forms.bash states the rule where the class table is declared: "a boolean is always
-#  present, always 1 or 0, and always tested as a NUMBER". `ft_class focusable=true` is
+#  ft-forms.bash states the rule where the prototype table is declared: "a boolean is always
+#  present, always 1 or 0, and always tested as a NUMBER". `ft_prototype focusable=true` is
 #  normalised at the declaration and ft-modify normalises a runtime write — but an INSTANCE
 #  property went into FT_FOCUSABLE raw, and every reader tests `== 1`. So
 #
 #      ft-label name=x focusable=true
 #
 #  — the spelling every other boolean in this framework uses (disabled=true, readOnly=true,
-#  wrap=true), and the spelling the class declarations use for this very key — stored the
+#  wrap=true), and the spelling the prototype declarations use for this very key — stored the
 #  string "true" and made the control UNFOCUSABLE. Silently: `false` and a typo also fail
 #  `== 1`, so the one wrong answer that mattered looked like it worked.
 #
 #  TWO DIFFERENT QUESTIONS, deliberately kept apart below:
 #    · `focusable` decides whether a control is in the RING at all.
-#    · a class's own skip predicate decides whether focus may REST there — a label with
+#    · a prototype's own skip predicate decides whether focus may REST there — a label with
 #      nothing to scroll is in the ring and still skipped, because focusing it would do
 #      nothing. That is not this bug and must not be "fixed" by it.
 # ─────────────────────────────────────────────────────────────────────────────
@@ -71,7 +71,7 @@ ft-modify btnFalse focusable=false
 check "ft-modify focusable=false → 0" "${FT_FOCUSABLE[btnFalse]:-}" "0"
 
 note "ring MEMBERSHIP and being SKIPPABLE are different questions"
-# A label with nothing to scroll is focusable by class (it may scroll when it overflows) and
+# A label with nothing to scroll is focusable by prototype (it may scroll when it overflows) and
 # still skipped, because focusing it would do nothing. Asserting both keeps a future "fix" for
 # the bug above from quietly deleting the skip.
 ft-form name=app2 width=60 height=10

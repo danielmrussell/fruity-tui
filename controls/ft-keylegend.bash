@@ -24,8 +24,8 @@
 [[ -n "${_FT_KEYLEGEND_LOADED:-}" ]] && return 0
 _FT_KEYLEGEND_LOADED=1
 
-ft_class_keylegend() {
-    ft_class extends=ft_control focusable=false defaults="display=block keys= capStyle=boxed importance=crucial"
+ft_prototype_keylegend() {
+    ft_prototype extends=ft_control focusable=false defaults="display=block keys= capStyle=boxed importance=crucial"
     ft_prop_kind_set keys paint     # value CONTAINS spaces → register so it isn't split as content
     ft_prop_kind_set capStyle layout   # boxed is 3 rows tall — a size change, so it reflows
 }
@@ -42,10 +42,10 @@ _ft_destroy_keylegend() {       # the pulse itself is shared and keyed globally;
 #         │ Enter │ Edit   │ Esc │ Done
 #         ╰───────╯        ╰─────╯
 # capStyle=flat   → one row, "Enter: Edit" — for a screen that cannot spare the two rows.
-# `boxed` is the class DEFAULT, so this cannot read the instance variable alone: with defaults
-# resolved at cascade level 5 rather than stamped onto the control, a raw read answers "" and
-# the legend lays out one row tall instead of three.
-_ft_kl_boxed() { _ft_prop_or_class "$1" capStyle ""; [[ "$FT_RET" == boxed ]]; }
+# `boxed` is the prototype DEFAULT, so this cannot read the instance variable alone: with
+# defaults resolved at cascade level 5 rather than stamped onto the control, a raw read answers ""
+# and the legend lays out one row tall instead of three.
+_ft_kl_boxed() { _ft_prop_or_prototype "$1" capStyle ""; [[ "$FT_RET" == boxed ]]; }
 _ft_height_keylegend() { _ft_kl_boxed "$1" && FT_RET=3 || FT_RET=1; }
 
 # _ft_kl_split LEGEND → fills FT_KEYLEGEND_PAIRS[] with the "KEY=Label" / bare tokens, splitting only

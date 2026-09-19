@@ -30,7 +30,7 @@
 [[ -n "${_FT_TABS_LOADED:-}" ]] && return 0
 _FT_TABS_LOADED=1
 
-# Built once, by the class that declares `keymap=tabs`.
+# Built once, by the prototype that declares `keymap=tabs`.
 _ft_define_keymap_tabs() {
     # INACTIVE — Enter steps into the strip. Left/Right are not bound here: arrowing ACROSS
     # a form must not switch tabs under you, which reflows the whole page.
@@ -49,12 +49,12 @@ _ft_define_keymap_tabs() {
     ft-keymap-cap ft_keymap_tabs_browsing END   ft_tabs_last   normal    "Last tab"
     ft-keymap-cap ft_keymap_tabs_browsing ESC   ft_key_undelve important "Leave"
 }
-ft_class_tabs() {
+ft_prototype_tabs() {
     ft_runlevels browsing=ft_keymap_tabs_browsing
     # The tabs fill their whole background, so a repaint of the tabs NODE ALONE (a focus
     # change dirties only the focused control) would erase every child — fillsBackground
     # makes the engine dirty the whole SUBTREE instead. See the note by _ft_draw_tabs.
-    ft_class extends=ft_control \
+    ft_prototype extends=ft_control \
         focusable=true \
         fillsBackground=true \
         keymap=tabs \
@@ -69,7 +69,7 @@ ft_class_tabs() {
     # In the DOM an index property that names the state is settable and acts — select.selectedIndex
     # moves the selection — so this is the CLASS acting on a change.
     #
-    # THROUGH setProp=, NOT FT_CLASS_REPROP, and the difference is a route. REPROP is told by
+    # THROUGH setProp=, NOT FT_PROTO_REPROP, and the difference is a route. REPROP is told by
     # ft-modify and by nothing else; `activeTab` can also move through the construction DSL and
     # through a STATE RESTORE. The restore was the live one: a reloaded app came back with
     # activeTab=1 restored and tab one still on screen, because the number arrived through
@@ -82,8 +82,8 @@ ft-tabs()     { ft_new tabs "$@" && FT_NEST_STACK+=("$FT_RET"); }
 end_ft_tabs() { ft-end tabs; }
 
 # ft-tab — a titled panel. The enclosing ft-tabs shows one at a time.
-ft_class_tab() {
-    ft_class extends=ft_control defaults="display=flex flexDirection=column"
+ft_prototype_tab() {
+    ft_prototype extends=ft_control defaults="display=flex flexDirection=column"
     # NO `ft_prop_kind_set title paint` HERE ANY MORE. A tab's title is drawn INTO its header, so
     # a longer one wants a wider tab — it was never paint-only even for a tab. And it is the same
     # global name ft-frame calls layout, so whichever of the two an app built first decided it for
@@ -135,9 +135,9 @@ _ft_tabs_show_only() {          # idx — show FT_TABS[idx], hide the rest (call
     return 0                    # the guard above must never decide this function's status
 }
 # setProp= hook, reached on EVERY route a property is written by — ft-modify, the construction
-# DSL, and a state restore. Only `activeTab` needs the class to do anything; everything else is
-# an ordinary repaint the engine has already scheduled. (At construction the bodies do not exist
-# yet, so _ft_tabs_apply finds no tabs and returns; end_ft_tabs applies it once they do.)
+# DSL, and a state restore. Only `activeTab` needs the prototype to do anything; everything
+# else is an ordinary repaint the engine has already scheduled. (At construction the bodies do not
+# exist yet, so _ft_tabs_apply finds no tabs and returns; end_ft_tabs applies it once they do.)
 _ft_tabs_setprop() {            # name prop value
     [[ "$2" == activeTab ]] || return 0
     _ft_tabs_apply "$1"

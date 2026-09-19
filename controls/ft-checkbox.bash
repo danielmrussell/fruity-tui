@@ -32,16 +32,16 @@ _ft_checkmark_states() {                 # variant → FT_RET "OFFGLYPH<US>ONGLY
 # multitoggle machinery via the constructor chain — draw, keymap, mouse, cycle-on-activate.
 # Without this a checkbox reported FT_TYPE=multitoggle and a `checkbox` selector matched
 # nothing (a real hole in the CSS model). ft_activate also cycles it (see its type case).
-ft_class_checkbox() {
+ft_prototype_checkbox() {
     # A RECONCILER OF ITS OWN, AND THE REASON IS THE POINT. The one deleted in 1d9f939 existed
-    # only to call its parent's and then reflect `checked` — a debt belonging to the class that
-    # ACCEPTS `checked=`, which is the multitoggle, and which pays it itself now. This one has
-    # work nothing above it has heard of: `checkmarkVariant` is the checkbox's own property. It
-    # delegates first because FT_CLASS_SETPROP is one slot per class, so a subclass's REPLACES
-    # the inherited one rather than adding to it.
+    # only to call its parent's and then reflect `checked` — a debt belonging to the prototype
+    # that ACCEPTS `checked=`, which is the multitoggle, and which pays it itself now. This one
+    # has work nothing above it has heard of: `checkmarkVariant` is the checkbox's own property. It
+    # delegates first because FT_PROTO_SETPROP is one slot per prototype, so a derived prototype's
+    # REPLACES the inherited one rather than adding to it.
     # …and the variant is DECLARED, so a checkbox nobody wrote one on still answers `box` when
     # asked which glyphs it is wearing, instead of answering nothing while wearing them.
-    ft_class extends=multitoggle setProp=_ft_checkbox_setprop \
+    ft_prototype extends=multitoggle setProp=_ft_checkbox_setprop \
              defaults="importance=important checkmarkVariant=box"
     # `[ ]` is three columns and `☐` is one, so the variant decides the control's WIDTH.
     ft_prop_kind_set checkmarkVariant layout
@@ -107,7 +107,7 @@ ft-checkbox() {                          # name=... text=... [checked=true|false
         case "$a" in
             checked=*) checked="${a#checked=}" ;;
             # checkmarkVariant is NOT taken out of the list any more — it is a property of the
-            # control, so it flows through like every other one and the class does the work.
+            # control, so it flows through like every other one and the prototype does the work.
             *)         rest+=("$a") ;;
         esac
     done

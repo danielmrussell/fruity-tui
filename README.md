@@ -66,8 +66,8 @@ fruity-tui/
 - **Globals** use `FT_` — escapes `FT_ANSI_*`, colours `FT_COLOR_*`, glyphs `FT_GLYPH_*`,
   geometry `FT_ROWS`/`FT_COLS`/`FT_MEASURED_WIDTH`, draw buffer `FT_OUT`.
 - **Internal** helpers use a leading `_ft_` and are not part of the API. This marks
-  *internals*, so it never goes on something a user writes — a control class is declared
-  by `ft_class_<type>`, with no underscore, because that is the authoring API.
+  *internals*, so it never goes on something a user writes — a control prototype is declared
+  by `ft_prototype_<type>`, with no underscore, because that is the authoring API.
 - **Names are spelled out.** `FT_MEASURED_WIDTH`, not `FT_MW`; `FT_GLYPH_TOP_LEFT`, not
   `FT_G_TL`; `FT_COLOR_BORDER`, not `FT_C_BORDER`; `ft_textfield_select_end`, not
   `ft_tf_send`. If a name needs a comment to say what it holds, the name is wrong.
@@ -196,15 +196,15 @@ end_ft_form
 `ft_style NAME prop`. See `docs/api-naming.md` for the DOM-alignment convention and
 `docs/styling-model.md` for the cascade.
 
-## Writing a control class
+## Writing a control prototype
 
-A class is **declared**, in a constructor named `ft_class_<type>`. The first instance of
-a type runs it once; `extends=` runs the superclass's constructor first, so the subclass
-inherits a filled-in struct and overrides only what differs.
+A prototype is **declared**, in a constructor named `ft_prototype_<type>`. The first instance
+of a type runs it once; `extends=` runs the base prototype's constructor first, so the derived
+prototype inherits a filled-in struct and overrides only what differs.
 
 ```bash
-ft_class_button() {
-    ft_class extends=label focusable=true focusSkip=none keymap=activate mouse=activate
+ft_prototype_button() {
+    ft_prototype extends=label focusable=true focusSkip=none keymap=activate mouse=activate
 }
 ft-button() { ft_new button "$@"; }
 ```
@@ -212,26 +212,26 @@ ft-button() { ft_new button "$@"; }
 That is the whole of `button`, and it reads as a sentence: *a button is a focusable label
 that activates.* Three things keep it that short:
 
-- **The target class is implicit.** There is no `$c` to thread down the chain, and so no way
-  to fill the wrong class's struct by mistake.
-- **`draw`, `preferredWidth` and `height` bind themselves** from `_ft_draw_<class>`,
-  `_ft_preferred_width_<class>` and `_ft_height_<class>` when those exist. Every class in the
-  chain binds its own, root first, so a subclass inherits what it does not define and
-  overrides what it does. Naming one explicitly still wins.
+- **The target prototype is implicit.** There is no `$c` to thread down the chain, and so no
+  way to fill the wrong prototype's struct by mistake.
+- **`draw`, `preferredWidth` and `height` bind themselves** from `_ft_draw_<type>`,
+  `_ft_preferred_width_<type>` and `_ft_height_<type>` when those exist. Every prototype in
+  the chain binds its own, root first, so a derived prototype inherits what it does not define
+  and overrides what it does. Naming one explicitly still wins.
 - **A function value may be written short**: `keymap=activate` is `ft_keymap_activate`,
   `mouse=activate` is `_ft_mouse_activate`. A value already starting `ft_`/`_ft_` is taken
-  verbatim, and `none` clears an entry inherited from a superclass.
+  verbatim, and `none` clears an entry inherited from a base prototype.
 
 Keys:
 
 | key | what it names |
 | --- | --- |
-| `extends=` | superclass; runs first whatever its position, and must precede any other key |
+| `extends=` | base prototype; runs first whatever its position, and must precede any other key |
 | `draw=` | the draw function (unset = an undrawn container) |
 | `preferredWidth=` / `height=` | intrinsic content size functions |
 | `focusable=` | `true`/`false` — can it hold keyboard focus |
 | `focusSkip=` | fn NAME → 0 to skip *this instance* (a label whose text fits) |
-| `keymap=` | class-default keymap name |
+| `keymap=` | prototype-default keymap name |
 | `mouse=` | fn NAME ACTION RELX RELY |
 | `wheelProbe=` | fn NAME → 0 iff it has something of its own to scroll |
 | `textProp=` | which property a bare DSL argument lands in (`text`, or `title` for a frame) |
@@ -241,16 +241,16 @@ Keys:
 | `borderSgr=` | fn NAME → the SGR its border wears |
 | `defaults=` | property defaults applied before user args — **appends** to the inherited set |
 
-An unknown key, an unknown superclass, a non-`true`/`false` boolean, or an `extends=`
-arriving after another key is a hard error, and the class is not registered. Booleans are
+An unknown key, an unknown base prototype, a non-`true`/`false` boolean, or an `extends=`
+arriving after another key is a hard error, and the prototype is not registered. Booleans are
 stored as `1`/`0` and are always present, so a reader tests them arithmetically — never
 with `-n`, which is true for `"0"`.
 
-**Keymaps.** The class says *which* keymap it uses; a `_ft_define_keymap_<name>` function
+**Keymaps.** The prototype says *which* keymap it uses; a `_ft_define_keymap_<name>` function
 says what is in it, and the engine runs that exactly once:
 
 ```bash
-ft_class_label() { ft_class extends=ft_control keymap=label … ; }
+ft_prototype_label() { ft_prototype extends=ft_control keymap=label … ; }
 
 _ft_define_keymap_label() {
     ft-keymap-cap ft_keymap_label UP ft_label_key_up "$FT_IMPORTANCE_CRUCIAL" "Scroll up"
@@ -258,12 +258,12 @@ _ft_define_keymap_label() {
 }
 ```
 
-The once-ness matters because a class constructor runs once *per subclass* — building
-button's struct runs label's constructor again — while a keymap is global. Every control
-used to open with its own `if [[ -z "${_FT_KM_LABEL_READY:-}" ]]` guard, so the one line
-that mattered (*which keymap am I?*) was buried under twenty binding lines.
+The once-ness matters because a prototype constructor runs once *per derived prototype* —
+building button's struct runs label's constructor again — while a keymap is global. Every
+control used to open with its own `if [[ -z "${_FT_KM_LABEL_READY:-}" ]]` guard, so the one
+line that mattered (*which keymap am I?*) was buried under twenty binding lines.
 
-**Runlevels** are declared at file scope, not in the constructor — `ft_class_runlevels`
+**Runlevels** are declared at file scope, not in the constructor — `ft_prototype_runlevels`
 registers the `<type>:<level>` CSS states, and stylesheets are parsed before any instance
 exists. See `controls/ft-textfield.bash`.
 

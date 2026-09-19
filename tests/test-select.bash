@@ -44,9 +44,9 @@ ft_select_key_end s;  ft_resolved_prop s cursor 0; check "End → last option" "
 ft_select_key_home s; ft_resolved_prop s cursor 0; check "Home → first option" "$FT_RET" "0"
 
 note "scrollbars are OPT-IN (default off) — the ⋯ affordance is the default"
-# ft_get, not _ft_get_raw: a class default is resolved at cascade level 5 now rather than
+# ft_get, not _ft_get_raw: a prototype default is resolved at cascade level 5 now rather than
 # stamped onto the instance, so _ft_get_raw answers "what did the AUTHOR set" (nothing) and
-# ft_get answers "what is this control's value" (the class's `false`), which is the question.
+# ft_get answers "what is this control's value" (the prototype's `false`), which is the question.
 ft_get s scrollbar; check "scrollbar defaults to false" "$FT_RET" "false"
 
 note "a CLOSED dropdown does not open on an arrow — it declines so focus can move"

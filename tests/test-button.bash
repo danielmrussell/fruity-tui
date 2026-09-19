@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ─────────────────────────────────────────────────────────────────────────────
-#  Tests for controls/ft-button.bash — and specifically for the claim the class is built
-#  on: A BUTTON IS A LABEL THAT ACTIVATES. Its class-constructor calls label's; its painter
+#  Tests for controls/ft-button.bash — and specifically for the claim the prototype is built
+#  on: A BUTTON IS A LABEL THAT ACTIVATES. Its prototype-constructor calls label's; its painter
 #  must therefore lay text out the way a label does, not the way a hand copy of ft_fit_align
 #  happened to.
 #
@@ -12,7 +12,7 @@
 #  at fit time (so it claimed a width it did not paint).
 #
 #  These assert on what is PAINTED, and the equivalence assertions compare a button against a
-#  label given the same text and width — the relationship the class declares, checked rather
+#  label given the same text and width — the relationship the prototype declares, checked rather
 #  than assumed.
 # ─────────────────────────────────────────────────────────────────────────────
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
@@ -45,7 +45,7 @@ _build width=26
 _paint btn; check "a button still CENTRES by default" "$(_lead "$FT_RET")" 11
 
 note "a button lays out its label exactly as a label does"
-# The class says a button is a label that activates. At the same width and alignment the two
+# The prototype says a button is a label that activates. At the same width and alignment the two
 # must paint the same columns — that is the whole claim, and it is what re-joining the painter
 # to ft_fit_align buys. (A button adds nothing of its own here: its one space of padding per
 # side is in its WIDTH, via _ft_preferred_width_button, not in its painter.)

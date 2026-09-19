@@ -19,7 +19,7 @@
 #      a multitoggle's selectedIndex  the one control that writes a property variable directly
 #
 #  THE COMPARISON is against the real function with its table emptied — not against a hard-coded
-#  value — so it keeps working when the box model or a class default legitimately changes. The
+#  value — so it keeps working when the box model or a prototype default legitimately changes. The
 #  truth walk snapshots the table, clears it, asks, and PUTS IT BACK, because a stale entry can
 #  only be caught by an ask that finds a warm one; a helper that left the table empty would make
 #  every following read a guaranteed miss and every assertion below vacuous.
@@ -190,18 +190,19 @@ _warm mt selectedIndex
 ft-modify mt value=b
 _agree "selectedIndex follows the value that moved it"  mt selectedIndex
 
-# ── the class table ──────────────────────────────────────────────────────────
-# A class default is the last level of every resolution, and a class may be declared lazily.
-# It cannot be driven into staleness — _ft_class_ensure runs before the first instance exists,
+# ── the prototype table ──────────────────────────────────────────────────────
+# A prototype default is the last level of every resolution, and a prototype may be declared
+# lazily.
+# It cannot be driven into staleness — _ft_prototype_ensure runs before the first instance exists,
 # so no control can have resolved against the missing default — so the assertion is about the
-# ROUTE rather than about a stale answer: declaring a class must drop everything.
+# ROUTE rather than about a stale answer: declaring a prototype must drop everything.
 note "declaring a class drops every entry (insurance, not a reachable staleness)"
 _g=$_FT_RESOLVE_GENERATION
-ft_class_init memoprobe >/dev/null 2>&1     # a type nothing has declared: falls back to ft_control
+ft_prototype_init memoprobe >/dev/null 2>&1     # a type nothing has declared: falls back to ft_control
 check "a class declaration bumped the generation" \
       "$( (( _FT_RESOLVE_GENERATION > _g )) && echo yes )" "yes"
 _g=$_FT_RESOLVE_GENERATION
-ft_class_init memoprobe >/dev/null 2>&1     # …and an already-ready class does no work at all
+ft_prototype_init memoprobe >/dev/null 2>&1     # …and an already-ready class does no work at all
 check "…and re-asking for a ready class does not"  "$_FT_RESOLVE_GENERATION" "$_g"
 
 # ── TEETH ────────────────────────────────────────────────────────────────────

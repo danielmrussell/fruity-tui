@@ -54,29 +54,29 @@ Highest precedence first:
 2. **app stylesheets** — by CSS **specificity**, then source order.
 3. **inheritance** — inherited properties (`color`, `visibility`, `cursor`, `text-align`,
    `font-weight`, `font-style`, and all `--custom` properties) take the parent's value —
-   **unless the element's own class declares one** (see below).
+   **unless the element's own prototype declares one** (see below).
 4. **default stylesheet** — the theme (`ft-default`).
-5. **class built-in default** — the control's last resort.
+5. **prototype built-in default** — the control's last resort.
 
-**A class default suppresses inheritance**, and that is CSS's own rule rather than a
+**A prototype default suppresses inheritance**, and that is CSS's own rule rather than a
 convenience: an inherited value fills in only where the cascade produced nothing *for this
-element*, and a class default is a declaration for this element. Without it a tree would take a
-select's `cursor` — which is a **row index** to those controls and CSS's inherited `cursor` to a
-stylesheet — and a button would stop centring its label inside a right-aligned container, which
-its own class comment promises it does not. Exactly two of the 79 class-defaulted properties
-inherit, and those are the two.
+element*, and a prototype default is a declaration for this element. Without it a tree would
+take a select's `cursor` — which is a **row index** to those controls and CSS's inherited
+`cursor` to a stylesheet — and a button would stop centring its label inside a right-aligned
+container, which its own prototype comment promises it does not. Exactly two of the 79
+prototype-defaulted properties inherit, and those are the two.
 
 > **This list was aspirational until 2026-09.** Every default was *stamped onto the instance* at
 > construction, which made it cascade level **1** — above every stylesheet — so the ladder ran
 > in reverse end to end. Measured on an ordinary frame with `#fr { padding: 2; gap: 3; overflow:
 > auto; flex-direction: column }` registered: padding 0, gap 0, overflow hidden, flex-direction
-> row. All 79 properties that 26 classes default were unreachable from a stylesheet on every
+> row. All 79 properties that 26 prototypes default were unreachable from a stylesheet on every
 > control; `border-color` worked only because nothing defaults it. Defaults now live in a
-> per-class table and answer at level 5, where this list always said they did.
+> per-prototype table and answer at level 5, where this list always said they did.
 >
 > **And the layout did not consult a stylesheet at all**, which was a second and independent
 > fault — `#fr { width: 30 }` reached `ft_style` and not `ft_resolved_prop`, and `width` is not
-> class-defaulted, so the inversion cannot explain it. The layout resolves through the cascade
+> prototype-defaulted, so the inversion cannot explain it. The layout resolves through the cascade
 > now, gated on whether any registered sheet declares the property (§9).
 
 CSS `kebab-case` and constructor `camelCase` are the **same property** (`border-color` ≡
@@ -259,8 +259,8 @@ CSS's model has to be bent. Every bend is here with its reason.
    edge cell draws a **one-eighth** hairline rather than a whole cell, because it can.
 4. **`border-width: 0`, `border-style: none` and `border-color: transparent` all work, from
    anywhere.** This entry used to record the opposite — that the first two were reachable only
-   from a constructor argument or `ft-modify`, because `ft_control` class-defaults
-   `borderWidth=thin` and `borderStyle=solid` and a class default outranked every stylesheet.
+   from a constructor argument or `ft-modify`, because `ft_control` prototype-defaults
+   `borderWidth=thin` and `borderStyle=solid` and a prototype default outranked every stylesheet.
    That was true, it was measured (`#id { border-width: 0 }` registered, `ft_style id
    borderWidth` still `thin`), and it was a symptom of the inverted ladder in §2 rather than
    anything the arrow introduced. Fixed there; the workaround is gone with it.
@@ -295,7 +295,7 @@ costs one associative lookup.
 
 Three things worth knowing about it:
 
-- **It adds level 2 only.** Levels 3, 4 and 5 are the inheritance walk and the class default
+- **It adds level 2 only.** Levels 3, 4 and 5 are the inheritance walk and the prototype default
   that already follow it. Asking `ft_style` for all of them instead imported the **theme** for a
   control that declares no background of its own, and an unset background must stay a *hole*
   showing whatever is behind it (§ `_ft_color_override`, `tests/test-inheritpaint.bash`).
@@ -314,7 +314,7 @@ Three things worth knowing about it:
 | | keystroke | css-demo step change | `ft_layout` alone |
 |---|---|---|---|
 | before | 5174 µs | 663 ms | 154.6 ms |
-| class defaults at level 5 | 4924 µs | 413 ms | 230.5 ms |
+| prototype defaults at level 5 | 4924 µs | 413 ms | 230.5 ms |
 | …plus the gated layout | 4848 µs | 451 ms | 258.2 ms |
 
 The keystroke does not move. A step change is **32% faster**, because building a control no
@@ -330,17 +330,17 @@ callout stopped showing intermediate frames. A drag frame went 36ms → 44ms, an
 loop cannot keep up with a fast mouse. Neither committed benchmark could see it — a drag is not
 a layout and not a property write — which is why `tools/bench-drag.bash` now exists.
 
-The cause was not the price of a class-default read but the **number** of them. `_ft_inset4`
+The cause was not the price of a prototype-default read but the **number** of them. `_ft_inset4`
 asked the table five times per control per pass, through five function calls, each with its own
-sheet-gate read; it cost 115µs a call against 33µs before, forty calls a frame. The class's
-answers cannot change once the class is registered, so they are now written down once, in the
-order the readers consume them, and taken in a single read (`FT_CLASS_INSET_BOX` /
-`FT_CLASS_MARGIN_BOX`). One flag replaces thirteen per-property gate reads while no sheet
-declares a box property.
+sheet-gate read; it cost 115µs a call against 33µs before, forty calls a frame. The
+prototype's answers cannot change once the prototype is registered, so they are now written
+down once, in the order the readers consume them, and taken in a single read
+(`FT_PROTO_INSET_BOX` / `FT_PROTO_MARGIN_BOX`). One flag replaces thirteen per-property gate
+reads while no sheet declares a box property.
 
 | | drag frame (median / max) | keystroke | css-demo step | `ft_layout` passes |
 |---|---|---|---|---|
-| before class defaults moved | 36 / 45 ms | — | — | 189 ms |
+| before prototype defaults moved | 36 / 45 ms | — | — | 189 ms |
 | the regression, as shipped | 43 / 54 ms | 1346 µs | 779 ms | 189 ms |
 | with the box tuples | **41 / 51 ms** | 1346 µs | 778 ms | **162 ms** |
 
@@ -353,7 +353,7 @@ tuple is. What remains is structural: the damage repair draws the dragged chip *
 frame**, so 85 of the 148 property reads in one drag frame are a repeat of a (control, property)
 already read in that same frame. Closing that means either not redrawing the overlay per damaged
 rect, or a per-frame read cache — a new mechanism, whose invalidation surface is every property
-write, every sheet registration, every class init, every reparent, and every state change a
+write, every sheet registration, every prototype init, every reparent, and every state change a
 selector can see.
 
 ---

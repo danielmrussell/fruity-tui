@@ -8,7 +8,7 @@
 #  sat at `adjusting` however many times you pressed it, and the key never bubbled to the form
 #  either. Reported as "hitting enter on sliders after entering them doesn't exit them".
 #
-#  Four classes reached that dead end: slider, label, table, tabs. Two never do, because they
+#  Four prototypes reached that dead end: slider, label, table, tabs. Two never do, because they
 #  bind ENTER in the deepest rung's own keymap — a tree expands the branch, a multi-line field
 #  takes a newline — and Enter there has a real deeper meaning that must be left alone. Those
 #  are the companions below, and they are the point: a fix that made Enter leave EVERYWHERE
@@ -104,7 +104,7 @@ else
 fi
 
 note "…and the legend says what Enter will actually do"
-# The class keymap's ENTER label describes going IN ("Adjust", "Scroll"), which is right at
+# The prototype keymap's ENTER label describes going IN ("Adjust", "Scroll"), which is right at
 # every rung but the last. An unchanged legend at the bottom names a key and lies about it.
 _enter_cap() {                  # control → the ENTER label the legend would derive
     ft_focus "$1" >/dev/null 2>&1

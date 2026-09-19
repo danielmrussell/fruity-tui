@@ -166,7 +166,7 @@ ft_remove tall; ft_layout app
 
 note "the gutter is GRABBABLE — press and drag it like any scrollbar"
 # Neither the gutter nor the ft-scrollbar control had a mouse handler at all, so a bar you
-# could see was a bar you could not touch. A container is inert (no FT_CLASS_MOUSE), so the
+# could see was a bar you could not touch. A container is inert (no FT_PROTO_MOUSE), so the
 # press has to be intercepted before normal targeting and held for the whole drag.
 FT_ROOT=app; ft_layout app; ft_scroll_set pane 0
 FT_OUT=""; _ft_redraw_walk app

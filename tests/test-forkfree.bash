@@ -25,7 +25,7 @@ FT_COLS=40; FT_ROWS=10
 
 work=$(mktemp -d); trap 'rm -rf "$work"' EXIT
 
-# A class with a real coerce hook. The memo is only populated when something coerces, and a
+# A prototype with a real coerce hook. The memo is only populated when something coerces, and a
 # control that coerces NOTHING makes the "it printed nothing" assertion pass for the wrong
 # reason — the first draft of this test used a slider and did exactly that.
 widget_scale_coerce() { FT_RET=$(( $3 * 2 )); }

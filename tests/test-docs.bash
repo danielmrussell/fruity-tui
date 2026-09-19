@@ -25,7 +25,7 @@ source "$here/fruity-tui.bash"
 ft_init
 exec {FT_TTY}>/dev/null
 
-# Instantiating one of each control runs every class constructor, so anything bound by
+# Instantiating one of each control runs every prototype constructor, so anything bound by
 # convention rather than defined outright exists by the time the checks run.
 ft-form name=docf width=40 height=20
     ft-label name=dl "x";  ft-button name=db "x";  ft-checkbox name=dc "x"

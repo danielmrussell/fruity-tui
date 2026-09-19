@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Unit tests for the F1 help system: F1 decode, per-control help gathering
-# (instance property → class default → library basics), and first-line-as-title.
+# (instance property → prototype default → library basics), and first-line-as-title.
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 source "$here/tests/_harness.bash"
 source "$here/fruity-tui.bash"

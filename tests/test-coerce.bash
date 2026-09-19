@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Unit tests for the coerce pipeline: ft_new as the framework's registration
-# entry point every class constructor calls, and <TYPE>_<PROP>_coerce hooks
+# entry point every prototype constructor calls, and <TYPE>_<PROP>_coerce hooks
 # by naming convention (validate/compute a suggestion into a final value, or
 # fail with a collected error and a safe fallback).
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)

@@ -2,7 +2,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 #  Fruity TUI — controls/ft-scrollbar.bash
 #
-#  The "scrollbar" class: a keyboard-driven track + proportional thumb. Its
+#  The "scrollbar" prototype: a keyboard-driven track + proportional thumb. Its
 #  properties are the DOM's own scroll vocabulary, axis-specific exactly as
 #  CSSOM spells them:
 #
@@ -34,7 +34,7 @@
 #  horizontal bars ignore the property. Size `width` to taste (e.g. width=4
 #  fits "100%"); the readout is clipped to the bar's width like any text.
 #
-#  The class keymap binds UP/DOWN/LEFT/RIGHT/PGUP/PGDN/HOME/END — so a
+#  The prototype keymap binds UP/DOWN/LEFT/RIGHT/PGUP/PGDN/HOME/END — so a
 #  focused scrollbar shadows the form's arrow-key focus bindings naturally
 #  (the dispatch cascade consults the focused control first). After every
 #  actual position change, onScroll=fn NAME NEWOFFSET is called if
@@ -47,7 +47,7 @@
 [[ -n "${_FT_SCROLLBAR_LOADED:-}" ]] && return 0
 _FT_SCROLLBAR_LOADED=1
 
-# Built once, by the class that declares `keymap=scrollbar`.
+# Built once, by the prototype that declares `keymap=scrollbar`.
 _ft_define_keymap_scrollbar() {
     # UP/DOWN carry the labels; LEFT/RIGHT are the same actions for a horizontal bar and
     # stay unlabelled, so the bar shows one "Scroll" pair rather than four rows of the
@@ -61,15 +61,15 @@ _ft_define_keymap_scrollbar() {
     ft-bindkeys ft_keymap_scrollbar \
         LEFT=ft_scrollbar_key_prev  RIGHT=ft_scrollbar_key_next
 }
-ft_class_scrollbar() {
-    ft_class extends=ft_control \
+ft_prototype_scrollbar() {
+    ft_prototype extends=ft_control \
         focusable=true \
         focusSkip=_ft_scrollbar_focus_skip \
         mouse=scrollbar \
         keymap=scrollbar \
         setProp=_ft_scrollbar_setprop \
         defaults="display=inline-block orientation=vertical step=1 indicator=none"
-    # Class-owned property classifications (the engine already classifies the
+    # Prototype-owned property classifications (the engine already classifies the
     # CSSOM scroll properties as paint; these are scrollbar-specific).
     # NO `ft_prop_kind_set orientation paint` HERE ANY MORE. It decides which AXIS this bar
     # measures itself along, and it is the same global name ft-table calls layout because it

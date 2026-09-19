@@ -2,7 +2,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 #  Fruity TUI — controls/ft-textfield.bash
 #
-#  The "textfield" class: a single-line editable text input — CSS's
+#  The "textfield" prototype: a single-line editable text input — CSS's
 #  <input type=text>. It sits in an input WELL (FT_COLOR_INPUT, like select/
 #  listbox), keeps its own `value` (a button's _on_activate just reads it, same
 #  as every other value-bearing control), and carries a visible CARET.
@@ -62,8 +62,8 @@ _ft_tf_hoff_set() { local v="_ftp_${1}_scrollLeft"
                     [[ "${!v:-}" == "$2" ]] || _ft_setprop "$1" scrollLeft "$2"; return 0; }
 # …and this is the half of that state a REPAINT can see: where the caret sits, what is
 # selected, and how far the view has scrolled. It is not properties, so the retained display
-# list's per-control write counter cannot see it move; a class declares its own paint state
-# instead (FT_CLASS_PAINT_STATE, ft-forms.bash). Registered at load time beside the arrays it
+# list's per-control write counter cannot see it move; a prototype declares its own paint state
+# instead (FT_PROTO_PAINT_STATE, ft-forms.bash). Registered at load time beside the arrays it
 # names, so a new one added above is added here in the same edit.
 #
 # MODE is in it because the block cursor and the bar cursor are different pixels, and the
@@ -88,14 +88,14 @@ _ft_textfield_paint_state() {   # name → FT_RET
 # cache by itself — this used to be a private FT_TF_EDIT array that the CSS
 # engine reached into, with two hand-written _ft_css_inval calls to compensate.
 #
-# This is declared at LOAD TIME, not inside ft_class_textfield with the rest of the class,
-# and it has to be: ft_runlevels registers the `textfield:editing` STATE, and a stylesheet
-# naming `:editing` is parsed long before the first field is ever constructed. Deferring it
-# to the class constructor makes the rule silently fail to match — the field stays at the
-# :focused colour with nothing to indicate why.
+# This is declared at LOAD TIME, not inside ft_prototype_textfield with the rest of the
+# prototype, and it has to be: ft_runlevels registers the `textfield:editing` STATE, and a
+# stylesheet naming `:editing` is parsed long before the first field is ever constructed.
+# Deferring it to the prototype constructor makes the rule silently fail to match — the field
+# stays at the :focused colour with nothing to indicate why.
 #
-# Being outside a constructor is exactly why it names its class with `for=`: there is no
-# class under construction to infer one from.
+# Being outside a constructor is exactly why it names its prototype with `for=`: there is
+# no prototype under construction to infer one from.
 ft_runlevels for=textfield \
     scrolling=ft_keymap_textfield_scrolling \
     perusing=ft_keymap_textfield_perusing \
@@ -130,12 +130,12 @@ _ft_textfield_can_mutate() { local v="_ftp_${1}_runlevel"; [[ "${!v-}" == editin
 # on that axis. MUST be declare -A (a bare array evaluates the name as arithmetic).
 declare -A FT_TEXTFIELD_VBAR=() FT_TEXTFIELD_HBAR=()
 
-# Built once, by the class that declares `keymap=textfield_idle`.
+# Built once, by the prototype that declares `keymap=textfield_idle`.
 #
 # A textfield has FOUR keymaps — idle, scrolling, perusing, editing — and they are one family
 # built together: perusing is literally the editing map minus every mutation, so they have to
-# be read (and changed) side by side. They are defined here, under the name of the one the
-# class starts in; the other three are reached through the runlevel ladder.
+# be read (and changed) side by side. They are defined here, under the name of the one
+# the prototype starts in; the other three are reached through the runlevel ladder.
 _ft_define_keymap_textfield_idle() {
     ft-bindkeys ft_keymap_textfield \
         LEFT=ft_textfield_move_left      RIGHT=ft_textfield_move_right \
@@ -228,10 +228,10 @@ _ft_define_keymap_textfield_idle() {
         CTRL+SPACE=ft_textfield_set_mark  CTRL+g=ft_textfield_keyboard_quit \
         TAB=ft_textfield_tab         BTAB=ft_textfield_btab       ESC=ft_textfield_esc
 }
-ft_class_textfield() {
+ft_prototype_textfield() {
     # What a repaint can see that is not a property (see _ft_textfield_paint_state).
-    FT_CLASS_PAINT_STATE[textfield]=_ft_textfield_paint_state
-    # Register this class's own properties (paint-only; they never reflow — the
+    FT_PROTO_PAINT_STATE[textfield]=_ft_textfield_paint_state
+    # Register this prototype's own properties (paint-only; they never reflow — the
     # box is a fixed `size`). Registering them also lets the positional DSL take
     # e.g. placeholder="Type here" as a property even though its value has
     # spaces (a known key always assigns).
@@ -262,7 +262,7 @@ ft_class_textfield() {
     # so registering here makes any control accept `borderAnimationGlow=24` etc.
     _ft_border_anim_register_props
     # A text field's border carries its edit-state colour, so animations shade THAT.
-    ft_class extends=ft_control borderSgr=_ft_textfield_border_sgr focusable=true
+    ft_prototype extends=ft_control borderSgr=_ft_textfield_border_sgr focusable=true
     # keymode is left ALONE by default → emacs/readline (the keymap below). It is
     # reserved for an opt-in `vi` mode (modal editing) added later; apps set it
     # per field and can persist the user's preference.
@@ -270,7 +270,7 @@ ft_class_textfield() {
     # is a FALLBACK inside _ft_textfield_start_caret — setting it here would mean every field
     # has it, and it would then always supersede cursorStartAtLine.
     # (the per-frame paint routine is bound to the engine per-instance on activate via
-    # ft_anim_bind, so it can carry the instance+structure — no class hook needed)
+    # ft_anim_bind, so it can carry the instance+structure — no prototype hook needed)
     # overflowY=auto BECAUSE THAT IS WHAT IT DOES. A textarea taller than its box scrolls, and
     # paints its own bar down its right edge — and it was declaring `overflow: hidden` the whole
     # time, inherited from the base control. So ft_has_scrollbar, the framework's one answer to
@@ -293,7 +293,7 @@ ft_class_textfield() {
     # `placeholder` is deliberately absent: it is drawn INSTEAD of a value, never wrapped by the
     # layout this generation guards. `rows`, `size` and `showLineNumbers` are absent because they
     # change the WIDTH or the row count, both of which the key carries itself.
-    ft_class keymap=textfield_idle mouse=textfield wheelProbe=_ft_textfield_wheel_probe \
+    ft_prototype keymap=textfield_idle mouse=textfield wheelProbe=_ft_textfield_wheel_probe \
         textProps="value text" \
         defaults="display=inline-block size=20 rows=1 maxLength=0 wrap=true wrapIndicator=false newlineIndicator=false showLineNumbers=false acceptsTab=auto keymode=emacs readOnly=false markdown=false activateToEdit=true overflowY=auto"
 }
@@ -593,7 +593,7 @@ _ft_textfield_start_caret() {          # name → FT_RET
         (( off > ${#v} )) && off=${#v}
         FT_RET=$off; return 0
     fi
-    FT_RET=0                                        # class default: start of document
+    FT_RET=0                                        # prototype default: start of document
 }
 # ft_textfield_deactivate — leave edit/cursor mode: drop the editing overlay, clear any
 # selection/mark, hide the caret. Idempotent (safe to call on a non-editing field).
@@ -2081,7 +2081,7 @@ _ft_textfield_rowspan() {              # sgr selsgr paddedwindow vlo vhi → FT_
 # Animations are a tiny registry keyed by name — three functions each:
 #   _ft_anim_<name>_begin NAME                    arm it (compute length, pace)
 #   _ft_anim_<name>_frame NAME                    ONE cheap partial repaint (the
-#                                                 FT_CLASS_ANIM hook fires this)
+#                                                 FT_PROTO_ANIM hook fires this)
 #   _ft_anim_<name>_overlay NAME row col rows cols sgr   lay it over a full draw
 # Adding another animation is three functions and a name; nothing else changes.
 #
@@ -2332,16 +2332,16 @@ _ft_border_anim_overlay() {     # name row col rows cols barsgr
     [[ -n "$a" ]] && declare -F "_ft_banim_${a}_overlay" >/dev/null && "_ft_banim_${a}_overlay" "$n" border "$@"
 }
 
-# The border SGR a border animation shades — resolved through a per-CLASS accessor so
+# The border SGR a border animation shades — resolved through a per-PROTOTYPE accessor so
 # this generalises past text fields. A text field's border carries its EDIT-STATE
 # colour (azure focused / gold editing / cyan read-only), so it overrides with
 # _ft_textfield_border_sgr; anything else falls back to the theme border (+ any borderColor).
-# (FT_CLASS_BORDER_SGR is declared with the rest of the class struct in ft-forms.bash — it
-# is a struct slot like any other, written as `borderSgr=` by ft_class.)
+# (FT_PROTO_BORDER_SGR is declared with the rest of the prototype struct in ft-forms.bash — it
+# is a struct slot like any other, written as `borderSgr=` by ft_prototype.)
 _ft_default_border_sgr() { _ft_color_override "$1" borderColor 38; FT_RET="$FT_COLOR_BORDER$FT_RET"; }
 _ft_border_sgr() {              # name → FT_RET
     local _ty=${FT_TYPE[$1]:-} fn=""    # empty once the control is removed
-    [[ -n "$_ty" ]] && fn=${FT_CLASS_BORDER_SGR[$_ty]:-}
+    [[ -n "$_ty" ]] && fn=${FT_PROTO_BORDER_SGR[$_ty]:-}
     "${fn:-_ft_default_border_sgr}" "$1"
 }
 
@@ -2690,9 +2690,10 @@ _ft_draw_textfield_single() {   # name — a one-line field inside a thin box
     (( cols < 3 )) && return
     _ft_textfield_textw "$name"; local textw=$FT_RET   # sets FT_TEXTFIELD_LEFT_BORDER/FT_TEXTFIELD_RIGHT_BORDER (1/1 here)
     # A one-line field has exactly one row of content in exactly one row of viewport, and saying
-    # so is not a formality: with overflowY=auto declared on the class, a field that published
-    # NOTHING would leave ft_has_scrollbar reading 0 and 0, and the answer to "does this have a
-    # bar" would depend on a property never being written rather than on the field being full.
+    # so is not a formality: with overflowY=auto declared on the prototype, a field that
+    # published NOTHING would leave ft_has_scrollbar reading 0 and 0, and the answer to "does this
+    # have a bar" would depend on a property never being written rather than on the field being
+    # full.
     _ft_textfield_publish_metrics "$name" 1 1
 
     ft_resolved_prop "$name" value "";       local val=$FT_RET   # a one-line field paints the string

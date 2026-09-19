@@ -447,7 +447,7 @@ ft_remove nap
 note "a restore fires the SAME event with the SAME argument as an ordinary interaction"
 # The arm asked `value == true` — the CHECKBOX's question — of a multitoggle whose options are
 # not booleans, so a 3-state control restored to `high` was announced with on_deactivate, the
-# event the class header defines as "a checkbox unchecking". And it called the hook with NO
+# event the prototype header defines as "a checkbox unchecking". And it called the hook with NO
 # ARGUMENT while the header documents "$1 is the new value" and every other route passes it, so
 # a handler written to that contract dies on `$1: unbound variable` in a `set -u` app.
 _MSEEN=""

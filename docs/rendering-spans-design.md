@@ -584,7 +584,7 @@ passes every check inside it). Without this gate the design should not be starte
 | route | what happens | already exists? |
 |---|---|---|
 | a property write (`ft_set`, `ft-modify`, `ft_remove_attribute`) | `ft_dirty` → re-derive | yes |
-| a class default / stylesheet change | `_ft_css_inval` bumps `_FT_CSS_VERSION` per subtree; `_ft_css_bump` bumps the epoch | yes |
+| a prototype default / stylesheet change | `_ft_css_inval` bumps `_FT_CSS_VERSION` per subtree; `_ft_css_bump` bumps the epoch | yes |
 | focus / state change | in the token (`FT_FOCUS`) | yes (`_FT_SGR_CACHE`) |
 | layout, reflow, scroll | `FT_LAYOUT_EPOCH`, `_FT_CLIP_GEN`, the control's own absolute box | yes |
 | overflow / padding / border on an ancestor | `_FT_CLIP_GEN` — the one counter that exists *because* neither the layout epoch nor the cascade token covers these | yes, with a gate |

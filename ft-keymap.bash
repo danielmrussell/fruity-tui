@@ -44,11 +44,12 @@ ft-keymap() {
 
 # ft_keymap_once NAME — declare NAME and return true, but only the FIRST time it is asked for.
 #
-# A class KEYMAP is global, but a class CONSTRUCTOR is not: it runs once per subclass, because
-# building a subclass's struct means running its superclass's constructor again (label's runs
-# for label, button, checkbox…). So the keymap-building block inside a constructor had to be
-# guarded, and every control invented its own flag to do it — _FT_KM_LABEL_READY,
-# _FT_KM_TREE_READY, _FT_KM_SLIDER_READY, eight of them, each a global spelled out by hand.
+# A prototype KEYMAP is global, but a prototype CONSTRUCTOR is not: it runs once per derived
+# prototype, because building a derived prototype's struct means running its base prototype's
+# constructor again (label's runs for label, button, checkbox…). So the keymap-building block
+# inside a constructor had to be guarded, and every control invented its own flag to do it —
+# _FT_KM_LABEL_READY, _FT_KM_TREE_READY, _FT_KM_SLIDER_READY, eight of them, each a global
+# spelled out by hand.
 # The guard is a property of the KEYMAP, so it belongs to the keymap:
 #
 #     if ft_keymap_once ft_keymap_label; then
@@ -120,12 +121,12 @@ ft-keymap-cap() {               # map pattern action importance label
     # Omitted still means 0 — "bound, but not shown in a legend". The KEYWORDS resolve through the
     # framework's one definition (_ft_importance), which a control's `importance=` property shares,
     # so a key legend and a callout cannot disagree about what "important" is worth.
-    # _ft_importance RETURNS THROUGH FT_RET, and class constructors declare their bindings in
+    # _ft_importance RETURNS THROUGH FT_RET, and prototype constructors declare their bindings in
     # tables interleaved with other FT_RET-returning calls — so calling it here without putting
     # FT_RET back corrupted whatever the caller had in flight. Measured: the scrollbar's arrow
     # bindings silently stopped dispatching (test-scrollbar 29/33, test-dispatch 44/47) while the
-    # importance values themselves were perfectly correct. Same clobber this codebase has been bitten
-    # by before; the fix is to borrow FT_RET and give it back, not to duplicate the table.
+    # importance values themselves were perfectly correct. Same clobber this codebase has been
+    # bitten by before; the fix is to borrow FT_RET and give it back, not to duplicate the table.
     local _imp=${4:-0} _sv_ret=$FT_RET
     case $_imp in
         crucial|important|normal|minor) _ft_importance "$_imp"; _imp=$FT_RET; FT_RET=$_sv_ret ;;

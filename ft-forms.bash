@@ -2,7 +2,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 #  Fruity TUI — ft-forms.bash   (retained mode)
 #
-#  The object/property model, the class system, the CSS layout engine, the
+#  The object/property model, the prototype system, the CSS layout engine, the
 #  reflow/repaint pipeline, the nesting DSL, focus, and event dispatch.
 #
 #  ── Design: a faithful subset of CSS ────────────────────────────────────────
@@ -25,8 +25,8 @@
 #
 #  ── Reflow vs repaint (the CSS performance model) ───────────────────────────
 #  Every property is engine-classified as layout or paint (FT_PROP_KIND — one
-#  table, like a browser; never per-class annotations). ft-modify consults it:
-#  paint-only changes repaint that one control and touch NOTHING else — so
+#  table, like a browser; never per-prototype annotations). ft-modify consults
+#  it: paint-only changes repaint that one control and touch NOTHING else — so
 #  scrolling (scrollTop) costs one repaint, by definition. Layout changes
 #  reflow: recompute the control's own size; unchanged → repaint just it;
 #  changed → re-lay the nearest fixed-size ancestor's subtree and repaint only
@@ -41,22 +41,23 @@
 #  Computed geometry: FT_ABSOLUTE_X FT_ABSOLUTE_Y FT_MEASURED_WIDTH FT_MEASURED_HEIGHT (used outer sizes) and
 #  FT_PREFERRED_WIDTH (preferred/max-content outer width, cached between passes).
 #
-#  ── Class system (constructor-chain inheritance) ─────────────────────────────
-#  A class is registered by a class-constructor `ft_class_<type>` that DECLARES
-#  itself with `ft_class`, naming its superclass — real constructor-chain
-#  inheritance, resolved once at class-registration time (memoized; first
-#  instance triggers it), never by runtime lookup chains:
+#  ── Prototype system (constructor-chain inheritance) ─────────────────────────
+#  A prototype is registered by a prototype-constructor `ft_prototype_<type>`
+#  that DECLARES itself with `ft_prototype`, naming its base prototype — real
+#  constructor-chain inheritance, resolved once at prototype-registration time
+#  (memoized; first instance triggers it), never by runtime lookup chains:
 #
-#      ft_class_button() {
-#          ft_class extends=label \
+#      ft_prototype_button() {
+#          ft_prototype extends=label \
 #                   draw=_ft_draw_button preferredWidth=_ft_preferred_width_button \
 #                   focusable=true mouse=_ft_mouse_activate keymap=ft_keymap_activate
 #      }
 #
-#  The root pure-virtual class is ft_control (ft_class_ft_control): sane
-#  defaults for everything. See ft_class for the full key list and the rules.
-#  Layout algorithms are NOT class code — they belong to display modes in the
-#  engine; a class contributes only its intrinsic content size and drawing.
+#  The root pure-virtual prototype is ft_control (ft_prototype_ft_control):
+#  sane defaults for everything. See ft_prototype for the full key list and the
+#  rules. Layout algorithms are NOT prototype code — they belong to display
+#  modes in the engine; a prototype contributes only its intrinsic content size
+#  and drawing.
 #
 #  ── Nesting DSL ──────────────────────────────────────────────────────────────
 #  Container constructors push themselves as the current parent; end_ft_* pops
@@ -67,10 +68,10 @@
 #
 #  ── Events ───────────────────────────────────────────────────────────────────
 #  ft_dispatch_event walks the focused control's keymaps (instance overlay →
-#  shared keymap=NAME ref → class default), then each ancestor's, up to the
-#  root. First match runs `action [args…] name token`; a `drop` default stops
-#  the walk. ENTER/SPACE on activatable classes run ft_activate, which calls
-#  onActivate=fn if defined. accessKey=G is sugar: underline + an auto
+#  shared keymap=NAME ref → prototype default), then each ancestor's, up to
+#  the root. First match runs `action [args…] name token`; a `drop` default
+#  stops the walk. ENTER/SPACE on activatable prototypes run ft_activate, which
+#  calls onActivate=fn if defined. accessKey=G is sugar: underline + an auto
 #  [Gg]→"ft_activate <name>" binding on the enclosing form.
 #
 #  Depends on ft-core.bash and ft-keymap.bash.
@@ -107,11 +108,11 @@ for _p in border padding paddingTop paddingRight paddingBottom paddingLeft \
           overflow overflowX overflowY; do _FT_CLIP_PROPS[$_p]=1; done
 unset _p
 # The two cache generations, declared HERE rather than beside the caches they key (which live
-# with _ft_clip_for and _ft_inset4, ~2000 lines down) because _ft_setprop bumps them and a class
-# constructor can call _ft_setprop while this file is still being sourced. An undeclared name
-# reaching `(( ))` is an unbound-variable error under set -u, not a zero.
+# with _ft_clip_for and _ft_inset4, ~2000 lines down) because _ft_setprop bumps them and a
+# prototype constructor can call _ft_setprop while this file is still being sourced. An
+# undeclared name reaching `(( ))` is an unbound-variable error under set -u, not a zero.
 declare -i _FT_CLIP_GEN=0       # geometry, the tree, or a box changed → clip rects
-# (Defined up here with the counter: _ft_setprop bumps it, and a class registered while this
+# (Defined up here with the counter: _ft_setprop bumps it, and a prototype registered while this
 # file is still being sourced reaches _ft_setprop.)
 _ft_clip_inval() { (( _FT_CLIP_GEN++ )); }
 
@@ -131,7 +132,7 @@ _ft_clip_inval() { (( _FT_CLIP_GEN++ )); }
 # real drag frame, 98% and 93% of reads are eligible, so the tax lands on a fortieth of them.
 #
 # WHAT IS STORED is ft_resolve's answer — before the caller's default, which belongs to the CALL
-# SITE (two of them may pass different ones), and before coercion, which belongs to the class.
+# SITE (two of them may pass different ones), and before coercion, which belongs to the prototype.
 # An entry is only made when all four of these hold; they are checked on the miss path, so a hit
 # pays for none of them:
 #
@@ -153,9 +154,9 @@ _ft_clip_inval() { (( _FT_CLIP_GEN++ )); }
 # WHAT AN ENTRY THEN DEPENDS ON, exhaustively:
 #     the control's own `_ftp_<name>_<prop>`;
 #     whether the property inherits (FT_INHERITED_PROP — fixed once ft-css has loaded);
-#     FT_TYPE[name], and FT_CLASS_DEFAULT["<type> <prop>"];
-#     for an inheriting property, the FT_PARENT chain and every ancestor's own value and class
-#       default;
+#     FT_TYPE[name], and FT_PROTO_DEFAULT["<type> <prop>"];
+#     for an inheriting property, the FT_PARENT chain and every ancestor's own value and
+#       prototype default;
 #     _FT_CSS_DECLARED_PROPS[prop] — condition 3 itself.
 #
 # AND EVERY ROUTE THAT CAN CHANGE ONE. This enumeration is what the cache lives or dies on, so
@@ -171,11 +172,11 @@ _ft_clip_inval() { (( _FT_CLIP_GEN++ )); }
 #     and a fresh one compare equal, and this framework has already paid once for a rebuilt
 #     control serving a dead one's cached answer (see ft_css_forget's comment).
 #   · a control is MOVED (_ft_reparented) — its subtree inherits through somewhere else now.
-#   · a class finishes declaring — FT_CLASS_DEFAULT is the last level of every instance's
+#   · a prototype finishes declaring — FT_PROTO_DEFAULT is the last level of every instance's
 #     resolution, so the generation goes up and every entry everywhere is dropped.
 #   · a stylesheet registers, or the theme swaps (_ft_css_bump) — it may DECLARE a property, which
 #     is condition 3, so the generation goes up.
-#   · a class's `setProp=` reconciler stamps a SIBLING property — _ft_multitoggle_setprop and
+#   · a prototype's `setProp=` reconciler stamps a SIBLING property — _ft_multitoggle_setprop and
 #     _ft_select_setprop keep `value` and `selectedIndex` in step — without going back through
 #     the setter, which would recurse. They write through _ft_stamp_prop, which forgets the pair
 #     it stamps; that is the whole reason it is a function.
@@ -213,9 +214,9 @@ _ft_resolve_forget() {          # name prop — only this pair's answer can have
 }
 # _ft_stamp_prop NAME PROP VALUE — write a property variable WITHOUT going through _ft_setprop.
 #
-# The one legitimate caller is a class's `setProp=` reconciler keeping a SIBLING property in step
-# with the one just written (a multitoggle's `value` following its `selectedIndex`); the setter
-# calls the reconciler, so a reconciler that called the setter back would recurse.
+# The one legitimate caller is a prototype's `setProp=` reconciler keeping a SIBLING property
+# in step with the one just written (a multitoggle's `value` following its `selectedIndex`);
+# the setter calls the reconciler, so a reconciler that called the setter back would recurse.
 #
 # Bypassing the setter also bypasses the setter's memo invalidation — which is why this is a
 # function rather than a `printf -v` written out at each site. The two lines were written out
@@ -287,7 +288,7 @@ _ft_setprop() {                 # name prop value
     # listeners per event coexist and repeated onActivate= args in ONE call all accumulate.
     # An EMPTY value clears that event's listeners (like el.onactivate = null). Explicit runtime
     # add/remove: ft_add_listener / ft_remove_listener. Dispatch: _ft_hook.
-    # A runlevel the class never declared would leave the control in a state no pseudo-class
+    # A runlevel the prototype never declared would leave the control in a state no pseudo-class
     # can match — silently. Reject it where the mistake is, not where it fails to show.
     local _rl_from=""
     # A control's TYPE is empty once it has been removed, and `${SOME_ASSOC[""]}` is a bash
@@ -304,17 +305,17 @@ _ft_setprop() {                 # name prop value
     # in a samba tool that code computes them from a config file.
     #
     # CSS's rule: an invalid declaration is DROPPED, leaving the previous value. Same here.
-    # …UNLESS THE CLASS SAYS IT READS THAT NAME AS A KEYWORD. A property's meaning belongs to
-    # the CLASS, not to a global table — `value` already means four different things — and
-    # `size` is the case that proved it: a textfield's size is a column count, and a bigarrow's
-    # is one of four authored shapes (`small | medium | large | x-large`). The guard exists to
-    # keep an app-supplied value out of `(( ))`; a class that resolves the name through a fixed
-    # `case` never puts it there, so guarding it is not safety, it is a wrong answer — measured,
-    # as `ft: ga: size="small" is not a number — declaration dropped`. Declared per class
-    # (`keywordProps=`), so the exemption is exactly as wide as the class that asked for it and
-    # every other control's `size` is still a number or dropped.
+    # …UNLESS THE PROTOTYPE SAYS IT READS THAT NAME AS A KEYWORD. A property's meaning belongs
+    # to the PROTOTYPE, not to a global table — `value` already means four different things —
+    # and `size` is the case that proved it: a textfield's size is a column count, and a
+    # bigarrow's is one of four authored shapes (`small | medium | large | x-large`). The guard
+    # exists to keep an app-supplied value out of `(( ))`; a prototype that resolves the name
+    # through a fixed `case` never puts it there, so guarding it is not safety, it is a wrong
+    # answer — measured, as `ft: ga: size="small" is not a number — declaration dropped`.
+    # Declared per prototype (`keywordProps=`), so the exemption is exactly as wide as the
+    # prototype that asked for it and every other control's `size` is still a number or dropped.
     if [[ -n "${_FT_NUMERIC_PROP[$2]:-}" && -n "$3" ]] \
-       && [[ " ${FT_CLASS_KEYWORD_PROPS[$_ty]:-} " != *" $2 "* ]]; then
+       && [[ " ${FT_PROTO_KEYWORD_PROPS[$_ty]:-} " != *" $2 "* ]]; then
         case "$3" in
             auto|inherit|initial|unset) : ;;                 # keywords the layout understands
             *[!0-9-]* | -*-* | -)                            # anything not a plain integer
@@ -339,10 +340,10 @@ _ft_setprop() {                 # name prop value
         esac
     fi
     case $2 in runlevel)
-        # …but only for a control that still HAS a class. On a removed one there is nothing to
+        # …but only for a control that still HAS a prototype. On a removed one there is nothing to
         # have declared anything, so the diagnostic could only say "not declared for ?" — and
         # printing it would put that on the alt screen. Every other property is stored silently
-        # for a dead name; this one now behaves the same instead of shouting about a class that
+        # for a dead name; this one now behaves the same instead of shouting about a prototype that
         # no longer exists.
         if [[ -n "$_ty" ]]; then
             _ft_runlevels_of "$1"; local _rls=${FT_RET:-unfocused}
@@ -353,18 +354,19 @@ _ft_setprop() {                 # name prop value
                    return 1 ;;
             esac
         fi
-        # THE RUNG BEING LEFT IS THE ELEMENT'S, WHICH INCLUDES ITS CLASS DEFAULT. Read raw, this
-        # answered "" for the first transition of every control's life — because `unfocused` is
-        # a class default and class defaults stopped being stamped onto instances — and the line
-        # below reads "" as CONSTRUCTION. So the first Enter into any control skipped its exit
-        # script and its enter script: measured as a textfield reaching runlevel `editing` with
-        # `textfield_runlevel_editing_enter` never called, i.e. no mode hint, no border sheen.
-        _ft_prop_or_class "$1" runlevel ""
+        # THE RUNG BEING LEFT IS THE ELEMENT'S, WHICH INCLUDES ITS PROTOTYPE DEFAULT. Read raw,
+        # this answered "" for the first transition of every control's life — because `unfocused`
+        # is a prototype default and prototype defaults stopped being stamped onto instances —
+        # and the line below reads "" as CONSTRUCTION. So the first Enter into any control
+        # skipped its exit script and its enter script: measured as a textfield reaching
+        # runlevel `editing` with `textfield_runlevel_editing_enter` never called, i.e. no mode
+        # hint, no border sheen.
+        _ft_prop_or_prototype "$1" runlevel ""
         _rl_from=$FT_RET
         # Setting it to what it already is is a NO-OP: no scripts, no invalidation. Guarded
         # once here so no runlevel script ever has to defend against being run twice. This is
         # also what makes construction a no-op rather than a special case now: a control is born
-        # at its class's rung, so writing that same rung changes nothing and returns here.
+        # at its prototype's rung, so writing that same rung changes nothing and returns here.
         [[ "$_rl_from" == "$3" ]] && return 0
         # Leaving fires while the OLD runlevel is still current, so a script can still see
         # what it is tearing down.
@@ -421,7 +423,7 @@ _ft_setprop() {                 # name prop value
     # verb for the same job) stored 8, so the two routes gave different answers.
     #
     # The bounds are the box's OWN published scrollHeight/clientHeight, so this belongs to the
-    # framework rather than to a class: every scrollable control publishes that pair (see
+    # framework rather than to a prototype: every scrollable control publishes that pair (see
     # _ft_pass_arrange and _ft_label_metrics) and none of them may hold an offset outside it.
     # Skipped while the pair is unknown — before the first arrange, during construction — because
     # clamping against a scrollHeight of nothing would pin every offset to 0.
@@ -464,19 +466,19 @@ _ft_setprop() {                 # name prop value
     # _ft_textfield_layout's key is "$name|$w|$wrap|$gen", so the width and the wrap flag are
     # already in it by name and the generation has only ever needed to track the value.
     #
-    # A class declares `textProps="…"` to name the properties that can change what it displays.
-    # DECLARING NOTHING KEEPS EXACTLY THE OLD BEHAVIOUR — bump on everything — so a class that
+    # A prototype declares `textProps="…"` to name the properties that can change what it displays.
+    # DECLARING NOTHING KEEPS EXACTLY THE OLD BEHAVIOUR — bump on everything — so a prototype that
     # composes its label out of four properties (a radio, a multitoggle) is untouched and cannot
     # be broken by failing to opt in. The failure mode of forgetting is a recompute; the failure
     # mode of getting the LIST wrong is a stale measurement, which is why it is one line in the
-    # class that owns the text rather than a guess made here.
+    # prototype that owns the text rather than a guess made here.
     # `_ty` is EMPTY for a control an earlier handler in this burst removed, and ${ASSOC[""]} is
     # a bash error on stderr — which in a TUI is the alt screen. Read it into a local first, the
     # same shape the reconciler below uses and for the same reason. An empty list then falls to
     # the "declares nothing" arm, which is the conservative answer.
     local _genvar="_fti_${name}__writegen" _tprops=""
     printf -v "$_genvar" '%s' $(( ++_FT_GENERATION_CLOCK ))
-    [[ -n "$_ty" ]] && _tprops=${FT_CLASS_TEXT_PROPS[$_ty]:-}
+    [[ -n "$_ty" ]] && _tprops=${FT_PROTO_TEXT_PROPS[$_ty]:-}
     case " $_tprops " in
         "  "|*" $prop "*) _genvar="_fti_${name}__textgen"
                           printf -v "$_genvar" '%s' $(( ++_FT_GENERATION_CLOCK )) ;;
@@ -500,7 +502,7 @@ _ft_setprop() {                 # name prop value
     # user's `log_rows` is now simply a different variable.
     # A RECONCILER CANNOT ASK WHAT IT REPLACED, because by the time it runs — deliberately last,
     # see below — the old value is already gone. Read it HERE, where it is still there, and only
-    # for a class that has a reconciler to tell: this is the array read the call site at the
+    # for a prototype that has a reconciler to tell: this is the array read the call site at the
     # bottom used to make, moved up rather than added.
     #
     # ft-scrollbar is why. "Scroll to 8" on a bar already at 8 must not fire onScroll, and the
@@ -509,7 +511,7 @@ _ft_setprop() {                 # name prop value
     # Only the previous value can tell the difference, and only this line can still see it.
     local _recon="" _prev=""
     if [[ -n "$_ty" ]]; then
-        _recon=${FT_CLASS_SETPROP[$_ty]:-}
+        _recon=${FT_PROTO_SETPROP[$_ty]:-}
         if [[ -n "$_recon" ]]; then local _pv="_ftp_${name}_${prop}"; _prev=${!_pv-}; fi
     fi
     printf -v "_ftp_${name}_${prop}" '%s' "$val"
@@ -577,21 +579,21 @@ _ft_setprop() {                 # name prop value
         # of its own cascade, so its one memo entry has to go. See _ft_css_inval_prop.
         _ft_css_inval_prop "$name" "$prop"
     fi
-    # A CLASS MAY KEEP ITS REAL STATE SOMEWHERE ELSE. A checkbox is a two-option multitoggle
+    # A PROTOTYPE MAY KEEP ITS REAL STATE SOMEWHERE ELSE. A checkbox is a two-option multitoggle
     # whose truth is `selectedIndex`; `checked=` was translated to it by the ft-checkbox
     # CONSTRUCTOR and nowhere else, so `ft-modify cb checked=true` was a silent no-op, while
     # `ft-modify cb value=true` set a shadow value the drawing never saw — the control then
-    # reported CHECKED to the app and drew UNCHECKED to the user, at the same time. Give the
-    # class one place to reconcile, on every route in (ft-modify, the DSL, a state restore).
+    # reported CHECKED to the app and drew UNCHECKED to the user, at the same time. Give
+    # the prototype one place to reconcile, on every route in (ft-modify, the DSL, a state restore).
     #
     # THE PROPERTY NAMES USED TO BE LISTED HERE, and the list was wrong four times in one
     # sitting: `checked|value|selectedIndex` did not cover a slider's min/max/step, then not a
     # radio's group, then not a table's cursor, then not its scrollTop — each time a reconciler
     # that WAS registered simply never ran, silently, which is the same shape as every bug this
-    # mechanism exists to fix. A class declaring a reconciler is the whole declaration; a second
+    # mechanism exists to fix. A prototype declaring a reconciler is the whole declaration; a second
     # global list deciding whether it is ever called is a place to forget. Measured, the list was
     # not buying anything either: it replaced one associative read with up to nine string
-    # compares. So the class is asked directly, and every reconciler opens with its own `case`.
+    # compares. So the prototype is asked directly, and every reconciler opens with its own `case`.
     # The asymmetry is the point: forgetting that `case` now costs a little wasted work, where
     # forgetting a name on the old list cost a reconciler that never ran and said nothing.
     #
@@ -608,7 +610,7 @@ _ft_setprop() {                 # name prop value
     return 0
 }
 # el.removeAttribute — truly UNSET a property (distinct from setting ""), so the control falls
-# back to its class default / the stylesheet. Handles subscripted props and custom properties
+# back to its prototype default / the stylesheet. Handles subscripted props and custom properties
 # (--x) via _ft_propkey, and invalidates the cascade when the property could affect a style.
 ft_remove_attribute() {         # NAME PROP
     local name=$1
@@ -628,11 +630,11 @@ ft_remove_attribute() {         # NAME PROP
     # under-invalidating is a wrong number on screen. This route already says "same predicate,
     # same route" four times below; this was the fifth and it was missing.
     # BOTH counters, and by the same rule as _ft_setprop's: a removal is a write, so __writegen
-    # always moves; __textgen moves when the class has not narrowed itself or has named this
+    # always moves; __textgen moves when the prototype has not narrowed itself or has named this
     # property. Same predicate, same route.
     local _genvar="_fti_${name}__writegen" _rty=${FT_TYPE[$name]:-} _tprops=""
     printf -v "$_genvar" '%s' $(( ++_FT_GENERATION_CLOCK ))
-    [[ -n "$_rty" ]] && _tprops=${FT_CLASS_TEXT_PROPS[$_rty]:-}   # ${ASSOC[""]} is a stderr error
+    [[ -n "$_rty" ]] && _tprops=${FT_PROTO_TEXT_PROPS[$_rty]:-}   # ${ASSOC[""]} is a stderr error
     case " $_tprops " in
         "  "|*" $pk "*) _genvar="_fti_${name}__textgen"
                         printf -v "$_genvar" '%s' $(( ++_FT_GENERATION_CLOCK )) ;;
@@ -651,7 +653,7 @@ ft_remove_attribute() {         # NAME PROP
     elif declare -F _ft_css_inval_prop >/dev/null 2>&1; then
         _ft_css_inval_prop "$name" "$pk"       # same predicate, same route — see _ft_setprop
     fi
-    # AND THE CLASS RECONCILER, which this route did not call — the sixth "same predicate, one
+    # AND THE PROTOTYPE RECONCILER, which this route did not call — the sixth "same predicate, one
     # route" in this function's own list, inside the mechanism built to end them.
     #
     # Measured: on a checked checkbox, `ft_remove_attribute cb selectedIndex` repainted it
@@ -662,12 +664,12 @@ ft_remove_attribute() {         # NAME PROP
     # property and paint both denied it.
     #
     # THE VALUE PASSED IS WHAT THE PROPERTY NOW RESOLVES TO, not the empty string. A removal does
-    # not make a control's state absent — it makes it the class default, which is what the
+    # not make a control's state absent — it makes it the prototype default, which is what the
     # control now IS and what the paint is about to use. Handing the reconciler "" would have it
     # reconcile against a value nothing will ever read.
     local _rty=${FT_TYPE[$name]:-}
     if [[ -n "$_rty" ]]; then
-        local _recon=${FT_CLASS_SETPROP[$_rty]:-}
+        local _recon=${FT_PROTO_SETPROP[$_rty]:-}
         if [[ -n "$_recon" ]]; then
             ft_resolved_prop "$name" "$pk" ""
             "$_recon" "$name" "$pk" "$FT_RET" "$_rprev"
@@ -699,11 +701,11 @@ ft_get() {
     case $2 in text|value) [[ "${_FT_TEXT_STALE[$1]:-}" == "$2" ]] && _ft_text_join "$1" ;; esac
     _ft_propkey "$2"; local var="_ftp_${1}_${FT_RET}" key=$FT_RET
     FT_RET="${!var-}"
-    # …and the CLASS DEFAULT when the author set nothing, because this is the public accessor
+    # …and the PROTOTYPE DEFAULT when the author set nothing, because this is the public accessor
     # and "what is this control's display" has one right answer whether or not anybody typed it.
-    # It reads the class table rather than the instance since defaults stopped being stamped
+    # It reads the prototype table rather than the instance since defaults stopped being stamped
     # there; _ft_get_raw stays the narrower question the cascade's level 1 asks.
-    [[ -v "$var" ]] || FT_RET=${FT_CLASS_DEFAULT["${FT_TYPE[$1]:-} $key"]-}
+    [[ -v "$var" ]] || FT_RET=${FT_PROTO_DEFAULT["${FT_TYPE[$1]:-} $key"]-}
     [[ -n "${3:-}" ]] && printf -v "$3" '%s' "$FT_RET"
     return 0
 }
@@ -747,8 +749,8 @@ _ft_truthy() { case "$1" in true|1|yes|on) return 0 ;; *) return 1 ;; esac; }
 #
 # Everything NOT in here is per-control: width, padding, margin, gap, the flex properties,
 # value, text, rows… In CSS none of those inherit, and resolving them up the tree let a
-# container's box values leak into every descendant — which is why the base control class had
-# to default them all to 0. That default masked the leak; this table removes it.
+# container's box values leak into every descendant — which is why the base control prototype
+# had to default them all to 0. That default masked the leak; this table removes it.
 declare -A FT_INHERITED_PROP=(
     [color]=1 [visibility]=1 [cursor]=1 [textAlign]=1 [fontWeight]=1 [fontStyle]=1
     [disabled]=1
@@ -885,7 +887,7 @@ ft_state :read-only  '[readOnly=true]'
 ft_state :read-write ':not([readOnly=true])'
 
 # ── :engaged / :outside — has this control taken the keys? ───────────────────
-# The one question that generalises across every class and every runlevel NAME (adjusting,
+# The one question that generalises across every prototype and every runlevel NAME (adjusting,
 # browsing, editing, scrolling, perusing…): is this control still at rest, or has it captured
 # the arrows? Focused-but-outside means the arrows move BETWEEN controls; engaged means they
 # belong to THIS one. Opposite meanings for the same keypress, so it has to be visible, and
@@ -944,14 +946,14 @@ ft_state :visible ft_state_is_visible display visibility
 # ── Runlevels — a control's engagement, as an ordinary property ──────────────
 # A runlevel is which of a control's mutually-exclusive engagement states it is in:
 # `unfocused` (the universal zero — every control has it, so `:not(:unfocused)` means "engaged"
-# everywhere) plus whatever else the class declares. Making it a PROPERTY is the whole trick:
+# everywhere) plus whatever else the prototype declares. Making it a PROPERTY is the whole trick:
 #   • the cascade invalidates on it automatically, because states declare what they read
 #   • `ft-modify field runlevel=editing` works — from a sibling, a parent, or the engine
 #   • ft_get reads it, a stylesheet matches it, a state serialiser can save it
 # Values are NOT globally ordered — a select's `open` and a textfield's `editing` are not
 # comparable depths — so they are keywords, never numbers.
-declare -A FT_CLASS_RUNLEVELS=()        # type → "unfocused [focused] <the levels it declared…>"
-declare -A FT_CLASS_RUNLEVEL_KEYMAP=()  # type:level → the keymap in effect at that level
+declare -A FT_PROTO_RUNLEVELS=()        # type → "unfocused [focused] <the levels it declared…>"
+declare -A FT_PROTO_RUNLEVEL_KEYMAP=()  # type:level → the keymap in effect at that level
 
 # THE TWO FREE RUNGS. Every control is `unfocused` — that is what it is when nobody is near
 # it. A FOCUSABLE control also gets `poised`: you are standing on it, and have not gone in.
@@ -962,10 +964,10 @@ declare -A FT_CLASS_RUNLEVEL_KEYMAP=()  # type:level → the keymap in effect at
 # no border, colour or animation could tell them apart from the runlevel alone. Naming the
 # state by what is NOT happening is what made that look acceptable.
 #
-# Deeper rungs are what a class ADDS (ft_runlevels); most classes add one, a text field
+# Deeper rungs are what a prototype ADDS (ft_runlevels); most prototypes add one, a text field
 # adds three, a button adds none.
-_ft_class_base_runlevels() {    # type → FT_RET
-    [[ "${FT_CLASS_FOCUSABLE[$1]:-}" == 1 ]] && FT_RET="unfocused poised" || FT_RET="unfocused"
+_ft_prototype_base_runlevels() {    # type → FT_RET
+    [[ "${FT_PROTO_FOCUSABLE[$1]:-}" == 1 ]] && FT_RET="unfocused poised" || FT_RET="unfocused"
 }
 
 # ft_runlevels TYPE level[=keymap]…   — the free rungs above come first, always.
@@ -974,21 +976,21 @@ _ft_class_base_runlevels() {    # type → FT_RET
 # restored, because nothing is overwritten.
 #
 #   ft_runlevels scrolling perusing editing=ft_keymap_textfield
-# Runlevel SCRIPTS — a control class does its entry/exit work in per-runlevel functions:
+# Runlevel SCRIPTS — a control prototype does its entry/exit work in per-runlevel functions:
 #
 #     textfield_runlevel_editing_enter() { … }      # named for the level, not a switch
 #     textfield_runlevel_editing_exit()  { … }
 #
 # One function per level per direction, dispatched by name — deliberately NOT one event with
 # a case over every runlevel, which is the shape that turns a dispatch system back into a
-# monolith. They are class-side; the per-instance `on…=` handlers stay free for the app.
+# monolith. They are prototype-side; the per-instance `on…=` handlers stay free for the app.
 _ft_runlevel_script() {         # name level enter|exit
     local fn="${FT_TYPE[$1]:-}_runlevel_${2}_${3}"
     declare -F "$fn" >/dev/null 2>&1 && "$fn" "$1"
     return 0                                     # a missing script is the normal case
 }
 
-# Built once, by the class that declares `keymap=form`.
+# Built once, by the prototype that declares `keymap=form`.
 _ft_define_keymap_form() {
     # Tab/Shift-Tab = linear ring order; the ARROWS move by geometry (spatial), so you
     # can cut across columns the way the layout looks. Controls that consume an arrow
@@ -1002,20 +1004,20 @@ _ft_define_keymap_form() {
     # is in EDIT mode it types a period instead, which is what you want.
     ft-keymap-cap ft_keymap_form '.' ft_focus_ping "$FT_IMPORTANCE_NORMAL" "Locate"
 }
-declare -A FT_CLASS_RUNLEVEL_EXTRA=()   # type → just what the class ADDED, in order
+declare -A FT_PROTO_RUNLEVEL_EXTRA=()   # type → just what the prototype ADDED, in order
 # ft_runlevels [for=TYPE] level[=keymap]…
 #
-# INSIDE a class constructor the type is IMPLICIT, exactly as it is for `ft_class` — the
-# constructor's body is the border, because ft_class_init scopes the class under
+# INSIDE a prototype constructor the type is IMPLICIT, exactly as it is for `ft_prototype` — the
+# constructor's body is the border, because ft_prototype_init scopes the prototype under
 # construction with `local` and bash's dynamic scoping publishes it to everything called
 # from there. That is why there is no begin/end pair to write: the function already is one.
 #
-#     ft_class_tree() {
+#     ft_prototype_tree() {
 #         ft_runlevels browsing=ft_keymap_tree_browsing
-#         ft_class extends=ft_control focusable=true …
+#         ft_prototype extends=ft_control focusable=true …
 #     }
 #
-# OUTSIDE one — an app adding a rung to a class it did not write — name the CLASS:
+# OUTSIDE one — an app adding a rung to a prototype it did not write — name the CLASS:
 #
 #     ft_runlevels for=tree previewing=my_preview_map      # every tree in the app
 #
@@ -1024,23 +1026,23 @@ declare -A FT_CLASS_RUNLEVEL_EXTRA=()   # type → just what the class ADDED, in
 #     ft_runlevels for=sidebar previewing=my_preview_map   # only `sidebar`
 #
 # THOSE ARE DIFFERENT OPERATIONS, NOT SPELLINGS OF ONE. An instance ladder is ad hoc and
-# stays ad hoc: it must never write through to the class, or "give this one field an extra
+# stays ad hoc: it must never write through to the prototype, or "give this one field an extra
 # rung" would silently re-rung every field in the app — and the author would have no reason
 # to suspect it. A live control name therefore means the control; a name that is not a
-# control is taken as a class.
+# control is taken as a prototype.
 #
 # `for=` rather than a bare first word because a rung may be bare too (`scrolling perusing
 # editing=…`), so a positional name could not be told from a rung name.
-declare -A FT_RUNLEVELS=()              # control → its OWN ladder (ad hoc, overrides its class)
+declare -A FT_RUNLEVELS=()              # control → its OWN ladder (ad hoc, overrides its prototype)
 declare -A FT_RUNLEVEL_KEYMAP=()        # control:level → keymap, for an ad-hoc rung
-ft_runlevels() {                # [for=CLASS|for=CONTROL] level[=keymap]…
-    local target=$FT_CLASS_UNDER_CONSTRUCTION instance=""
+ft_runlevels() {                # [for=TYPE|for=CONTROL] level[=keymap]…
+    local target=$FT_PROTO_UNDER_CONSTRUCTION instance=""
     if [[ "${1:-}" == for=* ]]; then
         target=${1#for=}; shift
         [[ -n "${FT_TYPE[$target]:-}" ]] && instance=$target
     fi
     if [[ -z "$target" ]]; then
-        printf 'ft_runlevels: no target — call it inside a class constructor, or pass for=CLASS or for=CONTROL\n' >&2
+        printf 'ft_runlevels: no target — call it inside a prototype constructor, or pass for=TYPE or for=CONTROL\n' >&2
         return 2
     fi
     local spec level levels="" statetype=$target
@@ -1050,28 +1052,28 @@ ft_runlevels() {                # [for=CLASS|for=CONTROL] level[=keymap]…
         if [[ -n "$instance" ]]; then
             [[ "$spec" == *=* ]] && FT_RUNLEVEL_KEYMAP[$instance:$level]=${spec#*=}
         else
-            [[ "$spec" == *=* ]] && FT_CLASS_RUNLEVEL_KEYMAP[$target:$level]=${spec#*=}
+            [[ "$spec" == *=* ]] && FT_PROTO_RUNLEVEL_KEYMAP[$target:$level]=${spec#*=}
         fi
         levels+=" $level"
         # The CSS state is registered against the TYPE either way — `[runlevel=X]` is what it
-        # tests, and a selector has to be writable whether the rung came from the class or
+        # tests, and a selector has to be writable whether the rung came from the prototype or
         # from one control. Scoping it to the instance would make `#sidebar:previewing`
         # unmatchable, which is the one rule you would actually want to write.
         ft_state "$statetype:$level" "[runlevel=$level]" || return 1
     done
     if [[ -n "$instance" ]]; then
-        _ft_class_base_runlevels "${FT_TYPE[$instance]}"
+        _ft_prototype_base_runlevels "${FT_TYPE[$instance]}"
         FT_RUNLEVELS[$instance]="$FT_RET${levels}"
     else
-        FT_CLASS_RUNLEVEL_EXTRA[$target]=${levels# }
+        FT_PROTO_RUNLEVEL_EXTRA[$target]=${levels# }
     fi
 }
-# The ladder that applies to THIS control: its own if it declared one, else its class's.
+# The ladder that applies to THIS control: its own if it declared one, else its prototype's.
 _ft_runlevels_of() {            # name → FT_RET
     local n=$1
     FT_RET=${FT_RUNLEVELS[$n]:-}
     [[ -n "$FT_RET" ]] && return 0
-    FT_RET=${FT_CLASS_RUNLEVELS[${FT_TYPE[$n]:-}]:-}
+    FT_RET=${FT_PROTO_RUNLEVELS[${FT_TYPE[$n]:-}]:-}
 }
 # …and the keymap for one of its rungs, same precedence.
 _ft_runlevel_keymap_of() {      # name level → FT_RET
@@ -1079,17 +1081,17 @@ _ft_runlevel_keymap_of() {      # name level → FT_RET
     FT_RET=${FT_RUNLEVEL_KEYMAP[$n:$l]:-}
     [[ -n "$FT_RET" ]] && return 0
     local t=${FT_TYPE[$n]:-}
-    FT_RET=${t:+${FT_CLASS_RUNLEVEL_KEYMAP[$t:$l]:-}}
+    FT_RET=${t:+${FT_PROTO_RUNLEVEL_KEYMAP[$t:$l]:-}}
 }
-# Stitch the free rungs onto whatever the class added. Deliberately NOT done inside
+# Stitch the free rungs onto whatever the prototype added. Deliberately NOT done inside
 # ft_runlevels: whether `poised` exists depends on `focusable`, which a constructor
 # may set before OR after declaring its rungs, so the only safe moment is once the whole
-# constructor has run. Called from ft_class_init.
-_ft_class_finish_runlevels() {  # type
+# constructor has run. Called from ft_prototype_init.
+_ft_prototype_finish_runlevels() {  # type
     local t=$1
-    _ft_class_base_runlevels "$t"; local base=$FT_RET
-    local extra=${FT_CLASS_RUNLEVEL_EXTRA[$t]:-}
-    FT_CLASS_RUNLEVELS[$t]="$base${extra:+ $extra}"
+    _ft_prototype_base_runlevels "$t"; local base=$FT_RET
+    local extra=${FT_PROTO_RUNLEVEL_EXTRA[$t]:-}
+    FT_PROTO_RUNLEVELS[$t]="$base${extra:+ $extra}"
     local level
     for level in $base; do ft_state "$t:$level" "[runlevel=$level]" || return 1; done
     return 0
@@ -1105,8 +1107,8 @@ _ft_class_finish_runlevels() {  # type
 # arrows acted the moment a control was focused, so a tree stole Up/Down from focus
 # navigation and a slider changed its value when you were only passing through.
 #
-# A class declares its rungs with ft_runlevels. Ordinary ladders are linear and need
-# nothing else; a class whose next rung DEPENDS on the control (a read-only field peruses
+# A prototype declares its rungs with ft_runlevels. Ordinary ladders are linear and need
+# nothing else; a prototype whose next rung DEPENDS on the control (a read-only field peruses
 # where an editable one edits) provides `<type>_runlevel_next NAME CURRENT → FT_RET`.
 ft_runlevel() {                 # name → FT_RET (never empty: unset means unfocused)
     local _v="_ftp_${1}_runlevel"
@@ -1138,7 +1140,7 @@ ft_runlevel_next_rung() {       # name → FT_RET
     [[ -n "$rungs" ]] || { FT_RET=""; return 1; }     # no ladder: Enter is the action
     ft_runlevel "$n"; local cur=$FT_RET next=""
     if declare -F "${type}_runlevel_next" >/dev/null 2>&1; then
-        "${type}_runlevel_next" "$n" "$cur"; next=$FT_RET      # the class picks the branch
+        "${type}_runlevel_next" "$n" "$cur"; next=$FT_RET      # the prototype picks the branch
     else
         local seen=0 r                                          # …otherwise the next one along
         for r in $rungs; do
@@ -1192,13 +1194,13 @@ ft_runlevel_out() {             # name — Esc: out of the insides, in one press
     _ft_setprop "$n" runlevel "$FT_RET"         # back to `poised`: you are still standing here
 }
 # The two free rungs are the FOCUS MACHINERY's to set — see _ft_focus_gain / _ft_focus_blur.
-# A class never writes them, which is what stops `runlevel` and `FT_FOCUS` disagreeing.
+# A prototype never writes them, which is what stops `runlevel` and `FT_FOCUS` disagreeing.
 _ft_runlevel_focus_gained() {   # name
     local n=$1 type=${FT_TYPE[$n]:-}
     [[ -n "$type" ]] || return 0
     _ft_runlevels_of "$n"
     case " $FT_RET " in *" poised "*) : ;; *) return 0 ;; esac
-    ft_runlevel_engaged "$n" && return 0        # a class may have deepened it already
+    ft_runlevel_engaged "$n" && return 0        # a prototype may have deepened it already
     _ft_setprop "$n" runlevel poised
 }
 # The shared ENTER: delve if there is anywhere to delve to, otherwise DO the thing. That
@@ -1217,16 +1219,16 @@ _ft_runlevel_focus_gained() {   # name
 # a bug that already shipped, and a read-only field ping-ponged `scrolling`↔`perusing` forever
 # on exactly that rule.
 #
-# A class whose deepest rung has a REAL deeper meaning for Enter binds ENTER in that rung's own
+# A prototype whose deepest rung has a REAL deeper meaning for Enter binds ENTER in that rung's own
 # keymap — a tree expands the branch, a multi-line field takes a newline — and therefore never
 # reaches here at all. "Nothing deeper for Enter to do" and "ENTER is unbound at this rung" are
 # the same fact in this design, and the layer cascade has already computed it by the time we
-# arrive. That is why this is the right layer for the rule rather than four class hooks.
+# arrive. That is why this is the right layer for the rule rather than four prototype hooks.
 #
 # The `activate` listener still wins, and deliberately: the bottom rung is the only place a
 # laddered control's onActivate is reachable from the keyboard, so dropping it would be an
 # unannounced API break. It is also the rule ft_textfield_enter already documents and follows,
-# in the one class the author reports as behaving correctly.
+# in the one prototype the author reports as behaving correctly.
 ft_key_delve() {                # name token
     local n=$1
     ft_runlevel_deeper "$n" && { ft_dirty "$n"; _ft_legend_dirty; return 0; }
@@ -1290,10 +1292,10 @@ ft_resolve() {                  # name prop → sets FT_RET ("" if unset and not
     [[ -v "$var" ]] && { FT_RET="${!var}"; return; }
     # ── THE LAYOUT ASKS THE CASCADE, BUT ONLY WHEN THERE IS SOMETHING TO ASK ────────────────
     # The layout has never consulted a stylesheet. It resolves through here and through the raw
-    # fast paths; ft_style is the PAINT path. Proven on a property no class defaults, so the
+    # fast paths; ft_style is the PAINT path. Proven on a property no prototype defaults, so the
     # level-5 fix cannot be the cause: with `#fr { width: 30; height: 7 }` registered, ft_style
-    # answered 30 and 7, ft_resolved_prop answered nothing, and the frame laid out 90x3. `ft_resolved_prop`
-    # appears 49 times in this file against `ft_style`'s 9.
+    # answered 30 and 7, ft_resolved_prop answered nothing, and the frame laid out 90x3.
+    # `ft_resolved_prop` appears 49 times in this file against `ft_style`'s 9.
     #
     # Routing every read through the cascade would put a query on the hottest path in the
     # framework. The gate is `_FT_CSS_DECLARED_PROPS`, accumulated by the stylesheet parser: it
@@ -1316,7 +1318,7 @@ ft_resolve() {                  # name prop → sets FT_RET ("" if unset and not
     if [[ -z "${_FT_RESOLVING_CASCADE:-}" && "$prop" != cursor ]] \
        && [[ -n "${_FT_CSS_DECLARED_PROPS[$prop]:-}" && -n "${_FT_CSS_LOADED:-}" ]]; then
         # THE APP-STYLESHEET LEVEL ONLY, and not `ft_style`. The missing level here is 2; 3, 4
-        # and 5 are the inheritance walk and the class default immediately below, and asking
+        # and 5 are the inheritance walk and the prototype default immediately below, and asking
         # ft_style for all of them would ALSO import level 4 — the theme — which is precisely
         # what `_ft_color_override` refuses to do for a non-inheriting property. Measured: with
         # ft_style here, a control with no background of its own answered the theme's
@@ -1327,12 +1329,12 @@ ft_resolve() {                  # name prop → sets FT_RET ("" if unset and not
         if (( _QGOT )); then _ft_css_resolve_value "$1" "$FT_RET"; return; fi
     fi
     # Nothing the author set, and nothing any sheet says. ONE assoc read answers both remaining
-    # questions — whether this element's own class declares the property (which stops
+    # questions — whether this element's own prototype declares the property (which stops
     # inheritance) and what it declares — and it REUSES `var` rather than declaring a second
     # local. A `local` is not free in bash and this is the framework's most-called function:
     # the extra declaration alone measured ~14ms on a 37-control layout.
-    var=${FT_CLASS_DEFAULT["${FT_TYPE[$1]:-} $prop"]-}
-    # Only an inheriting property may look further up, and only while its own class is silent.
+    var=${FT_PROTO_DEFAULT["${FT_TYPE[$1]:-} $prop"]-}
+    # Only an inheriting property may look further up, and only while its own prototype is silent.
     # Skipping that walk for everything else is most of what layout was spending its time on
     # (a miss cost ~72µs of ancestor probing against ~9µs for the local read).
     if (( inherits )) && (( ${#var} == 0 )); then
@@ -1340,9 +1342,9 @@ ft_resolve() {                  # name prop → sets FT_RET ("" if unset and not
         while [[ -n "$ancestor" ]]; do
             probe="_ftp_${ancestor}_${prop}"
             [[ -v "$probe" ]] && { FT_RET="${!probe}"; return; }
-            # …and an ancestor's own class default inherits too: it is that element's computed
+            # …and an ancestor's own prototype default inherits too: it is that element's computed
             # value, which is what inheritance passes down.
-            probe=${FT_CLASS_DEFAULT["${FT_TYPE[$ancestor]:-} $prop"]-}
+            probe=${FT_PROTO_DEFAULT["${FT_TYPE[$ancestor]:-} $prop"]-}
             (( ${#probe} )) && { FT_RET=$probe; return; }
             ancestor=${FT_PARENT[$ancestor]:-}
         done
@@ -1353,8 +1355,8 @@ ft_resolve() {                  # name prop → sets FT_RET ("" if unset and not
 # ── Layout-vs-paint classification (engine-owned, per PROPERTY) ──────────────
 # One table, like a browser. Paint-only properties repaint the one control;
 # layout properties reflow. Unknown properties default to layout (safe: a
-# needless reflow is correct; a skipped one is not). Classes may classify
-# their own custom properties via ft_prop_kind_set in their class-constructor.
+# needless reflow is correct; a skipped one is not). Prototypes may classify
+# their own custom properties via ft_prop_kind_set in their prototype-constructor.
 declare -A FT_PROP_KIND=()
 _ft_pk() { local k=$1; shift; local p; for p in "$@"; do FT_PROP_KIND[$p]=$k; done; }
 _ft_pk layout display width height minWidth maxWidth minHeight maxHeight \
@@ -1402,8 +1404,8 @@ _ft_pk paint color backgroundColor borderColor overflowY \
 # border", where the used border-width is 0 and the box gets SMALLER. Every other spelling of
 # either only picks glyphs — but a property is classified by the strongest thing it can do, and
 # "a needless reflow is correct; a skipped one is not" is what this table is for. (ft-table used
-# to register borderStyle for itself; it is the whole framework's answer now, so the per-class
-# line went with the reason for it.)
+# to register borderStyle for itself; it is the whole framework's answer now, so the
+# per-prototype line went with the reason for it.)
 unset -f _ft_pk
 # An EMPTY property name has no kind and cannot be registered — and asking anyway subscripts
 # FT_PROP_KIND with "", which is a bash error on stderr (the alt screen, in a TUI).
@@ -1412,11 +1414,11 @@ ft_prop_kind()     { [[ -z "$1" ]] && { FT_RET=layout; return 0; }
 # A KIND MAY ONLY EVER BE STRENGTHENED, and that is not a stylistic preference — it is what makes
 # this table say the same thing whatever order an app builds its widgets in.
 #
-# There is ONE table, many classes write to it, and a class constructor runs LAZILY, at the first
-# instance of its type. So a second class classifying a name the first has already classified is
-# not adjusting its own control: it is re-classifying that name for the whole framework, and the
-# winner is decided by which widget the app happened to build first. Measured on this tree, each
-# of these flipped a name that another class had deliberately called layout:
+# There is ONE table, many prototypes write to it, and a prototype constructor runs LAZILY, at the
+# first instance of its type. So a second prototype classifying a name the first has already
+# classified is not adjusting its own control: it is re-classifying that name for the whole
+# framework, and the winner is decided by which widget the app happened to build first. Measured on
+# this tree, each of these flipped a name that another prototype had deliberately called layout:
 #
 #     ft-beacon     text         layout → paint
 #     ft-tab        title        layout → paint
@@ -1429,11 +1431,11 @@ ft_prop_kind()     { [[ -z "$1" ]] && { FT_RET=layout; return 0; }
 #     no beacon                 text-kind=layout   label width 5 → 40   (correct)
 #     a beacon was built first  text-kind=paint    label width 5 → 5    (string clipped)
 #
-# Refusing the downgrade settles every contested name on `layout` whichever class is instantiated
-# first, which is the direction this table's own rule already points: a needless reflow is
-# correct, a skipped one is not. Silently, because a class asking for `paint` on a name someone
-# else needs reflowed is not an authoring error to shout about — it is a difference of opinion,
-# and the conservative opinion wins by construction rather than by everyone remembering.
+# Refusing the downgrade settles every contested name on `layout` whichever prototype is
+# instantiated first, which is the direction this table's own rule already points: a needless reflow
+# is correct, a skipped one is not. Silently, because a prototype asking for `paint` on a name
+# someone else needs reflowed is not an authoring error to shout about — it is a difference of
+# opinion, and the conservative opinion wins by construction rather than by everyone remembering.
 ft_prop_kind_set() { [[ -z "$1" ]] && return 1
                      # TWO KINDS, AND A THIRD IS A TYPO. `ft_prop_kind_set showLineNumbers layout#
                      # comment` — no space before the `#` — stored the kind "layout#", which every
@@ -1448,16 +1450,16 @@ ft_prop_kind_set() { [[ -z "$1" ]] && return 1
 
 # ── Shared arg parser: props, then `keymap` section of key=action bindings ───
 # keymap=NAME (with '=') attaches a SHARED keymap by reference (a plain
-# property, consulted by dispatch between the instance overlay and the class
-# default). The bare token `keymap` starts the instance-overlay section.
+# property, consulted by dispatch between the instance overlay and the
+# prototype default). The bare token `keymap` starts the instance-overlay section.
 #
 # A bare argument is the element's CONTENT, like text between HTML tags: it
-# sets the class's content property (text for most classes, title for frames —
-# FT_CLASS_TEXTPROP):   ft-label name=hello "Hello, terminal!"
+# sets the prototype's content property (text for most prototypes, title for frames —
+# FT_PROTO_TEXTPROP):   ft-label name=hello "Hello, terminal!"
 #
 # An argument is a PROPERTY assignment when it starts with `IDENT=` and either
 #   (a) IDENT is a KNOWN property (in FT_PROP_KIND — every built-in prop is, and
-#       a class registers its own custom props in its constructor, which runs
+#       a prototype registers its own custom props in its constructor, which runs
 #       before any arg is parsed), OR
 #   (b) the value is a single word (no embedded whitespace) — the normal shape
 #       of a positional value, so unregistered custom props like `scale=5` still
@@ -1528,52 +1530,52 @@ _ft_apply_args() {              # name args...
     done
 }
 
-# ── Class system ─────────────────────────────────────────────────────────────
-declare -A FT_CLASS_READY=() FT_CLASS_DRAW=() FT_CLASS_PREFERRED_WIDTH=() FT_CLASS_HEIGHT=() \
-    FT_CLASS_KEYWORD_PROPS=() FT_CLASS_TEXT_PROPS=() \
-           FT_CLASS_FOCUSABLE=() FT_CLASS_KEYMAP=() FT_CLASS_DEFAULTS=() FT_CLASS_FOCUS_SKIP=() \
-           FT_CLASS_TEXTPROP=() FT_CLASS_TOP_EDGE_PROP=() \
-           FT_CLASS_MOUSE=() FT_CLASS_NOHIT=() FT_CLASS_BORDER_SGR=() \
-           FT_CLASS_REPROP=()
-# FT_CLASS_REPROP[type]=fn — SOME PROPERTIES NEED THE CLASS TO DO SOMETHING, not just repaint.
+# ── Prototype system ─────────────────────────────────────────────────────────
+declare -A FT_PROTO_READY=() FT_PROTO_DRAW=() FT_PROTO_PREFERRED_WIDTH=() FT_PROTO_HEIGHT=() \
+    FT_PROTO_KEYWORD_PROPS=() FT_PROTO_TEXT_PROPS=() \
+           FT_PROTO_FOCUSABLE=() FT_PROTO_KEYMAP=() FT_PROTO_DEFAULTS=() FT_PROTO_FOCUS_SKIP=() \
+           FT_PROTO_TEXTPROP=() FT_PROTO_TOP_EDGE_PROP=() \
+           FT_PROTO_MOUSE=() FT_PROTO_NOHIT=() FT_PROTO_BORDER_SGR=() \
+           FT_PROTO_REPROP=()
+# FT_PROTO_REPROP[type]=fn — SOME PROPERTIES NEED THE PROTOTYPE TO DO SOMETHING, not just repaint.
 # A beacon's `effect` decides whether it runs an animation loop at all, so changing it has to
-# re-arm; ft-modify cannot know that and must not learn it. The class registers a function and
+# re-arm; ft-modify cannot know that and must not learn it. The prototype registers a function and
 # ft-modify calls it with the control and the keys that actually changed:
-#     FT_CLASS_REPROP[beacon]=_ft_beacon_reprop     # fn NAME "effect lifetime …"
-# Same shape as _ft_destroy_<type> and _ft_ink_<type>: the engine asks, the class answers.
+#     FT_PROTO_REPROP[beacon]=_ft_beacon_reprop     # fn NAME "effect lifetime …"
+# Same shape as _ft_destroy_<type> and _ft_ink_<type>: the engine asks, the prototype answers.
 # demo/callout-demo.bash used to call _ft_beacon_arm itself after every effect change.
-# Cost: one array read per ft-modify for a class that registers nothing, which is all but one.
+# Cost: one array read per ft-modify for a prototype that registers nothing, which is all but one.
 
-# The class struct, as the AUTHORING key each entry is written with. This table is the only
+# The prototype struct, as the AUTHORING key each entry is written with. This table is the only
 # place the two vocabularies meet: a control author writes `preferredWidth=`, the engine reads
-# FT_CLASS_PREFERRED_WIDTH. Adding a slot to the struct means adding one row here — and a key that is
-# not in this table is a hard error, which is the point: `FT_CLASS_FOCUSSABLE[$c]=1` used to
+# FT_PROTO_PREFERRED_WIDTH. Adding a slot to the struct means adding one row here — and a key that
+# is not in this table is a hard error, which is the point: `FT_PROTO_FOCUSSABLE[$c]=1` used to
 # create a brand-new associative array that nothing would ever read, silently, forever.
-declare -A FT_CLASS_STRUCT=(
-    [draw]=FT_CLASS_DRAW                 # draw fn ("" = an undrawn container)
-    [preferredWidth]=FT_CLASS_PREFERRED_WIDTH      # intrinsic max-content width fn (leaf classes)
-    [height]=FT_CLASS_HEIGHT             # intrinsic height-at-width fn   (leaf classes)
-    [focusable]=FT_CLASS_FOCUSABLE       # true/false — can this class hold keyboard focus
-    [focusSkip]=FT_CLASS_FOCUS_SKIP      # fn NAME → 0 to skip THIS instance (a label that fits)
-    [keymap]=FT_CLASS_KEYMAP             # class-default keymap name ("" = none)
-    [mouse]=FT_CLASS_MOUSE               # fn NAME ACTION RELX RELY
-    [wheelProbe]=FT_CLASS_WHEEL_PROBE    # fn NAME → 0 iff it has something to scroll
-    [textProp]=FT_CLASS_TEXTPROP         # which property bare DSL content lands in
-    [topEdgeProp]=FT_CLASS_TOP_EDGE_PROP # a property drawn on the box's TOP EDGE, not inside it
+declare -A FT_PROTO_STRUCT=(
+    [draw]=FT_PROTO_DRAW                 # draw fn ("" = an undrawn container)
+    [preferredWidth]=FT_PROTO_PREFERRED_WIDTH      # intrinsic max-content width fn (leaf prototypes)
+    [height]=FT_PROTO_HEIGHT             # intrinsic height-at-width fn   (leaf prototypes)
+    [focusable]=FT_PROTO_FOCUSABLE       # true/false — can this prototype hold keyboard focus
+    [focusSkip]=FT_PROTO_FOCUS_SKIP      # fn NAME → 0 to skip THIS instance (a label that fits)
+    [keymap]=FT_PROTO_KEYMAP             # prototype-default keymap name ("" = none)
+    [mouse]=FT_PROTO_MOUSE               # fn NAME ACTION RELX RELY
+    [wheelProbe]=FT_PROTO_WHEEL_PROBE    # fn NAME → 0 iff it has something to scroll
+    [textProp]=FT_PROTO_TEXTPROP         # which property bare DSL content lands in
+    [topEdgeProp]=FT_PROTO_TOP_EDGE_PROP # a property drawn on the box's TOP EDGE, not inside it
                                          # (a frame's title, over its top border). The box
                                          # RESERVES that row while the property is non-empty,
                                          # whether or not a border supplies it — the way a
                                          # <fieldset> keeps room for its <legend> under
                                          # `border: none`. See _ft_inset4.
-    [noHit]=FT_CLASS_NOHIT               # true = pointer-events:none (transparent to clicks)
-    [setProp]=FT_CLASS_SETPROP           # fn NAME PROP VALUE — reconcile a late property write
-    [fillsBackground]=FT_CLASS_FILLS_BACKGROUND  # true = its draw paints its WHOLE box (see below)
-    [borderSgr]=FT_CLASS_BORDER_SGR      # fn NAME → the SGR this class's border wears
-    [defaults]=FT_CLASS_DEFAULTS         # property defaults applied before user args (APPENDS)
-    [keywordProps]=FT_CLASS_KEYWORD_PROPS   # numeric-named props THIS class reads as keywords
-    [textProps]=FT_CLASS_TEXT_PROPS      # which props can change this class's DISPLAYED TEXT.
+    [noHit]=FT_PROTO_NOHIT               # true = pointer-events:none (transparent to clicks)
+    [setProp]=FT_PROTO_SETPROP           # fn NAME PROP VALUE — reconcile a late property write
+    [fillsBackground]=FT_PROTO_FILLS_BACKGROUND  # true = its draw paints its WHOLE box (see below)
+    [borderSgr]=FT_PROTO_BORDER_SGR      # fn NAME → the SGR this prototype's border wears
+    [defaults]=FT_PROTO_DEFAULTS         # property defaults applied before user args (APPENDS)
+    [keywordProps]=FT_PROTO_KEYWORD_PROPS   # numeric-named props THIS prototype reads as keywords
+    [textProps]=FT_PROTO_TEXT_PROPS      # which props can change this prototype's DISPLAYED TEXT.
                                          # UNSET means "any of them" — the conservative answer,
-                                         # and the one every class had before this existed. See
+                                         # and the one every prototype had before this existed. See
                                          # the two generation counters in _ft_setprop.
 )
 # Booleans are written as true/false and stored as 1/0.
@@ -1583,13 +1585,13 @@ declare -A FT_CLASS_STRUCT=(
 # "0". That is precisely how a deliberately inert control came to claim mouse clicks (see
 # _ft_mouse_target). So a boolean is always present, always 1 or 0, and always tested as a
 # NUMBER. If you find yourself writing `-n` on one of these, it is wrong.
-declare -A _FT_CLASS_BOOLEAN_KEY=( [focusable]=1 [noHit]=1 [fillsBackground]=1 )
+declare -A _FT_PROTO_BOOLEAN_KEY=( [focusable]=1 [noHit]=1 [fillsBackground]=1 )
 
 # …AND THE SAME RULE FOR AN INSTANCE. The paragraph above is the framework's boolean contract,
-# but it was enforced only where a CLASS declares one. An instance property went into
+# but it was enforced only where a PROTOTYPE declares one. An instance property went into
 # FT_FOCUSABLE raw, and every reader tests `== 1` — so `ft-label … focusable=true`, the
 # spelling every other boolean here uses (disabled=true, readOnly=true) and the spelling the
-# class declarations use for this very key, stored the string "true" and made the control
+# prototype declarations use for this very key, stored the string "true" and made the control
 # UNFOCUSABLE. Silently, because `false` and a typo fail `== 1` as well: the one wrong answer
 # that mattered looked like it worked.
 #
@@ -1600,131 +1602,132 @@ declare -A _FT_CLASS_BOOLEAN_KEY=( [focusable]=1 [noHit]=1 [fillsBackground]=1 )
 _ft_focusable_apply() {         # name type rawValue
     local name=$1 type=$2 raw=$3
     case "$raw" in
-        '')      FT_FOCUSABLE[$name]=${FT_CLASS_FOCUSABLE[$type]:-0} ;;
+        '')      FT_FOCUSABLE[$name]=${FT_PROTO_FOCUSABLE[$type]:-0} ;;
         1|true)  FT_FOCUSABLE[$name]=1 ;;
         0|false) FT_FOCUSABLE[$name]=0 ;;
         *) printf 'ft: %s: focusable must be true or false, got "%s"\n' "$name" "$raw" >&2
-           FT_FOCUSABLE[$name]=${FT_CLASS_FOCUSABLE[$type]:-0} ;;
+           FT_FOCUSABLE[$name]=${FT_PROTO_FOCUSABLE[$type]:-0} ;;
     esac
     return 0
 }
 
-# The class currently being built. Threading this target by hand through the constructor chain
-# was the sharpest edge in the old API: a subclass's constructor runs its SUPERCLASS's
-# constructor to fill its OWN struct (label's constructor builds button's struct), so every
-# call carried a `$c` that, passed wrong, silently filled a different class. It is now implicit
-# and unspellable. ft_class_init makes it a `local`, so bash's own dynamic scoping both
+# The prototype currently being built. Threading this target by hand through the constructor chain
+# was the sharpest edge in the old API: a derived prototype's constructor runs its BASE
+# prototype's constructor to fill its OWN struct (label's constructor builds button's struct), so
+# every call carried a `$c` that, passed wrong, silently filled a different prototype. It is now
+# implicit and unspellable. ft_prototype_init makes it a `local`, so bash's own dynamic scoping both
 # publishes it to the whole chain below and restores it on the way out — reentrancy included.
-FT_CLASS_UNDER_CONSTRUCTION=""
-_FT_CLASS_STRUCT_WRITTEN=0      # has any struct key been set for it yet (guards late extends=)
-# Whether ft_class REJECTED anything while building it. A flag and not the constructor's exit
+FT_PROTO_UNDER_CONSTRUCTION=""
+_FT_PROTO_STRUCT_WRITTEN=0      # has any struct key been set for it yet (guards late extends=)
+# Whether ft_prototype REJECTED anything while building it. A flag and not the constructor's exit
 # status, because that status is whatever the author's last statement happened to return — a
-# trailing `(( count++ ))` returns 1 on its first run and would fail an entirely valid class,
+# trailing `(( count++ ))` returns 1 on its first run and would fail an entirely valid prototype,
 # while a trailing `|| true` would swallow a real rejection. The flag can do neither.
-_FT_CLASS_DECLARATION_FAILED=0
+_FT_PROTO_DECLARATION_FAILED=0
 
-# ft_class KEY=VALUE… — declare the class under construction. Order-independent:
-#   · `extends=SUPER` runs SUPER's constructor FIRST wherever it appears in the argument list,
+# ft_prototype KEY=VALUE… — declare the prototype under construction. Order-independent:
+#   · `extends=BASE` runs BASE's constructor FIRST wherever it appears in the argument list,
 #     so "inherit, then override" is the only order that can happen.
-#   · `defaults=` APPENDS to what was inherited (a subclass adds to its parent's defaults);
-#     every other key REPLACES.
-#   · an unknown key, an unknown superclass, or a non-boolean boolean is a hard error.
-# Struct slots are cleared by ft_class_init before the chain runs, so a class never inherits
-# a stale entry and `defaults=` can always append.
-ft_class() {                    # key=value…
-    local c=$FT_CLASS_UNDER_CONSTRUCTION
+#   · `defaults=` APPENDS to what was inherited (a derived prototype adds to its base's
+#     defaults); every other key REPLACES.
+#   · an unknown key, an unknown base prototype, or a non-boolean boolean is a hard error.
+# Struct slots are cleared by ft_prototype_init before the chain runs, so a prototype never
+# inherits a stale entry and `defaults=` can always append.
+ft_prototype() {                    # key=value…
+    local c=$FT_PROTO_UNDER_CONSTRUCTION
     if [[ -z "$c" ]]; then
-        printf 'ft_class: no class under construction (call it from ft_class_<type>)\n' >&2
-        _FT_CLASS_DECLARATION_FAILED=1; return 2
+        printf 'ft_prototype: no prototype under construction (call it from ft_prototype_<type>)\n' >&2
+        _FT_PROTO_DECLARATION_FAILED=1; return 2
     fi
     local arg key val array
     # extends first, whatever the argument order
     for arg in "$@"; do
         [[ "$arg" == extends=* ]] || continue
         val=${arg#*=}
-        if ! declare -F "ft_class_$val" >/dev/null 2>&1; then
-            printf 'ft_class: %s extends unknown class "%s"\n' "$c" "$val" >&2
-            _FT_CLASS_DECLARATION_FAILED=1; return 2
+        if ! declare -F "ft_prototype_$val" >/dev/null 2>&1; then
+            printf 'ft_prototype: %s extends unknown prototype "%s"\n' "$c" "$val" >&2
+            _FT_PROTO_DECLARATION_FAILED=1; return 2
         fi
-        # A constructor may call ft_class more than once, but `extends=` runs the SUPERCLASS
-        # constructor — which writes the same struct. Arriving after a key has already been
-        # set, it would silently overwrite it with the parent's value (the subclass would
-        # quietly become unfocusable again). Loud, because the symptom is far from the cause.
-        if (( _FT_CLASS_STRUCT_WRITTEN )); then
-            printf 'ft_class: %s: extends=%s must come before any other key is set\n' \
+        # A constructor may call ft_prototype more than once, but `extends=` runs the BASE
+        # PROTOTYPE's constructor — which writes the same struct. Arriving after a key has
+        # already been set, it would silently overwrite it with the base's value (the derived
+        # prototype would quietly become unfocusable again). Loud, because the symptom is far
+        # from the cause.
+        if (( _FT_PROTO_STRUCT_WRITTEN )); then
+            printf 'ft_prototype: %s: extends=%s must come before any other key is set\n' \
                    "$c" "$val" >&2
-            _FT_CLASS_DECLARATION_FAILED=1; return 2
+            _FT_PROTO_DECLARATION_FAILED=1; return 2
         fi
-        # A CYCLE IN extends= IS A SEGFAULT, NOT AN ERROR. This calls the superclass's
-        # constructor DIRECTLY — it never goes back through ft_class_init — so that function's
-        # re-entrancy guard cannot see it. `ft_class_x() { ft_class extends=x; }` recurses
-        # until bash's stack blows; so does a ring, x→y→x. _FT_CLASS_CHAIN is a `local` of
-        # ft_class_init, so appending here is visible to every nested constructor and unwinds
+        # A CYCLE IN extends= IS A SEGFAULT, NOT AN ERROR. This calls the base prototype's
+        # constructor DIRECTLY — it never goes back through ft_prototype_init — so that function's
+        # re-entrancy guard cannot see it. `ft_prototype_x() { ft_prototype extends=x; }` recurses
+        # until bash's stack blows; so does a ring, x→y→x. _FT_PROTO_CHAIN is a `local` of
+        # ft_prototype_init, so appending here is visible to every nested constructor and unwinds
         # by itself when the initialisation returns.
-        case " ${_FT_CLASS_CHAIN:-} " in
+        case " ${_FT_PROTO_CHAIN:-} " in
             *" $val "*)
-                printf 'ft_class: %s: extends= cycle — "%s" is already in this chain (%s)\n' \
-                       "$c" "$val" "${_FT_CLASS_CHAIN// / → }" >&2
-                _FT_CLASS_DECLARATION_FAILED=1; return 2 ;;
+                printf 'ft_prototype: %s: extends= cycle — "%s" is already in this chain (%s)\n' \
+                       "$c" "$val" "${_FT_PROTO_CHAIN// / → }" >&2
+                _FT_PROTO_DECLARATION_FAILED=1; return 2 ;;
         esac
-        _FT_CLASS_CHAIN="${_FT_CLASS_CHAIN:-} $val"
-        "ft_class_$val" "$c"   # $c is vestigial — old-style constructors still read it as $1
+        _FT_PROTO_CHAIN="${_FT_PROTO_CHAIN:-} $val"
+        "ft_prototype_$val" "$c"   # $c is vestigial — old-style constructors still read it as $1
     done
-    # This class's own conventional functions land BEFORE its explicit keys, so an explicit
-    # one always wins. The declaring class is read off the call stack rather than asked for:
-    # ft_class is only ever called from ft_class_<type>, and making the author repeat the
+    # This prototype's own conventional functions land BEFORE its explicit keys, so an explicit
+    # one always wins. The declaring prototype is read off the call stack rather than asked for:
+    # ft_prototype is only ever called from ft_prototype_<type>, and making the author repeat the
     # name is precisely the ceremony this is removing.
     local declaring=${FUNCNAME[1]:-}
-    [[ "$declaring" == ft_class_* ]] && _ft_class_bind_by_convention "${declaring#ft_class_}" "$c"
+    [[ "$declaring" == ft_prototype_* ]] && _ft_prototype_bind_by_convention "${declaring#ft_prototype_}" "$c"
     for arg in "$@"; do
         if [[ "$arg" != *=* ]]; then
-            printf 'ft_class: %s: "%s" is not KEY=VALUE\n' "$c" "$arg" >&2
-            _FT_CLASS_DECLARATION_FAILED=1; return 2
+            printf 'ft_prototype: %s: "%s" is not KEY=VALUE\n' "$c" "$arg" >&2
+            _FT_PROTO_DECLARATION_FAILED=1; return 2
         fi
         key=${arg%%=*}; val=${arg#*=}
         [[ "$key" == extends ]] && continue          # already handled above
-        array=${FT_CLASS_STRUCT[$key]:-}
+        array=${FT_PROTO_STRUCT[$key]:-}
         if [[ -z "$array" ]]; then
-            printf 'ft_class: %s: unknown key "%s" (known: %s)\n' \
-                   "$c" "$key" "${!FT_CLASS_STRUCT[*]}" >&2
-            _FT_CLASS_DECLARATION_FAILED=1; return 2
+            printf 'ft_prototype: %s: unknown key "%s" (known: %s)\n' \
+                   "$c" "$key" "${!FT_PROTO_STRUCT[*]}" >&2
+            _FT_PROTO_DECLARATION_FAILED=1; return 2
         fi
-        if [[ -n "${_FT_CLASS_BOOLEAN_KEY[$key]:-}" ]]; then
+        if [[ -n "${_FT_PROTO_BOOLEAN_KEY[$key]:-}" ]]; then
             case "$val" in
                 true)  val=1 ;;
                 false) val=0 ;;
-                *) printf 'ft_class: %s: %s must be true or false, got "%s"\n' \
-                          "$c" "$key" "$val" >&2; _FT_CLASS_DECLARATION_FAILED=1; return 2 ;;
+                *) printf 'ft_prototype: %s: %s must be true or false, got "%s"\n' \
+                          "$c" "$key" "$val" >&2; _FT_PROTO_DECLARATION_FAILED=1; return 2 ;;
             esac
         fi
         if [[ "$key" == defaults ]]; then
-            printf -v "${array}[$c]" '%s' "${FT_CLASS_DEFAULTS[$c]:-}${val:+ $val}"
+            printf -v "${array}[$c]" '%s' "${FT_PROTO_DEFAULTS[$c]:-}${val:+ $val}"
         else
-            _ft_class_resolve_value "$key" "$val" || { _FT_CLASS_DECLARATION_FAILED=1; return 2; }
+            _ft_prototype_resolve_value "$key" "$val" || { _FT_PROTO_DECLARATION_FAILED=1; return 2; }
             printf -v "${array}[$c]" '%s' "$FT_RET"
         fi
-        _FT_CLASS_STRUCT_WRITTEN=1      # ft_class_init's local — see the extends= guard above
+        _FT_PROTO_STRUCT_WRITTEN=1      # ft_prototype_init's local — see the extends= guard above
     done
 }
 
 # A function-valued key may be written SHORT. `keymap=activate` and `mouse=activate` say what
-# the class does; `keymap=ft_keymap_activate mouse=_ft_mouse_activate` say the same thing twice
+# the prototype does; `keymap=ft_keymap_activate mouse=_ft_mouse_activate` say the same thing twice
 # with the prefix spelled out by hand. A value that already starts with ft_/_ft_ is taken
 # verbatim, so an odd one out never has to fight the convention. `none` clears an inherited
 # entry — the old spelling for that was a bare `focusSkip=`, which reads like a typo.
-declare -A _FT_CLASS_SHORT_VALUE_PREFIX=(
+declare -A _FT_PROTO_SHORT_VALUE_PREFIX=(
     [keymap]=ft_keymap_          [mouse]=_ft_mouse_
     [draw]=_ft_draw_             [preferredWidth]=_ft_preferred_width_   [height]=_ft_height_
 )
-_ft_class_resolve_value() {     # key value → FT_RET
-    local key=$1 val=$2 prefix=${_FT_CLASS_SHORT_VALUE_PREFIX[$1]:-}
+_ft_prototype_resolve_value() {     # key value → FT_RET
+    local key=$1 val=$2 prefix=${_FT_PROTO_SHORT_VALUE_PREFIX[$1]:-}
     if [[ "$val" == none ]]; then FT_RET=""; return 0; fi
     if [[ -n "$prefix" && -n "$val" && "$val" != ft_* && "$val" != _ft_* ]]; then
         val=$prefix$val
     fi
     FT_RET=$val
     # A keymap is DECLARED here and DEFINED by `_ft_define_keymap_<name>`, run exactly once.
-    # The class says which keymap it uses; the definer says what is in it. Before this, every
+    # The prototype says which keymap it uses; the definer says what is in it. Before this, every
     # control opened its constructor with a `ft_keymap_once` block, so the one line that
     # mattered — which keymap am I? — was buried under twenty binding lines.
     if [[ "$key" == keymap && -n "$val" ]]; then
@@ -1735,40 +1738,41 @@ _ft_class_resolve_value() {     # key value → FT_RET
 }
 
 # Bind draw / preferredWidth / height from the naming convention. Every one of them is
-# `_ft_<role>_<class>` — 42 of 42 across the built-in controls — so `draw=_ft_draw_button`
-# inside ft_class_button was the type spelled a third time and the role a second, carrying
+# `_ft_<role>_<type>` — 42 of 42 across the built-in controls — so `draw=_ft_draw_button`
+# inside ft_prototype_button was the type spelled a third time and the role a second, carrying
 # nothing a reader could not already see.
 #
-# DECLARING is the class whose constructor is running, which is NOT the class being built:
-# ft_class_label runs to fill BUTTON's struct, and what it contributes there is label's
-# `_ft_draw_label`. Binding only the leaf's name would silently drop everything a superclass
+# DECLARING is the prototype whose constructor is running, which is NOT the prototype being built:
+# ft_prototype_label runs to fill BUTTON's struct, and what it contributes there is label's
+# `_ft_draw_label`. Binding only the leaf's name would silently drop everything a base prototype
 # provides by convention — button would inherit no height function at all. So each level of
-# the chain binds its own, root first, and the leaf's overrides. A subclass with no function
-# of its own (checkbox over multitoggle) finds nothing and correctly keeps what it inherited.
-_ft_class_bind_by_convention() {   # declaring targetclass
+# the chain binds its own, root first, and the leaf's overrides. A derived prototype with no
+# function of its own (checkbox over multitoggle) finds nothing and correctly keeps what it
+# inherited.
+_ft_prototype_bind_by_convention() {   # declaring targetprototype
     local key fn
     for key in draw preferredWidth height; do
-        fn=${_FT_CLASS_SHORT_VALUE_PREFIX[$key]}$1
-        declare -F "$fn" >/dev/null 2>&1 && printf -v "${FT_CLASS_STRUCT[$key]}[$2]" '%s' "$fn"
+        fn=${_FT_PROTO_SHORT_VALUE_PREFIX[$key]}$1
+        declare -F "$fn" >/dev/null 2>&1 && printf -v "${FT_PROTO_STRUCT[$key]}[$2]" '%s' "$fn"
     done
     return 0
 }
 
-# Every struct slot starts empty for a class about to be built, so the constructor chain only
+# Every struct slot starts empty for a prototype about to be built, so the constructor chain only
 # ever ADDS. Without this, `defaults=` could not append (it would accumulate across rebuilds)
-# and a slot the chain no longer sets would keep a previous class's value.
-_ft_class_struct_clear() {      # type
+# and a slot the chain no longer sets would keep a previous prototype's value.
+_ft_prototype_struct_clear() {      # type
     local key array
-    for key in "${!FT_CLASS_STRUCT[@]}"; do
-        array=${FT_CLASS_STRUCT[$key]}
+    for key in "${!FT_PROTO_STRUCT[@]}"; do
+        array=${FT_PROTO_STRUCT[$key]}
         # A boolean clears to 0, not "" — the guarantee readers rely on is that it is ALWAYS
-        # present and always numeric, so a class that never mentions `noHit` still answers
+        # present and always numeric, so a prototype that never mentions `noHit` still answers
         # the question. "" would put the tri-state back and invite `-n` all over again.
-        printf -v "${array}[$1]" '%s' "${_FT_CLASS_BOOLEAN_KEY[$key]:+0}"
+        printf -v "${array}[$1]" '%s' "${_FT_PROTO_BOOLEAN_KEY[$key]:+0}"
     done
 }
 
-# Root pure-virtual class. Every class-constructor chain bottoms out here.
+# Root pure-virtual prototype. Every prototype-constructor chain bottoms out here.
 # Defaults are CSS's real initial values wherever CSS has one (display:block,
 # position:static, align-items:stretch, flex-shrink:1…).
 #
@@ -1777,63 +1781,64 @@ _ft_class_struct_clear() {      # type
 # pane sets paddingTop=3), corrupting every descendant's size and position. Same for
 # `runlevel=unfocused`: undefaulted, it would resolve up the parent chain and a container in
 # some runlevel would drag every descendant into it.
-ft_class_ft_control() {
-    ft_class focusable=false textProp=text \
+ft_prototype_ft_control() {
+    ft_prototype focusable=false textProp=text \
              defaults="display=block position=static border=false borderStyle=solid borderWidth=thin borderRadius=0 padding=0 paddingTop=0 paddingRight=0 paddingBottom=0 paddingLeft=0 margin=0 boxSizing=borderBox flexDirection=row gap=0 justifyContent=start alignItems=stretch alignSelf=auto flexGrow=0 flexShrink=1 flexBasis=auto overflow=hidden runlevel=unfocused importance=normal"
     # `importance` is here again, and its absence was a WORKAROUND for the inverted ladder rather
-    # than a design. The note that stood in its place read: "A class default is an instance-level
-    # write, which outranks every stylesheet rule exactly as inline style does — so declaring
-    # importance=normal made `textfield:focus { importance: crucial }` a silent no-op." That was
-    # true of every one of the other twenty-three defaults on the line above too; this property
-    # was simply the one where somebody noticed. A class default is level 5 now, so the base
-    # value lives where a reader looks for it and a state rule can still speak over it.
+    # than a design. The note that stood in its place read: "A prototype default is an
+    # instance-level write, which outranks every stylesheet rule exactly as inline style does — so
+    # declaring importance=normal made `textfield:focus { importance: crucial }` a silent no-op."
+    # That was true of every one of the other twenty-three defaults on the line above too; this
+    # property was simply the one where somebody noticed. A prototype default is level 5 now, so the
+    # base value lives where a reader looks for it and a state rule can still speak over it.
 }
 
-# ── Class defaults live HERE, not on the instance ────────────────────────────
-# `FT_CLASS_DEFAULT["<type> <prop>"]` is the flat form of every `defaults=` a class and its
-# ancestors declared, built once when the class registers.
+# ── Prototype defaults live HERE, not on the instance ────────────────────────
+# `FT_PROTO_DEFAULT["<type> <prop>"]` is the flat form of every `defaults=` a prototype and
+# its ancestors declared, built once when the prototype registers.
 #
 # WHAT IT REPLACED. `ft_new` used to STAMP every default onto the instance as a property, so
 # "the control's last resort" and "the author typed it at the call site" were the same string
-# and no reader could tell them apart. docs/styling-model.md §2 has always said a class default
+# and no reader could tell them apart. docs/styling-model.md §2 has always said a prototype default
 # is cascade level FIVE; the implementation made it level ONE, inverting the ladder end to end.
 # Measured on an ordinary frame with `#fr { padding: 2; gap: 3; overflow: auto; flex-direction:
 # column; justify-content: center }` registered: padding 0, gap 0, overflow hidden,
-# flex-direction row, justify-content start. All 79 properties that 26 classes default were
+# flex-direction row, justify-content start. All 79 properties that 26 prototypes default were
 # unreachable from a stylesheet, on every control. `border-color` worked only because nothing
 # defaults it — which is why a bigarrow's outline was stylable and its width was not.
 #
 # A TABLE AND NOT A REGISTERED STYLESHEET, for one decisive reason: ft-forms must work with
-# ft-css unloaded. A class default is what a control IS — a `display: none` option, a bordered
+# ft-css unloaded. A prototype default is what a control IS — a `display: none` option, a bordered
 # frame, a tab strip's three-row inset — and putting the framework's own defaults behind an
 # optional dependency would mean an app that never registers a sheet gets a layout made of
 # nothing. The resolver already had the slot (`_ft_style_compute`'s level 5, "supplied by
-# controls in M2; nothing here yet"); this fills it. Per-CLASS storage also means the table is
-# O(classes) rather than O(controls), and building a control got cheaper rather than dearer.
-declare -A FT_CLASS_DEFAULT=()
+# controls in M2; nothing here yet"); this fills it. Per-PROTOTYPE storage also means the table
+# is O(prototypes) rather than O(controls), and building a control got cheaper rather than dearer.
+declare -A FT_PROTO_DEFAULT=()
 # ── ONE READ FOR A WHOLE BOX ─────────────────────────────────────────────────────────────────
 # The box readers want the same five or eight of these in a row, per control, per layout pass,
 # and asking the table separately for each is what made dragging a callout stutter. MEASURED, on
-# a drag frame: `_ft_inset4` cost 115µs a call against 33µs before class defaults moved to level
+# a drag frame: `_ft_inset4` cost 115µs a call against 33µs before prototype defaults moved to level
 # 5, and it runs 40 times a frame — 3.3ms of a 43ms frame, the single largest piece of that
 # regression. The cause was not the price of a lookup but the NUMBER of them: five keyed reads
-# plus five calls plus five sheet-gate reads, where the answers never change once the class is
-# registered. A keyed read is ~3.5µs; a whole tuple read plus `set --` is ~7µs for eight values.
+# plus five calls plus five sheet-gate reads, where the answers never change once the
+# prototype is registered. A keyed read is ~3.5µs; a whole tuple read plus `set --` is ~7µs for
+# eight values.
 #
-# So the class's box answers are laid out ONCE, in the order the readers consume them, with an
+# So the prototype's box answers are laid out ONCE, in the order the readers consume them, with an
 # absent value already replaced by the fallback the reader would have chosen (0 for a count, `-`
-# for overflow, which matches neither `auto` nor `scroll`). The reader needs no "did the class
-# say anything" test: it takes the field.
+# for overflow, which matches neither `auto` nor `scroll`). The reader needs no "did the
+# prototype say anything" test: it takes the field.
 #
-# THIS IS NOT A NEW CASCADE LEVEL and it does not outrank anything. It is level 5's answer for a
-# class, written down at the moment the class is built — see `_ft_class_box_tuples`, called from
-# the one place FT_CLASS_DEFAULT is ever filled, which is why it needs no invalidation.
+# THIS IS NOT A NEW CASCADE LEVEL and it does not outrank anything. It is level 5's answer for
+# a prototype, written down at the moment the prototype is built — see `_ft_prototype_box_tuples`,
+# called from the one place FT_PROTO_DEFAULT is ever filled, which is why it needs no invalidation.
 #
 # SAFE BECAUSE NONE OF THESE VALUES CAN CONTAIN A SPACE: every one is a count or a single
 # keyword. A property whose value could hold a space must never join a tuple — `set --` would
 # split it in two and shift every field after it, silently, into the wrong side of the box.
-declare -A FT_CLASS_INSET_BOX=()   # type → "border padding top right bottom left overflow overflowX topEdgeProp"
-declare -A FT_CLASS_MARGIN_BOX=()  # type → "margin top right bottom left"
+declare -A FT_PROTO_INSET_BOX=()   # type → "border padding top right bottom left overflow overflowX topEdgeProp"
+declare -A FT_PROTO_MARGIN_BOX=()  # type → "margin top right bottom left"
 #
 # THE SAME LIST GUARDS THE OTHER RAW FAST PATHS. `_ft_disp`, `_ft_border` and `_ft_padding` each
 # asked `_FT_CSS_DECLARED_PROPS` whether a sheet declares their one property — a keyed read
@@ -1851,85 +1856,85 @@ unset _ft_bp
 # Set by the stylesheet parser when a sheet declares ANY of them. While it is empty — the usual
 # case, and ALWAYS the case with ft-css unloaded — the readers below take their tuple and never
 # ask a sheet anything. When it is set they ask per property, exactly as before, because level 2
-# outranks the class.
+# outranks the prototype.
 _FT_CSS_FASTPATH_DECLARED=""
-_ft_class_box_tuples() {        # type — called once, where the class's flat defaults are built
+_ft_prototype_box_tuples() {        # type — called once, where the prototype's flat defaults are built
     local t=$1 p v inset="" margin=""
     for p in border padding paddingTop paddingRight paddingBottom paddingLeft; do
-        v=${FT_CLASS_DEFAULT["$t $p"]-}; inset+=" ${v:-0}"
+        v=${FT_PROTO_DEFAULT["$t $p"]-}; inset+=" ${v:-0}"
     done
     for p in overflow overflowX; do
-        v=${FT_CLASS_DEFAULT["$t $p"]-}; inset+=" ${v:--}"
+        v=${FT_PROTO_DEFAULT["$t $p"]-}; inset+=" ${v:--}"
     done
-    # …and the NAME of the property this class draws on its top edge, so _ft_inset4 can reserve
-    # that row without a second table lookup. `-` for the classes that draw nothing there, which
+    # …and the NAME of the property this prototype draws on its top edge, so _ft_inset4 can reserve
+    # that row without a second table lookup. `-` for the prototypes that draw nothing there, which
     # is all of them but the frame.
-    inset+=" ${FT_CLASS_TOP_EDGE_PROP[$t]:--}"
+    inset+=" ${FT_PROTO_TOP_EDGE_PROP[$t]:--}"
     for p in margin marginTop marginRight marginBottom marginLeft; do
-        v=${FT_CLASS_DEFAULT["$t $p"]-}; margin+=" ${v:-0}"
+        v=${FT_PROTO_DEFAULT["$t $p"]-}; margin+=" ${v:-0}"
     done
-    FT_CLASS_INSET_BOX[$t]=${inset# }
-    FT_CLASS_MARGIN_BOX[$t]=${margin# }
-    # A class re-declared after its controls exist hands _ft_inset4 a different tuple, and no
+    FT_PROTO_INSET_BOX[$t]=${inset# }
+    FT_PROTO_MARGIN_BOX[$t]=${margin# }
+    # A prototype re-declared after its controls exist hands _ft_inset4 a different tuple, and no
     # property of any control changed to say so. Normally this runs before anything is built,
     # in which case the bump costs one increment.
     _FT_CLIP_GEN=$(( _FT_CLIP_GEN + 1 ))
 }
 # THE EMPTY STRING IS TREATED AS "DECLARES NOTHING", and that is safe by measurement rather than
-# by luck: no class default is both INHERITED and EMPTY. The only two that inherit are
+# by luck: no prototype default is both INHERITED and EMPTY. The only two that inherit are
 # `cursor=0` and `textAlign=center`, so "defaults to empty" and "does not default" cannot be
 # told apart by any reader that exists — and one assoc read instead of a `-v` test plus a
-# second read is worth 40ms on a 37-control layout. tests/test-class.bash asserts the invariant,
+# second read is worth 40ms on a 37-control layout. tests/test-prototype.bash asserts the invariant,
 # so adding an inherited empty default fails there rather than here.
-_ft_class_default() {           # name prop → FT_RET, status 1 if the class declares nothing
+_ft_prototype_default() {           # name prop → FT_RET, status 1 if the prototype declares nothing
     [[ -n "${1:-}" ]] || { FT_RET=""; return 1; }     # ${FT_TYPE[""]} is a bash error on stderr
-    FT_RET=${FT_CLASS_DEFAULT["${FT_TYPE[$1]:-} $2"]-}
+    FT_RET=${FT_PROTO_DEFAULT["${FT_TYPE[$1]:-} $2"]-}
     (( ${#FT_RET} > 0 ))
 }
 # …and the same answer as a VARIABLE NAME, for the readers that indirect through one. The
 # scratch variable is per-call and immediately consumed; it exists so ft_own_prop's existing
 # `${!var}` shape does not have to be rewritten around two different kinds of source.
-_FT_CLASS_DEFAULT_SCRATCH=""
-_ft_class_default_var() {       # name prop → FT_RET = a variable name holding the class default
-    if [[ -n "${1:-}" ]]; then _FT_CLASS_DEFAULT_SCRATCH=${FT_CLASS_DEFAULT["${FT_TYPE[$1]:-} $2"]-}
-    else                       _FT_CLASS_DEFAULT_SCRATCH=""; fi
-    FT_RET=_FT_CLASS_DEFAULT_SCRATCH
+_FT_PROTO_DEFAULT_SCRATCH=""
+_ft_prototype_default_var() {       # name prop → FT_RET = a variable name holding the prototype default
+    if [[ -n "${1:-}" ]]; then _FT_PROTO_DEFAULT_SCRATCH=${FT_PROTO_DEFAULT["${FT_TYPE[$1]:-} $2"]-}
+    else                       _FT_PROTO_DEFAULT_SCRATCH=""; fi
+    FT_RET=_FT_PROTO_DEFAULT_SCRATCH
 }
 # THE RESOLVED VALUE, FAST, for the raw readers that cannot afford ft_resolved_prop: what the author
-# set, else what the class declares, else the caller's fallback. Every one of these used to be
-# a single variable read that was correct only because the class default was stamped onto the
+# set, else what the prototype declares, else the caller's fallback. Every one of these used to be
+# a single variable read that was correct only because the prototype default was stamped onto the
 # instance — `runlevel` most of all, where an empty answer reads as "not unfocused", i.e. every
 # control in the app permanently ENGAGED.
-_ft_prop_or_class() {           # name prop fallback → FT_RET
+_ft_prop_or_prototype() {           # name prop fallback → FT_RET
     local v="_ftp_${1}_${2}"; FT_RET=${!v-}
     (( ${#FT_RET} )) && return
-    [[ -n "${1:-}" ]] && FT_RET=${FT_CLASS_DEFAULT["${FT_TYPE[$1]:-} $2"]-} || FT_RET=""
+    [[ -n "${1:-}" ]] && FT_RET=${FT_PROTO_DEFAULT["${FT_TYPE[$1]:-} $2"]-} || FT_RET=""
     (( ${#FT_RET} )) || FT_RET=${3-}
 }
 # …and the question the INHERITANCE step has to ask, which is CSS's own rule: an inherited value
-# fills in only where the cascade produced nothing FOR THIS ELEMENT, and a class default is a
+# fills in only where the cascade produced nothing FOR THIS ELEMENT, and a prototype default is a
 # declaration for this element. Without it an option's `display: none` would be overridden by
 # its parent's display, a tree would take a select's `cursor` INDEX, and a button's centred text
-# — a UA-stylesheet promise its class comment spells out — would follow a container's
+# — a UA-stylesheet promise its prototype comment spells out — would follow a container's
 # `text-align`. Two of the 79 defaults inherit; this is what keeps them where they were.
-_ft_class_declares() {          # name prop → 0 if this control's class defaults it
+_ft_prototype_declares() {          # name prop → 0 if this control's prototype defaults it
     [[ -n "${1:-}" ]] || return 1
-    local _v=${FT_CLASS_DEFAULT["${FT_TYPE[$1]:-} $2"]-}
+    local _v=${FT_PROTO_DEFAULT["${FT_TYPE[$1]:-} $2"]-}
     (( ${#_v} > 0 ))
 }
 
-# Memoized: the first instance of a type triggers its class-constructor chain
-# exactly once. A type with no ft_class_<type> declared is a plain control.
+# Memoized: the first instance of a type triggers its prototype-constructor chain
+# exactly once. A type with no ft_prototype_<type> declared is a plain control.
 # Types whose initialisation is IN PROGRESS. Re-entering one is always a cycle, and a cycle
-# here does not fail gracefully: `ft_class_init` calls "ft_class_$t", which calls it again,
+# here does not fail gracefully: `ft_prototype_init` calls "ft_prototype_$t", which calls it again,
 # until bash's stack blows and the process takes a SEGFAULT — no message, no trap, nothing for
-# the app to report. FT_CLASS_READY cannot catch it because it is only set on the way OUT.
+# the app to report. FT_PROTO_READY cannot catch it because it is only set on the way OUT.
 # Three ways in, all of them authoring mistakes rather than exotica:
-#   · `ft_class extends=X` inside ft_class_X            (a class extending itself)
+#   · `ft_prototype extends=X` inside ft_prototype_X         (a prototype extending itself)
 #   · a longer ring — X extends Y, Y extends X
-#   · a type whose NAME collides with a framework function: type `init` makes "ft_class_$t"
-#     resolve to ft_class_init itself. (That is how this was found — a probe that enumerated
-#     class names by grepping for ^ft_class_* matched the initialiser and passed it in.)
+#   · a type whose NAME collides with a framework function: type `init` makes "ft_prototype_$t"
+#     resolve to ft_prototype_init itself. (That is how this was found — a probe that enumerated
+#     prototype names by grepping for ^ft_prototype_* matched the initialiser and passed it in.)
 # Properties whose value the layout feeds to bash arithmetic. Listed by NAME because bash has
 # no types: everything is a string until (( )) decides otherwise, and that is exactly the
 # problem — see the validation in _ft_setprop. `value` is deliberately ABSENT: a text field's
@@ -1956,7 +1961,7 @@ _ft_class_declares() {          # name prop → 0 if this control's class defaul
 #      · scrollTop/scrollLeft are CLAMPED rather than dropped, which is what the DOM does
 #        with `el.scrollTop = -5` — see _ft_clamp_scroll at the top of this file
 #      · step is the slider's own, floored at the write by _ft_slider_sanitize_prop, which is
-#        the class owning its own property rather than this table guessing for it
+#        the prototype owning its own property rather than this table guessing for it
 declare -A _FT_NUMERIC_PROP=(
     [width]=+ [height]=+ [minWidth]=+ [maxWidth]=+ [minHeight]=+ [maxHeight]=+
     [left]=1 [top]=1 [size]=+ [rows]=+ [maxLength]=+ [selectedIndex]=1
@@ -1971,47 +1976,47 @@ declare -A _FT_NUMERIC_PROP=(
     [parkedTop]=1 [parkedLeft]=1        # a dragged callout's parked box — geometry, and the one
                                         # kind that can arrive from a SAVED STATE FILE
 )
-declare -A _FT_CLASS_INITIALISING=()
-ft_class_init() {               # type
+declare -A _FT_PROTO_INITIALISING=()
+ft_prototype_init() {               # type
     local t=$1
-    [[ -z "$t" ]] && return 2                  # empty subscripts are a bash error, not a class
-    [[ -n "${FT_CLASS_READY[$t]:-}" ]] && return 0
-    if [[ -n "${_FT_CLASS_INITIALISING[$t]:-}" ]]; then
-        printf 'ft_class_init: "%s" is already being initialised — extends= cycle, or a type name that collides with a framework function\n' \
+    [[ -z "$t" ]] && return 2                  # empty subscripts are a bash error, not a prototype
+    [[ -n "${FT_PROTO_READY[$t]:-}" ]] && return 0
+    if [[ -n "${_FT_PROTO_INITIALISING[$t]:-}" ]]; then
+        printf 'ft_prototype_init: "%s" is already being initialised — extends= cycle, or a type name that collides with a framework function\n' \
                "$t" >&2
         return 2
     fi
-    _FT_CLASS_INITIALISING[$t]=1
+    _FT_PROTO_INITIALISING[$t]=1
     # `local` is the mechanism, not a shortcut: bash's dynamic scoping publishes the target
-    # class to every ft_class call in the chain below AND restores it on the way out, so a
-    # constructor that itself initialises another class cannot corrupt the one in progress.
-    local FT_CLASS_UNDER_CONSTRUCTION=$t _FT_CLASS_STRUCT_WRITTEN=0 \
-          _FT_CLASS_DECLARATION_FAILED=0 _FT_CLASS_CHAIN=$t
-    _ft_class_struct_clear "$t"
-    if declare -F "ft_class_$t" >/dev/null 2>&1; then
-        "ft_class_$t" "$t"
+    # prototype to every ft_prototype call in the chain below AND restores it on the way out, so a
+    # constructor that itself initialises another prototype cannot corrupt the one in progress.
+    local FT_PROTO_UNDER_CONSTRUCTION=$t _FT_PROTO_STRUCT_WRITTEN=0 \
+          _FT_PROTO_DECLARATION_FAILED=0 _FT_PROTO_CHAIN=$t
+    _ft_prototype_struct_clear "$t"
+    if declare -F "ft_prototype_$t" >/dev/null 2>&1; then
+        "ft_prototype_$t" "$t"
     else
-        ft_class_ft_control "$t"
+        ft_prototype_ft_control "$t"
     fi
-    unset "_FT_CLASS_INITIALISING[$t]"       # before either exit: a failed class may be retried
-    # Only a class that declared itself cleanly is memoized. Caching a rejected one would
+    unset "_FT_PROTO_INITIALISING[$t]"       # before either exit: a failed prototype may be retried
+    # Only a prototype that declared itself cleanly is memoized. Caching a rejected one would
     # report the fault once and then behave as though the broken struct were intended.
-    (( _FT_CLASS_DECLARATION_FAILED )) && return 2
-    _ft_class_finish_runlevels "$t"      # …now that `focusable` is settled, add the free rungs
-    # FT_CLASS_DEFAULTS[$t] already carries the whole extends chain, appended parent-first, so
+    (( _FT_PROTO_DECLARATION_FAILED )) && return 2
+    _ft_prototype_finish_runlevels "$t"      # …now that `focusable` is settled, add the free rungs
+    # FT_PROTO_DEFAULTS[$t] already carries the whole extends chain, appended base-first, so
     # one pass gives the flat table with later declarations overriding earlier ones — which is
     # what lets `button` say `importance=crucial` after `label` said `importance=minor`.
     local _kv
-    for _kv in ${FT_CLASS_DEFAULTS[$t]:-}; do
-        FT_CLASS_DEFAULT["$t ${_kv%%=*}"]=${_kv#*=}
+    for _kv in ${FT_PROTO_DEFAULTS[$t]:-}; do
+        FT_PROTO_DEFAULT["$t ${_kv%%=*}"]=${_kv#*=}
     done
-    # A class default is the last level of every instance's resolution, and a class may be
+    # A prototype default is the last level of every instance's resolution, and a prototype may be
     # declared lazily — on the first control of its type, long after other controls have resolved
     # against an empty table. Nothing here knows which properties or which types are affected, so
-    # this is the global drop; class declaration happens a few dozen times in a program's life.
+    # this is the global drop; prototype declaration happens a few dozen times in a program's life.
     _ft_resolve_inval_all
-    _ft_class_box_tuples "$t"           # …and the box answers, laid out for one read apiece
-    FT_CLASS_READY[$t]=1
+    _ft_prototype_box_tuples "$t"           # …and the box answers, laid out for one read apiece
+    FT_PROTO_READY[$t]=1
     return 0
 }
 
@@ -2126,7 +2131,7 @@ _ft_caps_form() {               # name
             [[ "$FT_RET" == "_ft_accel_dispatch $form $letter" ]] || continue
         fi
         _tty=${FT_TYPE[$target]:-}; textprop=text          # empty if it was just removed
-        [[ -n "$_tty" ]] && textprop=${FT_CLASS_TEXTPROP[$_tty]:-text}
+        [[ -n "$_tty" ]] && textprop=${FT_PROTO_TEXTPROP[$_tty]:-text}
         _ft_get_raw "$target" "$textprop"; label=$FT_RET
         [[ -n "$label" ]] || label=$target                  # no text of its own → its name
         _ft_caps_add "$FT_IMPORTANCE_NORMAL" "$letter" "$label"
@@ -2158,16 +2163,16 @@ _ft_enclosing_form_of() {       # name → FT_RET (nearest form ancestor or "")
 }
 
 # ── Instance construction ────────────────────────────────────────────────────
-# ft_new TYPE args... — the framework's registration entry point every class
-# constructor calls. Class defaults apply first, user args after (later wins).
+# ft_new TYPE args... — the framework's registration entry point every prototype
+# constructor calls. Prototype defaults apply first, user args after (later wins).
 # Parent: explicit parent= wins, else the innermost open container. Focusable
 # controls are recorded (in declaration order) for their form's focus ring.
 # Sets FT_RET to the registered name.
 ft_new() {                      # TYPE args...
     local type=$1; shift
-    # A class that failed to declare itself is not half-usable — building instances of it
+    # A prototype that failed to declare itself is not half-usable — building instances of it
     # would scatter the real fault across whatever it later fails to draw or focus.
-    ft_class_init "$type" || return 1
+    ft_prototype_init "$type" || return 1
     local a name="" parent_explicit=0
     for a in "$@"; do
         case "$a" in
@@ -2188,7 +2193,7 @@ ft_new() {                      # TYPE args...
         return 1
     fi
     FT_TYPE[$name]="$type"
-    # A NAME MAY HAVE BEEN SOMETHING ELSE. Its type decides its class defaults, and the rebuild
+    # A NAME MAY HAVE BEEN SOMETHING ELSE. Its type decides its prototype defaults, and the rebuild
     # idiom re-declares a subtree under the same names, so the incoming control must not read the
     # outgoing one's resolved answers. (ft_remove bumps too; this covers a name that was resolved
     # against before it was ever a control.)
@@ -2196,12 +2201,12 @@ ft_new() {                      # TYPE args...
     [[ -z "${FT_KIDS[$name]+x}"   ]] && FT_KIDS[$name]=""
     [[ -z "${FT_KEYMAP[$name]+x}" ]] && FT_KEYMAP[$name]=""
     FT_PROPS[$name]=""
-    _FT_TEXTPROP=${FT_CLASS_TEXTPROP[$type]:-text}
+    _FT_TEXTPROP=${FT_PROTO_TEXTPROP[$type]:-text}
     # THE DEFAULTS ARE NOT APPLIED HERE ANY MORE. They used to be prepended to the constructor's
     # own arguments, which made them instance properties — cascade level 1, above every
-    # stylesheet. They are resolved at level 5 now (see FT_CLASS_DEFAULT). A control is built
+    # stylesheet. They are resolved at level 5 now (see FT_PROTO_DEFAULT). A control is built
     # with exactly the properties its caller named, which is also why ft_state_save now writes a
-    # reader's choices instead of forty-two of the class's.
+    # reader's choices instead of forty-two of the prototype's.
     _ft_apply_args "$name" "$@"
     _FT_TEXTPROP=text
     if (( ! parent_explicit )) && (( ${#FT_NEST_STACK[@]} > 0 )); then
@@ -2234,7 +2239,7 @@ ft_new() {                      # TYPE args...
         _ft_enclosing_form_of "$name"
         [[ -n "$FT_RET" ]] && FT_PENDING_FOCUS[$FT_RET]="${FT_PENDING_FOCUS[$FT_RET]:-}${FT_PENDING_FOCUS[$FT_RET]:+ }$name"
     fi
-    # accessKey sugar: underline is the class draw fn's job; the BEHAVIOR is a
+    # accessKey sugar: underline is the prototype draw fn's job; the BEHAVIOR is a
     # keymap binding on the enclosing form. Several controls MAY share one
     # accelerator letter — the key activates the first of them (in declaration
     # order) that is currently enabled AND visible, so e.g. a "Hide" and an
@@ -2246,16 +2251,16 @@ ft_new() {                      # TYPE args...
     FT_RET=$name
 }
 
-# Built-in container classes + the DSL statements. A container constructor
+# Built-in container prototypes + the DSL statements. A container constructor
 # registers, then pushes itself as the current parent; end_ft_* pops it.
-ft_class_form() {
+ft_prototype_form() {
     # A form's draw FILLS ITS WHOLE BOX and paints no children (see _ft_draw_form), so
     # anything that repaints a form on its own erases the entire screen and leaves only
     # whatever else happened to be dirty. `fillsBackground` is the flag for exactly that,
     # and the form — the case its own comments cite — was never declared with it: any
     # damage rect anywhere enlisted the root form and blanked the app. (Found via the Ctrl+S
     # confirmation, whose one-row repair took the whole UI with it.)
-    ft_class extends=ft_control keymap=form \
+    ft_prototype extends=ft_control keymap=form \
         fillsBackground=true
 }
 # The form ALWAYS fills its rectangle (the screen colour, or its own
@@ -2274,7 +2279,7 @@ _ft_draw_form() {               # name
         ft_print_at_width $(( row + r )) "$col" "$sgr$FT_FIT$FT_COLOR_RESET" "$cols"   # known width: skip ft_print_at's ANSI scan
     done
 }
-# div: a plain undrawn ft_control container — no class-constructor needed.
+# div: a plain undrawn ft_control container — no prototype-constructor needed.
 
 ft-form()  { ft_new form  "$@" && FT_NEST_STACK+=("$FT_RET"); }
 ft-frame() { ft_new frame "$@" && FT_NEST_STACK+=("$FT_RET"); }
@@ -2295,7 +2300,7 @@ end_ft_div() { ft-end div; }
 # TEXT, as in HTML — read it with _ft_option_value, never raw. display=none —
 # options are never laid out or drawn themselves; their OWNER (multitoggle,
 # select) renders them. name= is optional (auto-generated from the owner).
-ft_class_option() { ft_class extends=ft_control defaults="display=none"; }
+ft_prototype_option() { ft_prototype extends=ft_control defaults="display=none"; }
 _FT_OPT_SEQ=0
 ft-option() {
     local a hasname=0
@@ -2391,12 +2396,12 @@ form_on_children_complete() { ft_focus_ring_build "$1"; }
 # which found the control's own box unchanged and stopped — the sibling stayed wherever the
 # absolute control had let it slide until something else laid the page out. The same copy had
 # also never re-registered an accelerator, refreshed the focusable or draw table, armed or
-# cancelled a transition, or told the class (REPROP). Found by tests/test-incremental.bash.
+# cancelled a transition, or told the prototype (REPROP). Found by tests/test-incremental.bash.
 #
 # _ft_prop_owed NAME KEY does what cannot wait for that one property (a registration, a hide's
 # damage) and RECORDS the rest in the CALLER's `_ft_owed`; _ft_prop_owed_pay NAME then pays it
 # once, so a write of five properties still reflows once. Caller-scoped rather than global on
-# purpose: a class reconciler may itself call ft-modify, and a nested write must not clear the
+# purpose: a prototype reconciler may itself call ft-modify, and a nested write must not clear the
 # debts of the write it is nested in. The caller declares `local _ft_owed="" _ft_owed_keys=""`.
 _ft_prop_owed() {               # name key → 1 if the change is refused (the property is put back)
     local name=$1 key=$2
@@ -2525,13 +2530,13 @@ _ft_prop_owed_pay() {           # name — settle what _ft_prop_owed recorded
     local name=$1 owed=" $_ft_owed " keys=$_ft_owed_keys moved=0
     local _ty=${FT_TYPE[$name]:-}
     [[ "$owed" == *" moved "* ]] && moved=1
-    # The class gets told what changed BEFORE the repaint is scheduled, so anything it does in
+    # The prototype gets told what changed BEFORE the repaint is scheduled, so anything it does in
     # response (arming an animation, resizing an internal buffer) is part of the same frame.
     # `-n "$_ty"` FIRST: ft-modify is reachable for a control that has no type (removed by an
     # earlier handler in the same burst), and ${ASSOC[""]} is a bash error on stderr — which in
     # a TUI is the alt screen. tests/test-reach.bash exists to catch exactly this and did.
-    if [[ -n "$keys" && -n "$_ty" && -n "${FT_CLASS_REPROP[$_ty]:-}" ]]; then
-        "${FT_CLASS_REPROP[$_ty]}" "$name" "$keys"
+    if [[ -n "$keys" && -n "$_ty" && -n "${FT_PROTO_REPROP[$_ty]:-}" ]]; then
+        "${FT_PROTO_REPROP[$_ty]}" "$name" "$keys"
     fi
     if (( moved )) || [[ "$owed" == *" reflow "* ]]; then
         ft_reflow "$name" "$moved"
@@ -2555,7 +2560,7 @@ ft-modify() {                   # name args...
     # A control removed by an earlier handler has NO TYPE, and ${ASSOC[""]} is a bash error
     # on stderr — the alt screen, in a TUI. Read the type first, subscript with it.
     local _ty=${FT_TYPE[$name]:-} textprop=text
-    [[ -n "$_ty" ]] && textprop=${FT_CLASS_TEXTPROP[$_ty]:-text}
+    [[ -n "$_ty" ]] && textprop=${FT_PROTO_TEXTPROP[$_ty]:-text}
     for arg in "$@"; do
         if [[ "$inkeymap" == 0 && "$arg" == keymap ]]; then inkeymap=1; continue; fi
         if (( inkeymap )); then
@@ -2722,7 +2727,7 @@ ft_remove() {                   # name — el.remove(): detach from the tree + f
     [[ -z "$descendant" ]] && ft_damage_subtree "$name"
     _ft_detach "$name"          # unlink from the parent's child list (else a runtime-added child dangles)
     for kid in ${FT_KIDS[$name]:-}; do ft_remove "$kid" descendant; done
-    # A class may define _ft_destroy_<type> to release per-instance transient state
+    # A prototype may define _ft_destroy_<type> to release per-instance transient state
     # (a text field's caret/scroll/edit arrays) so a REBUILT control with the same
     # name doesn't inherit stale scroll position — the tutorial rebuilds prose/code
     # every page, and without this they'd reopen wherever the old one was scrolled.
@@ -2798,7 +2803,7 @@ ft_remove() {                   # name — el.remove(): detach from the tree + f
                                 # table grew by one dead key per control ever created.
     # An AD-HOC ladder belongs to this control and dies with it. Left behind, a rebuild that
     # reuses the name would inherit rungs it never asked for — and since an instance ladder
-    # overrides its class's, that control alone would behave unlike every sibling, with
+    # overrides its prototype's, that control alone would behave unlike every sibling, with
     # nothing in the app's source to explain why.
     if [[ -n "${FT_RUNLEVELS[$name]:-}" ]]; then
         local _rl
@@ -2871,7 +2876,7 @@ ft_has_errors()   { (( ${#FT_ERRORS[@]} > 0 )); }
 
 # ft_resolved_prop NAME PROP [DEFAULT] → FT_RET — the value this control RESOLVES for a
 # property: what the author set, else what an app stylesheet says, else an ancestor's value if
-# the property inherits, else the class default, else DEFAULT; then coerced to the property's
+# the property inherits, else the prototype default, else DEFAULT; then coerced to the property's
 # type. This is the normal read — every control and every layout pass goes through it.
 #
 # It is deliberately NOT called "computed": ft_style is the full five-level cascade (the paint
@@ -2932,14 +2937,14 @@ ft_resolved_prop() {
     ft_coerce "$n" "$p" "$FT_RET"
 }
 # ft_own_prop answers "what is this ELEMENT's value", with no inheritance — which now includes what
-# its CLASS declares, because that is the element's own value in the absence of an author one.
+# its PROTOTYPE declares, because that is the element's own value in the absence of an author one.
 # "Own" is JavaScript's word for exactly this distinction (hasOwnProperty: mine, not the
 # prototype chain's), and docs/api-naming.md says to take the DOM's vocabulary as it stands.
 # _ft_get_raw stays the narrower question, "what did the AUTHOR set", and is what cascade level
 # 1 asks; the two were the same function's job while defaults were stamped onto instances.
 #
 # THIS IS NOT A CONVENIENCE. Twenty layout call sites read `position` this way, and a beacon's
-# `position=absolute` is a class default: unresolved, every overlay in the framework would join
+# `position=absolute` is a prototype default: unresolved, every overlay in the framework would join
 # the normal layout flow. `_ft_in_flow` is the one that would have made it visible.
 ft_own_prop() {                 # name prop → FT_RET (the element's own value, coerced; no inheritance)
     local var                                       # same fast path as _ft_get_raw
@@ -2955,9 +2960,9 @@ ft_own_prop() {                 # name prop → FT_RET (the element's own value,
     # "no inheritance" contract is kept to the letter: the cascade is only consulted for
     # properties it could not inherit anyway.
     if [[ ! -v "$var" && -n "${_FT_CSS_DECLARED_PROPS[$2]:-}" ]] && _ft_gated_style_own "$1" "$2"; then
-        _FT_CLASS_DEFAULT_SCRATCH=$FT_RET; var=_FT_CLASS_DEFAULT_SCRATCH
+        _FT_PROTO_DEFAULT_SCRATCH=$FT_RET; var=_FT_PROTO_DEFAULT_SCRATCH
     fi
-    [[ -v "$var" ]] || { _ft_class_default_var "$1" "$2"; var=$FT_RET; }
+    [[ -v "$var" ]] || { _ft_prototype_default_var "$1" "$2"; var=$FT_RET; }
     local h                                         # hook memo read inline (see ft_resolved_prop)
     case $2 in
         *'['*) _ft_coerce_hook "$1" "$2"; h=$FT_COERCE_HOOK ;;
@@ -2971,17 +2976,17 @@ ft_own_prop() {                 # name prop → FT_RET (the element's own value,
 # ── Box model helpers ────────────────────────────────────────────────────────
 FT_RET=0
 # border/padding/margin are read straight from their property variables, for the same reason
-# as `display` above: layout properties, never inherited, no coercion hooks, class-defaulted.
-# A layout asks for them ~400 times; going through ft_resolved_prop cost ~62µs each against ~10µs here.
-# THE RAW FAST PATHS BELOW EACH GAINED A SECOND READ, and it is not optional now that a class
-# default is no longer stamped onto the instance. `_ft_disp` is the one that matters: `display`
-# is asked 479 times in one layout of a 37-control page, more than every other property put
-# together, and without the class value every option, table row and tree node would stop being
-# `display: none` and every button would stop being inline-block. `_ft_border` is why a frame
+# as `display` above: layout properties, never inherited, no coercion hooks, prototype-defaulted.
+# A layout asks for them ~400 times; going through ft_resolved_prop cost ~62µs each against ~10µs
+# here. THE RAW FAST PATHS BELOW EACH GAINED A SECOND READ, and it is not optional now that a
+# prototype default is no longer stamped onto the instance. `_ft_disp` is the one that matters:
+# `display` is asked 479 times in one layout of a 37-control page, more than every other property
+# put together, and without the prototype value every option, table row and tree node would stop
+# being `display: none` and every button would stop being inline-block. `_ft_border` is why a frame
 # has a border at all, and `_ft_inset4` is why a tab strip keeps its three rows.
 _ft_border()  { local v="_ftp_${1}_border"; v=${!v-}
                 (( ${#v} )) || { [[ -n "${_FT_CSS_FASTPATH_DECLARED:-}" ]] && { _ft_gated_style "$1" border && v=$FT_RET; }; }
-                (( ${#v} )) || { [[ -n "${1:-}" ]] && v=${FT_CLASS_DEFAULT["${FT_TYPE[$1]:-} border"]-}; }
+                (( ${#v} )) || { [[ -n "${1:-}" ]] && v=${FT_PROTO_DEFAULT["${FT_TYPE[$1]:-} border"]-}; }
                 FT_RET=0
                 [[ -n "${1:-}" && ( "$v" == true || "$v" == 1 ) ]] || return
                 _ft_border_off "$1" "${FT_TYPE[$1]:-}" || FT_RET=1; }
@@ -3039,17 +3044,17 @@ _ft_border_glyph_fits() {       # name value → status 1 (with a message) when 
 _ft_border_off() {              # name type → status 0 when the style or the width removes it
     local v="_ftp_${1}_borderStyle"; v=${!v-}
     (( ${#v} )) || { [[ -n "${_FT_CSS_FASTPATH_DECLARED:-}" ]] && { _ft_gated_style "$1" borderStyle && v=$FT_RET; }; }
-    (( ${#v} )) || { [[ -n "$2" ]] && v=${FT_CLASS_DEFAULT["$2 borderStyle"]-}; }
+    (( ${#v} )) || { [[ -n "$2" ]] && v=${FT_PROTO_DEFAULT["$2 borderStyle"]-}; }
     case $v in none|hidden) return 0 ;; esac
     v="_ftp_${1}_borderWidth"; v=${!v-}
     (( ${#v} )) || { [[ -n "${_FT_CSS_FASTPATH_DECLARED:-}" ]] && { _ft_gated_style "$1" borderWidth && v=$FT_RET; }; }
-    (( ${#v} )) || { [[ -n "$2" ]] && v=${FT_CLASS_DEFAULT["$2 borderWidth"]-}; }
+    (( ${#v} )) || { [[ -n "$2" ]] && v=${FT_PROTO_DEFAULT["$2 borderWidth"]-}; }
     case $v in 0|none) return 0 ;; *) return 1 ;; esac
 }
 _ft_padding() { local v="_ftp_${1}_padding"; FT_RET=${!v-}
                 (( ${#FT_RET} )) && return
                 [[ -n "${_FT_CSS_FASTPATH_DECLARED:-}" ]] && { _ft_gated_style "$1" padding && return; }
-                [[ -n "${1:-}" ]] && FT_RET=${FT_CLASS_DEFAULT["${FT_TYPE[$1]:-} padding"]-} || FT_RET=""
+                [[ -n "${1:-}" ]] && FT_RET=${FT_PROTO_DEFAULT["${FT_TYPE[$1]:-} padding"]-} || FT_RET=""
                 (( ${#FT_RET} )) || FT_RET=0; }
 _ft_inset()   { local b p; _ft_border "$1"; b=$FT_RET; _ft_padding "$1"; p=$FT_RET; FT_RET=$(( b + p )); }
 # Per-side margin = uniform margin + that side's marginTop/Right/Bottom/Left, exactly as
@@ -3064,13 +3069,13 @@ _ft_inset()   { local b p; _ft_border "$1"; b=$FT_RET; _ft_padding "$1"; p=$FT_R
 # these before the parent is finished with them.
 FT_MARGIN_TOP=0; FT_MARGIN_RIGHT=0; FT_MARGIN_BOTTOM=0; FT_MARGIN_LEFT=0
 # Each component is the same three-step ladder the framework resolves everywhere: what the author
-# set, else what a stylesheet says, else what the class defaults. The sheet step is guarded by one
-# flag rather than a keyed read per property, because with no sheet declaring a box property there
-# is nothing there to find; the class step is a field of the tuple, already defaulted.
+# set, else what a stylesheet says, else what the prototype defaults. The sheet step is guarded by
+# one flag rather than a keyed read per property, because with no sheet declaring a box property
+# there is nothing there to find; the prototype step is a field of the tuple, already defaulted.
 _ft_margin4() {                 # name → FT_MARGIN_TOP / FT_MARGIN_RIGHT / FT_MARGIN_BOTTOM / FT_MARGIN_LEFT
     local n=$1 v base sheet=${_FT_CSS_FASTPATH_DECLARED:-}
     local ty=${FT_TYPE[$n]:-}
-    if [[ -n "$ty" ]]; then set -- ${FT_CLASS_MARGIN_BOX[$ty]:-0 0 0 0 0}   # …and its sibling,
+    if [[ -n "$ty" ]]; then set -- ${FT_PROTO_MARGIN_BOX[$ty]:-0 0 0 0 0}   # …and its sibling,
     else                    set -- 0 0 0 0 0                                # for the same reason
     fi
     v="_ftp_${n}_margin";       v=${!v-}
@@ -3096,20 +3101,20 @@ _ft_margin4() {                 # name → FT_MARGIN_TOP / FT_MARGIN_RIGHT / FT_
 # otherwise clobber them).
 FT_INSET_TOP=0; FT_INSET_RIGHT=0; FT_INSET_BOTTOM=0; FT_INSET_LEFT=0
 # HOT PATH (per control, per layout pass, per clip). padding + the four per-side
-# paddings are always set LOCALLY (base-class defaults, never inherited) and are
+# paddings are always set LOCALLY (base-prototype defaults, never inherited) and are
 # plain integers needing no coercion — so read them straight from the shell vars
 # (fork-free, no ft_resolved_prop coerce/resolve overhead). This keeps a tab switch (a
 # full subtree relayout) snappy.
 #
-# `tabs` is why the class step cannot simply answer 0: it reserves paddingTop=3 for its own tab
-# strip, and without the class value the tab body draws over the strip.
+# `tabs` is why the prototype step cannot simply answer 0: it reserves paddingTop=3 for its own tab
+# strip, and without the prototype value the tab body draws over the strip.
 _ft_inset4() {                  # name → FT_INSET_TOP / FT_INSET_RIGHT / FT_INSET_BOTTOM / FT_INSET_LEFT (incl. any scroll gutter)
     local n=$1 b v base ty=${FT_TYPE[$1]:-} sheet=${_FT_CSS_FASTPATH_DECLARED:-}
     # A control an earlier handler in this burst removed has NO TYPE, and ${ASSOC[""]} is a bash
-    # error on stderr — which in a TUI is the alt screen. _ft_border already guards its class
-    # read for exactly this reason; these two did not, and the hole became reachable the moment
-    # `overflow` turned layout-kind and a write to it began scheduling a reflow of its own.
-    if [[ -n "$ty" ]]; then set -- ${FT_CLASS_INSET_BOX[$ty]:-0 0 0 0 0 0 - - -}
+    # error on stderr — which in a TUI is the alt screen. _ft_border already guards its
+    # prototype read for exactly this reason; these two did not, and the hole became reachable the
+    # moment `overflow` turned layout-kind and a write to it began scheduling a reflow of its own.
+    if [[ -n "$ty" ]]; then set -- ${FT_PROTO_INSET_BOX[$ty]:-0 0 0 0 0 0 - - -}
     else                    set -- 0 0 0 0 0 0 - - -
     fi
     v="_ftp_${n}_border";        v=${!v-}
@@ -3136,8 +3141,8 @@ _ft_inset4() {                  # name → FT_INSET_TOP / FT_INSET_RIGHT / FT_IN
     # border, so a bordered frame's title row is the one `b` already reserved — but with no
     # border there is nothing holding it, and the title landed in the content area where the
     # first child painted straight over it. A <fieldset> keeps room for its <legend> whatever
-    # border-style says, and so does this. Tested field-first (a name, not a flag) because every
-    # class but the frame answers `-` and stops here for the price of one comparison.
+    # border-style says, and so does this. Tested field-first (a name, not a flag) because
+    # every prototype but the frame answers `-` and stops here for the price of one comparison.
     if [[ "$9" != - ]] && (( ! b )); then
         v="_ftp_${n}_$9";        v=${!v-}
         (( ${#v} )) || { [[ -n "$sheet" ]] && _ft_gated_style "$n" "$9" && v=$FT_RET; }
@@ -3211,7 +3216,7 @@ _ft_color_override() {          # name prop channel(38|48) → sets FT_RET (esca
     # ancestor did work, which is why this survived: apps set colours inline.
     #
     # ASKED ONLY WHEN THE PROPERTY ACTUALLY INHERITS, and that restraint is load-bearing.
-    # ft_style also applies a class's built-in default, so asking it for `backgroundColor` on
+    # ft_style also applies a prototype's built-in default, so asking it for `backgroundColor` on
     # an unstyled label answers a real colour where the engine requires NOTHING — an unset
     # background must stay a HOLE showing whatever is behind it. Background does not inherit,
     # so it never reaches this line and keeps its hole; the ancestor's background still floors
@@ -3863,11 +3868,11 @@ ft_append_data() {              # name text [prop=text]
 # display=none is skipped by every pass (and by draw and focus).
 
 # Read STRAIGHT from the property variable. `display` is a layout property: it never inherits
-# (not in FT_INHERITED_PROP), it is always set locally by the class defaults, and it has no
-# coercion hook — so _ft_get_raw's dispatch and ft_resolved_prop's resolve+coerce can only arrive back
-# at this same variable. Exactly the reasoning _ft_inset4 already uses for padding. One layout
+# (not in FT_INHERITED_PROP), it is always set locally by the prototype defaults, and it has no
+# coercion hook — so _ft_get_raw's dispatch and ft_resolved_prop's resolve+coerce can only arrive
+# back at this same variable. Exactly the reasoning _ft_inset4 already uses for padding. One layout
 # of a 37-control page asks 479 times, which is more than every other property put together.
-# THE RAW FAST PATHS TAKE THE GATE TOO. Reading the instance and the class but not the sheet
+# THE RAW FAST PATHS TAKE THE GATE TOO. Reading the instance and the prototype but not the sheet
 # would make `#thing { display: none }` true for the paint and false for the layout, which is
 # worse than either answer alone. The gate is shut for every app that writes no such rule, so
 # the 479 `display` reads in a layout still cost one variable read and one assoc read.
@@ -3893,7 +3898,7 @@ _ft_gated_style() {             # name prop → FT_RET, status 1 if the gate is 
 _ft_disp()    { local v="_ftp_${1}_display"; FT_RET=${!v-}
                 (( ${#FT_RET} )) && return
                 [[ -n "${_FT_CSS_FASTPATH_DECLARED:-}" ]] && { _ft_gated_style "$1" display && return; }
-                [[ -n "${1:-}" ]] && FT_RET=${FT_CLASS_DEFAULT["${FT_TYPE[$1]:-} display"]-} || FT_RET=""
+                [[ -n "${1:-}" ]] && FT_RET=${FT_PROTO_DEFAULT["${FT_TYPE[$1]:-} display"]-} || FT_RET=""
                 (( ${#FT_RET} )) || FT_RET=block; }
 _ft_in_flow() {                 # name → 0 if participates in normal flow
     _ft_disp "$1"; [[ "$FT_RET" == none ]] && return 1
@@ -3929,7 +3934,7 @@ _ft_pass_pref() {               # name
     local content=0
     _ft_inset4 "$name"; local il=$FT_INSET_LEFT ir=$FT_INSET_RIGHT
     local type=${FT_TYPE[$name]}
-    local prefw_fn=${FT_CLASS_PREFERRED_WIDTH[$type]:-}
+    local prefw_fn=${FT_PROTO_PREFERRED_WIDTH[$type]:-}
     if [[ -n "$prefw_fn" ]]; then
         "$prefw_fn" "$name"; content=$FT_RET
     else
@@ -4139,7 +4144,7 @@ _ft_pass_width() {              # name
 # context actually has, because a terminal does not scroll your UI — content
 # that can't fit must CLIP OR SCROLL inside its box (labels default
 # overflowY=auto and grow a scrollbar), never silently run off the screen.
-# A leaf's height comes from its class intrinsic (label wraps to its used
+# A leaf's height comes from its prototype intrinsic (label wraps to its used
 # content width); a container's from stacking/line-boxing/flexing its
 # children, each child measured against the space remaining for it.
 declare -A FT_AVAILABLE_HEIGHT=()
@@ -4230,7 +4235,7 @@ _ft_pass_height() {             # name [availH]
 
     local content=0
     local type=${FT_TYPE[$name]}
-    local h_fn=${FT_CLASS_HEIGHT[$type]:-}
+    local h_fn=${FT_PROTO_HEIGHT[$type]:-}
     if [[ -n "$h_fn" ]]; then
         "$h_fn" "$name" "$innerw"; content=$FT_RET
     elif [[ "$disp" == flex && "$fdir" != column ]]; then
@@ -4887,10 +4892,10 @@ ft_set_mode_hint() {            # message ("" = navigation mode)
 # the refill has already put its ground back, and repainting it would blank every sibling the
 # rect never touched. (Children painted over by an ordinary repaint are repaired in
 # ft_redraw_dirty for every container with a draw, declared here or not.)
-declare -A FT_CLASS_FILLS_BACKGROUND=()
-# Per-class property RECONCILER: <fn> NAME PROP VALUE, run by _ft_setprop after the property is
-# stored, for classes whose real state lives in another property (see the checkbox note there).
-declare -A FT_CLASS_SETPROP=()
+declare -A FT_PROTO_FILLS_BACKGROUND=()
+# Per-prototype property RECONCILER: <fn> NAME PROP VALUE, run by _ft_setprop after the property is
+# stored, for prototypes whose real state lives in another property (see the checkbox note there).
+declare -A FT_PROTO_SETPROP=()
 # A keys=auto keylegend derives its caps from the FOCUSED control (and its current state —
 # edit mode, an active selection, …), so it must be repainted whenever any of that changes —
 # otherwise the legend freezes on the first control's keys and looks dead. Cheap: normally a
@@ -4913,14 +4918,14 @@ _ft_focus_dirty() {             # name — dirty a control for a focus change
 }
 
 # ── Draw ─────────────────────────────────────────────────────────────────────
-# Instance draw= override, else the class struct's draw function (filled by
-# the constructor chain — a subclass that overrode it simply wrote a
+# Instance draw= override, else the prototype struct's draw function (filled by
+# the constructor chain — a derived prototype that overrode it simply wrote a
 # different name there). display=none controls are never drawn.
 _ft_resolve_draw() {            # name → sets FT_RET (function name or "")
     local name=$1
     local fn=${FT_DRAW[$name]:-}
     local _ty=${FT_TYPE[$name]:-}      # empty once the control is removed
-    [[ -z "$fn" && -n "$_ty" ]] && fn=${FT_CLASS_DRAW[$_ty]:-}
+    [[ -z "$fn" && -n "$_ty" ]] && fn=${FT_PROTO_DRAW[$_ty]:-}
     if [[ -n "$fn" ]] && declare -F "$fn" >/dev/null 2>&1; then FT_RET=$fn; else FT_RET=""; fi
 }
 # _ft_clip_for NAME — set the paint clip (see ft-core's ft_print_at) to the
@@ -5036,7 +5041,7 @@ _ft_clip_for() {                # name
 #   FT_RETAIN_GENERATION      the escape hatch — ft_retain_inval, for a caller that knows it has
 #                             changed something this list cannot see
 #   _FT_CSS_EPOCH             a sheet registered, a theme swapped
-#   _FT_RESOLVE_GENERATION    a class finished declaring; every resolution may differ
+#   _FT_RESOLVE_GENERATION    a prototype finished declaring; every resolution may differ
 #   _FT_CSS_VERSION[name]     this node's scoped cascade version (already per-subtree)
 #   _FT_RESOLVE_VERSION[name] this node's resolved-property version — an inheriting write
 #                             anywhere above it bumps the whole subtree
@@ -5046,9 +5051,9 @@ _ft_clip_for() {                # name
 #                             without enumerating them — and it covers them even when the write
 #                             forgot to dirty, which is the failure this design most fears.
 #                             NOT __textgen, which it used to be: that one is now narrowable by
-#                             a class (`textProps=`) so a textfield stops re-wrapping its
-#                             document on an unrelated write, and a counter a class may narrow
-#                             is exactly what this token must not be built on
+#                             a prototype (`textProps=`) so a textfield stops re-wrapping its
+#                             document on an unrelated write, and a counter a prototype may
+#                             narrow is exactly what this token must not be built on
 #   FT_FOCUS, FT_ROOT         :focus and :root change appearance and deliberately bump nothing
 #   FT_COLOR_MODE, FT_USE_UTF8  8/256/truecolour, and whether glyphs degrade to ASCII
 #   FT_ROWS, FT_COLS          the terminal size; an app may resize without laying out
@@ -5087,19 +5092,19 @@ declare -i FT_RETAIN_GENERATION=0
 # outside the framework (writing to the tty itself, or through FT_OUT) has put ink on cells the
 # list believes it owns, and there has to be a way to say so that is not an underscore.
 ft_retain_inval() { (( FT_RETAIN_GENERATION++ )); return 0; }
-# A CLASS MAY HAVE PAINT STATE THAT IS NOT A PROPERTY, and only the class knows about it. A
+# A PROTOTYPE MAY HAVE PAINT STATE THAT IS NOT A PROPERTY, and only the prototype knows about it. A
 # textfield's caret, selection anchor and scroll offsets change what it paints and live in
 # parallel arrays, so `_fti_<name>__textgen` — which covers every property write there is —
 # cannot see them. Same shape as `_ft_ink_<type>`, and the same reason: nothing here knows what
-# a textfield is. A class registers `FT_CLASS_PAINT_STATE[type]=fn`, fn answers in FT_RET, and a
-# class with nothing to declare registers nothing and pays one array read.
+# a textfield is. A prototype registers `FT_PROTO_PAINT_STATE[type]=fn`, fn answers in FT_RET,
+# and a prototype with nothing to declare registers nothing and pays one array read.
 #
 # THE GATE FOUND THIS, which is worth recording: tests/test-stale.bash's "selecting across
 # lines" scene moves an anchor and a caret and repaints, and the retained block served the old
 # selection. That is exactly the hazard this design is most exposed to (§3.3 of
 # docs/rendering-spans-design.md), caught on the first run by a file written for a different
 # cache two months earlier.
-declare -A FT_CLASS_PAINT_STATE=()
+declare -A FT_PROTO_PAINT_STATE=()
 _ft_retain_token() {            # name → FT_RET   (_ft_clip_for NAME must have run first)
     local _rtg="_fti_${1}__writegen"
     FT_RET="$FT_RETAIN_GENERATION:${_FT_CSS_EPOCH:-0}:$_FT_RESOLVE_GENERATION"
@@ -5109,7 +5114,7 @@ _ft_retain_token() {            # name → FT_RET   (_ft_clip_for NAME must have
     FT_RET+=":${FT_ABSOLUTE_X[$1]:-}:${FT_ABSOLUTE_Y[$1]:-}"
     FT_RET+=":${FT_MEASURED_WIDTH[$1]:-}:${FT_MEASURED_HEIGHT[$1]:-}"
     FT_RET+=":$FT_CLIP_R0:$FT_CLIP_C0:$FT_CLIP_R1:$FT_CLIP_C1:${FT_ANIM_PHASE[$1]:-}"
-    local _rps=${FT_CLASS_PAINT_STATE[${FT_TYPE[$1]:-}]:-}
+    local _rps=${FT_PROTO_PAINT_STATE[${FT_TYPE[$1]:-}]:-}
     if [[ -n "$_rps" ]]; then
         local _rtbase=$FT_RET
         "$_rps" "$1"
@@ -5199,7 +5204,7 @@ ft_draw_one() {                 # name
         fi
     fi
     # A scrollable container paints its bar(s) in the reserved gutter (see _ft_inset4) — after
-    # its own draw, and regardless of whether the class has one (divs/panels often don't).
+    # its own draw, and regardless of whether the prototype has one (divs/panels often don't).
     local _sgv="_ftp_${1}_scrollHeight" _sgh="_ftp_${1}_scrollWidth"
     if [[ -n "${!_sgv:-}${!_sgh:-}" ]]; then
         _ft_clip_for "$1"                  # the painter above may have widened the rect
@@ -6033,7 +6038,7 @@ ft_publish_paint_rect() { FT_PAINT_RECT[$1]="$2 $3 $4 $5"; }   # a draw that pai
 # leader, an arrow) publishes its real footprint with `ft_publish_paint_rect`. That covers every
 # control in the toolkit but one, and the exception is instructive: a bigarrow publishes its
 # LANDED rect, because other placements need to avoid where it will end up — and mid-flight
-# that is not where its ink is. So a class whose ink is not its paint rect says so, by
+# that is not where its ink is. So a prototype whose ink is not its paint rect says so, by
 # defining `_ft_ink_<type> NAME`; nothing here knows what a beacon is.
 #
 # (This used to be gated behind FT_DAMAGE_AUTO, off by default, because the repair pass could
@@ -6100,7 +6105,7 @@ _ft_dfill_hit_build() {         # node — DFS push of every hittable control
     [[ -n "${_FT_TRANSITION_LOADED:-}" && -n "${_FT_TRANSITION_ACTIVE[$n]:-}" ]] && return
     local ax=${FT_ABSOLUTE_X[$n]:-} w=${FT_MEASURED_WIDTH[$n]:-0} h=${FT_MEASURED_HEIGHT[$n]:-0}
     if [[ -n "$ax" ]] && (( w > 0 && h > 0 )); then
-        if (( ${FT_CLASS_NOHIT[${FT_TYPE[$n]:-}]:-0} != 1 )); then
+        if (( ${FT_PROTO_NOHIT[${FT_TYPE[$n]:-}]:-0} != 1 )); then
             _FT_DHIT_NODE+=("$n"); _FT_DHIT_X+=("$ax"); _FT_DHIT_Y+=("${FT_ABSOLUTE_Y[$n]:-0}")
             _FT_DHIT_R+=($(( ax + w - 1 ))); _FT_DHIT_B+=($(( ${FT_ABSOLUTE_Y[$n]:-0} + h - 1 )))
             (( _FT_DHIT_N++ ))
@@ -6256,9 +6261,9 @@ _ft_damage_enlist() {           # node   (was _ft_damage_dirty_multi, which name
             done
             if (( hit )); then
                 local ty=${FT_TYPE[$n]:-} skip=0
-                if (( ${FT_CLASS_FILLS_BACKGROUND[$ty]:-0} == 1 )); then
+                if (( ${FT_PROTO_FILLS_BACKGROUND[$ty]:-0} == 1 )); then
                     skip=1
-                elif (( FT_DAMAGE_NARROW )) && [[ -n "${FT_KIDS[$n]:-}" && -z "${FT_CLASS_DRAW[$ty]:-}" ]] \
+                elif (( FT_DAMAGE_NARROW )) && [[ -n "${FT_KIDS[$n]:-}" && -z "${FT_PROTO_DRAW[$ty]:-}" ]] \
                      && { _ft_border "$n"; (( ! FT_RET )); }; then
                     skip=1      # draw-less containers only — see "HAS KIDS IS NOT THAT PREDICATE"
                 elif [[ "$ty" == frame ]] && (( ! ring )); then
@@ -6409,8 +6414,8 @@ ft_redraw_dirty() {
     # container that IS enlisted repaints its whole interior") and the dirty path did not: a
     # frame's borderColor, a tab strip's focus, any paint-kind write on anything with children
     # repainted the container and left its children blank. The focus route had a copy of the
-    # rule, keyed on the class declaring fillsBackground — which frame never did, so moving focus
-    # onto a frame blanked it too. One rule, here, where every dirty paint passes.
+    # rule, keyed on the prototype declaring fillsBackground — which frame never did, so moving
+    # focus onto a frame blanked it too. One rule, here, where every dirty paint passes.
     #
     # REPAIR, NOT DIRTY: the children's content has not changed, only their cells were painted
     # over, and a retained block re-emits in a fraction of a derive. A container with no draw
@@ -6611,7 +6616,7 @@ ft_focus_first() {
 }
 
 # _ft_focus_skippable NAME → 0 if focus must skip this control right now:
-# display=none, or the class's own focus-skip predicate says so (e.g. a for=
+# display=none, or the prototype's own focus-skip predicate says so (e.g. a for=
 # scrollbar whose content currently fits — visible focus must never land on
 # something the user can't see).
 # _ft_hidden_anywhere NAME → 0 if NAME or ANY ancestor is display=none or
@@ -6636,7 +6641,7 @@ _ft_focus_skippable() {         # name
     _ft_hidden_anywhere "$name" && return 0   # hidden here OR under a hidden ancestor
     ft_resolved_prop "$name" disabled false
     [[ "$FT_RET" == true ]] && return 0   # inherits: disabling a container disables its subtree
-    local fn=${FT_CLASS_FOCUS_SKIP[$ty]:-}
+    local fn=${FT_PROTO_FOCUS_SKIP[$ty]:-}
     [[ -n "$fn" ]] && "$fn" "$name" && return 0
     return 1
 }
@@ -6645,24 +6650,25 @@ _ft_focus_skippable() {         # name
 # is skippable, focus stays put.
 # A control losing focus may need to tear down transient state (a text field in
 # edit mode must drop back to idle so Tabbing back in doesn't land mid-edit). A
-# class opts in by defining _ft_blur_<type>; the focus machinery calls it here.
+# prototype opts in by defining _ft_blur_<type>; the focus machinery calls it here.
 _ft_focus_blur() {              # name (the control losing focus)
     local n=${1:-}; [[ -z "$n" ]] && return
     local fn="_ft_blur_${FT_TYPE[$n]:-}"
     declare -F "$fn" >/dev/null 2>&1 && "$fn" "$n"
-    # LEAVING A CONTROL ENDS ITS ACTIVATION — for EVERY class, not just the ones that
+    # LEAVING A CONTROL ENDS ITS ACTIVATION — for EVERY prototype, not just the ones that
     # remembered to opt in. The comment above has always said a field must drop back to idle
-    # so Tabbing in does not land mid-edit, but it was enforced only by an optional per-class
-    # hook, and no class defined one: a slider Tabbed away from stayed in `adjusting`, a tree
-    # and a select stayed in `browsing`, a field stayed in `editing`. Come back to it and the
-    # arrows silently meant something else than they did on every other control — with nothing
-    # on screen saying so. Runlevel is an ordinary property, so this fires the class's runlevel
-    # exit script and invalidates the cascade for free; a class needs no code to take part.
+    # so Tabbing in does not land mid-edit, but it was enforced only by an optional
+    # per-prototype hook, and no prototype defined one: a slider Tabbed away from stayed in
+    # `adjusting`, a tree and a select stayed in `browsing`, a field stayed in `editing`. Come back
+    # to it and the arrows silently meant something else than they did on every other control — with
+    # nothing on screen saying so. Runlevel is an ordinary property, so this fires the prototype's
+    # runlevel exit script and invalidates the cascade for free; a prototype needs no code to take
+    # part.
     local _rv="_ftp_${n}_runlevel"
     [[ -n "${!_rv-}" && "${!_rv-}" != unfocused ]] && _ft_setprop "$n" runlevel unfocused
     return 0
 }
-# Symmetric focus-IN hook: a class may define _ft_focusin_<type> to react to
+# Symmetric focus-IN hook: a prototype may define _ft_focusin_<type> to react to
 # GAINING focus (e.g. a text field with activateToEdit=false starts editing).
 # EVERY path that changes which control has focus lands here. Setting FT_FOCUS alone leaves
 # the control's rung saying `unfocused` while it plainly is not — so its border, its cursor
@@ -6682,7 +6688,7 @@ _ft_focus_gain() {              # name (the control gaining focus)
     # which is the point. The trail is only meaningful for the step that just happened.
     unset "FT_FOCUS_CAME_FROM[$n]" "FT_FOCUS_CAME_DIR[$n]"
     # `poised` is a RUNG, not a separate axis — climbing onto it is what gaining focus means.
-    # Before the class hook, so a class that wants to go deeper still (activateToEdit=false)
+    # Before the prototype hook, so a prototype that wants to go deeper still (activateToEdit=false)
     # deepens from a settled state rather than racing it.
     _ft_runlevel_focus_gained "$n"
     local fn="_ft_focusin_${FT_TYPE[$n]:-}"
@@ -6838,7 +6844,7 @@ ft_focus_down()  { ft_focus_dir down; }
 # The beacon control (controls/ft-beacon.bash) owns ALL of it — the drawing, the shared
 # animation engine, the theming (--locator-N / --beacon-N), the on-top overlay paint and
 # the self-destruct. The locator is now just "make one of those around whatever has
-# focus", so the homing beacon is a genuine instance of the reusable class rather than a
+# focus", so the homing beacon is a genuine instance of the reusable prototype rather than a
 # private one-off. A forms-only build that never loaded the beacon control simply has no
 # locator (the key becomes a no-op) — the layering stays one-directional.
 FT_LOCATOR=__ft_locator          # the single, reusable locator-beacon instance
@@ -6976,7 +6982,7 @@ ft_children() { FT_RET=${FT_KIDS[$1]:-};   [[ -n "$FT_RET" ]]; }        # → sp
 #
 # Focus is TWO things: the global POINTER (which control has it) and that control's RUNG (how
 # far into it you have stepped). Every path that MOVES focus does both — _ft_focus_blur runs
-# the class's blur hook and drops the rung, then the caller reassigns the pointer. This entry
+# the prototype's blur hook and drops the rung, then the caller reassigns the pointer. This entry
 # point cleared the pointer only, on the since-outdated reasoning that FT_FOCUS being in the
 # cascade cache key made :focus re-resolve by itself. It does not: :focus reads the RUNG. So a
 # blurred control kept whatever rung it was on and went on matching :focus — and, if it had
@@ -7096,8 +7102,8 @@ _ft_route_obstacles() {         # exclude... — fill _RT_* from the live tree +
         t=${FT_TYPE[$n]}
         [[ -n "$t" ]] || continue                     # empty type ⇒ empty subscript is an ERROR
         # Containers and overlays are see-through for routing: a line may cross a panel's empty
-        # area, but never a real control's box. (Keyed on the TYPE, not on FT_CLASS_DRAW, which
-        # is only populated once a control of that type has been constructed — lazy class init.)
+        # area, but never a real control's box. (Keyed on the TYPE, not on FT_PROTO_DRAW, which
+        # is only populated once a control of that type has been constructed — lazy prototype init.)
         case $t in
             empty|beacon)            continue ;;
             form|frame|div|tabs|box) container=1 ;;
@@ -7579,11 +7585,11 @@ ft_route_draw() {               # "r c r c …" SGR — draw the polyline with c
     done
 }
 
-# Optional per-class wheel probe: FT_CLASS_WHEEL_PROBE[type]=fn, fn NAME → 0 iff the control
+# Optional per-prototype wheel probe: FT_PROTO_WHEEL_PROBE[type]=fn, fn NAME → 0 iff the control
 # will meaningfully consume a wheel tick itself (its own content overflows). No probe = always
 # consumes (a tree/table cursor move is always meaningful). Probes let the wheel CHAIN through
 # a content-fits control to the scroll pane behind it.
-declare -A FT_CLASS_WHEEL_PROBE=()
+declare -A FT_PROTO_WHEEL_PROBE=()
 _ft_scrollable_ancestor() {     # NAME → FT_RET = nearest self-or-ancestor that actually scrolls
     local n=$1
     while [[ -n "$n" ]]; do
@@ -7716,8 +7722,8 @@ ft_modal_pop() {
 #
 #   1  instance overlay  — what the app put on THIS control
 #   2  keymap= reference — a shared map the instance points at
-#   3  runlevel keymap   — the class's map for the runlevel it is currently in
-#   4  class keymap      — the type's base keys
+#   3  runlevel keymap   — the prototype's map for the runlevel it is currently in
+#   4  prototype keymap  — the type's base keys
 #
 # Layer 3 is why entering a runlevel needs no save/restore: the editing keymap is SELECTED
 # by the runlevel, never written over the instance slot. Nothing is destroyed, so nothing
@@ -7731,11 +7737,11 @@ _ft_keymap_layers() {           # name → FT_KEYMAP_LAYERS, in precedence order
     _ft_get_raw "$name" runlevel; local runlevel=$FT_RET
     local _rlkm=""
     [[ -n "$runlevel" ]] && { _ft_runlevel_keymap_of "$name" "$runlevel"; _rlkm=$FT_RET; }
-    # `${type:+…}` so the class-keyed subscripts are never evaluated when the type is
-    # EMPTY — `FT_CLASS_KEYMAP[]` is a "bad array subscript", not an empty lookup.
+    # `${type:+…}` so the prototype-keyed subscripts are never evaluated when the type is
+    # EMPTY — `FT_PROTO_KEYMAP[]` is a "bad array subscript", not an empty lookup.
     FT_KEYMAP_LAYERS=("${FT_KEYMAP[$name]:-}" "$refkm"
                       "$_rlkm"
-                      "${type:+${FT_CLASS_KEYMAP[$type]:-}}")
+                      "${type:+${FT_PROTO_KEYMAP[$type]:-}}")
 }
 declare -a FT_KEYMAP_LAYERS=()
 
@@ -7830,7 +7836,7 @@ ft_dispatch_event() {           # token
 }
 
 # Back-compat single-control primitive (no ancestor walk). Reads the SAME layers as the
-# cascade — it used to check only the instance overlay and the class map, silently missing
+# cascade — it used to check only the instance overlay and the prototype map, silently missing
 # a `keymap=` reference and now a runlevel map too.
 ft_dispatch_keymap() {          # name token
     local name=$1 tok=$2 km
@@ -7880,14 +7886,15 @@ _ft_importance() {              # crucial|important|normal|minor|0-255 → FT_RE
 }
 # What a control's cells are WORTH — the weight anything deciding "what may I cover?" multiplies
 # by. Read through ft_resolved_prop so a stylesheet or an instance can override it like any other
-# property, with the class default as the floor.
+# property, with the prototype default as the floor.
 _ft_control_importance() {      # name → FT_RET (0–255)
-    # THROUGH THE CASCADE, not ft_resolved_prop. Importance is action density, and action density is a
-    # function of STATE — a textfield is nearly inert until the caret is in it. `ft_style` is the
-    # resolver that answers `textfield:focus { importance: crucial }`; `ft_resolved_prop` does not consult
-    # the stylesheet for it and returned the class default forever. Measured on a focus toggle:
-    # ft_style gave minor → crucial across the transition while ft_resolved_prop said `normal` throughout.
-    # Called once per obstacle when the obstacle list is built (~17 controls), not per candidate.
+    # THROUGH THE CASCADE, not ft_resolved_prop. Importance is action density, and action density is
+    # a function of STATE — a textfield is nearly inert until the caret is in it. `ft_style` is the
+    # resolver that answers `textfield:focus { importance: crucial }`; `ft_resolved_prop` does not
+    # consult the stylesheet for it and returned the prototype default forever. Measured on a focus
+    # toggle: ft_style gave minor → crucial across the transition while ft_resolved_prop said
+    # `normal` throughout. Called once per obstacle when the obstacle list is built (~17 controls),
+    # not per candidate.
     ft_style "$1" importance
     [[ -n "$FT_RET" ]] || FT_RET=normal
     _ft_importance "$FT_RET"
@@ -7896,8 +7903,8 @@ _ft_control_importance() {      # name → FT_RET (0–255)
 # The legend a status bar shows is not hand-authored — it is DERIVED from whatever the
 # focused control (and its ancestors, up to the form) can do RIGHT NOW. Each control
 # declares its keys with ft-keymap-cap (importance + label); the legend collects them from
-# the exact same cascade dispatch walks — instance overlay → shared keymap=ref → class
-# default, at the focused leaf then each ancestor — so what the user is shown to press is
+# the exact same cascade dispatch walks — instance overlay → shared keymap=ref →
+# prototype default, at the focused leaf then each ancestor — so what the user is shown to press is
 # always what a press would actually do. Nearest-wins dedup: a leaf's binding for a key
 # hides an ancestor's. The result is sorted by importance so the key that matters most
 # here leads (Up/Down on a scroller, arrows on a slider, Space on a checkbox).
@@ -7956,7 +7963,7 @@ _ft_caps_add() {                # importance pattern label
     FT_CAPS+=("$1"$'\t'"$2"$'\t'"$3")
 }
 # Does ENTER actually reach the shared delve handler for this control, right now? The keymap
-# CASCADE is the authority — a rung's own map, then the class map, then whatever is above —
+# CASCADE is the authority — a rung's own map, then the prototype map, then whatever is above —
 # and the first layer that binds ENTER decides. Anything that claims it (a tree's expand, a
 # textarea's newline) means Enter has a deeper meaning here and the shared rule never runs.
 _ft_enter_reaches_delve() {     # name
@@ -7975,7 +7982,7 @@ _ft_legend_caps() {             # → fills FT_CAPS = ("IMPORTANCE\tPATTERN\tLAB
     local n=${FT_FOCUS:-} km refkm capfn
     [[ -z "$n" || -z "${FT_TYPE[$n]:-}" ]] && n=$FT_ROOT
     while [[ -n "$n" ]]; do
-        # AT THE BOTTOM OF A LADDER, ENTER LEAVES — so say so. The class keymap's ENTER label
+        # AT THE BOTTOM OF A LADDER, ENTER LEAVES — so say so. The prototype keymap's ENTER label
         # describes going IN ("Adjust", "Scroll"), which is right at every rung but the last;
         # standing on the last one, ft_key_delve leaves instead, and an unchanged legend would
         # name a key and lie about it. In ONE place rather than as an _ft_caps_slider /
@@ -8018,12 +8025,12 @@ _ft_legend_caps() {             # → fills FT_CAPS = ("IMPORTANCE\tPATTERN\tLAB
 # ── Mouse ────────────────────────────────────────────────────────────────────
 # The run loop fills these from a MOUSE event: FT_MOUSE_X/Y are 1-based cells,
 # FT_MOUSE_BUTTON the SGR button code, FT_MOUSE_ACTION the final char (M press/drag, m
-# release). A control opts in by setting FT_CLASS_MOUSE[type] to a handler run
+# release). A control opts in by setting FT_PROTO_MOUSE[type] to a handler run
 # as: <fn> NAME ACTION RELX RELY   (ACTION = press | drag | release).
 FT_MOUSE_BUTTON=0; FT_MOUSE_X=1; FT_MOUSE_Y=1; FT_MOUSE_ACTION=M
 FT_HIT=""; _FT_MOUSE_DOWN=""
-# Deepest POSITIONED control containing screen cell (x,y) (0-based). A class flagged
-# FT_CLASS_NOHIT (CSS pointer-events:none — e.g. a beacon overlay) is TRANSPARENT to
+# Deepest POSITIONED control containing screen cell (x,y) (0-based). A prototype flagged
+# FT_PROTO_NOHIT (CSS pointer-events:none — e.g. a beacon overlay) is TRANSPARENT to
 # the mouse: it never claims the hit, so a click passes through it to the real control
 # underneath (an overlay's paint position isn't even its layout rect, so a hit on it
 # would be meaningless anyway).
@@ -8038,13 +8045,13 @@ _ft_hit_walk() {                # x y node
     [[ -z "$ax" ]] && return
     ay=${FT_ABSOLUTE_Y[$3]:-0}
     (( x >= ax && x < ax + w && y >= ay && y < ay + h )) || return
-    (( ${FT_CLASS_NOHIT[${FT_TYPE[$n]:-}]:-0} == 1 )) || FT_HIT=$n
+    (( ${FT_PROTO_NOHIT[${FT_TYPE[$n]:-}]:-0} == 1 )) || FT_HIT=$n
     for k in ${FT_KIDS[$n]:-}; do _ft_hit_walk "$x" "$y" "$k"; done
 }
 _ft_hit_test() { FT_HIT=""; _ft_hit_walk "$1" "$2" "${3:-$FT_ROOT}"; }
 # Nearest self-or-ancestor of $1 that can take the click (focusable or mousy).
 #
-# `focusable` is 0 or 1, so testing it with -n was true for EVERY class that had been
+# `focusable` is 0 or 1, so testing it with -n was true for EVERY prototype that had been
 # initialised — including every deliberately inert one. A heading, statusbar, keylegend or
 # boxheader therefore claimed the click it was standing in front of. ft_focus refuses to
 # move onto them, so focus looked correct, and the damage landed on the two callers that
@@ -8057,22 +8064,22 @@ _ft_mouse_target() {            # node → FT_RET ("" if none)
     local n=$1 t
     while [[ -n "$n" ]]; do
         t=${FT_TYPE[$n]:-}
-        if [[ "${FT_CLASS_FOCUSABLE[$t]:-0}" == 1 || -n "${FT_CLASS_MOUSE[$t]:-}" ]]; then
+        if [[ "${FT_PROTO_FOCUSABLE[$t]:-0}" == 1 || -n "${FT_PROTO_MOUSE[$t]:-}" ]]; then
             _ft_focus_skippable "$n" || { FT_RET=$n; return 0; }
         fi
         n=${FT_PARENT[$n]:-}
     done
     FT_RET=""; return 1
 }
-_ft_mouse_deliver() {           # name action absx absy — call the class mouse handler
+_ft_mouse_deliver() {           # name action absx absy — call the prototype mouse handler
     local n=$1                                # NOTE: split — a same-statement $n reads OLD
     # A control can be REMOVED between the press and the release (a button that deletes its own
-    # row). Its name is still held as the mouse-capture target, and asking for the class handler
+    # row). Its name is still held as the mouse-capture target, and asking for the prototype handler
     # of a control with no type subscripts an associative array with "" — a bash error printed
     # to stderr, which in a TUI is the alt screen.
     local ty=${FT_TYPE[$n]:-}
     [[ -z "$ty" ]] && return 0
-    local fn=${FT_CLASS_MOUSE[$ty]:-}
+    local fn=${FT_PROTO_MOUSE[$ty]:-}
     [[ -z "$fn" ]] && return 0
     "$fn" "$n" "$2" $(( $3 - ${FT_ABSOLUTE_X[$n]:-0} )) $(( $4 - ${FT_ABSOLUTE_Y[$n]:-0} ))
 }
@@ -8106,7 +8113,7 @@ _ft_dispatch_mouse() {
         _ft_mouse_target "$FT_HIT" && _wtgt=$FT_RET
         # Over an INERT spot (nothing interactive, or a bare container) the wheel scrolls the
         # nearest overflow container — like a browser. Over a real control, the control keeps
-        # its own wheel behavior — UNLESS its class probe says it has nothing to scroll (a label
+        # its own wheel behavior — UNLESS its prototype probe says it has nothing to scroll (a label
         # whose text fits, a textfield with no overflow), in which case the wheel CHAINS to the
         # pane, exactly like browser scroll chaining.
         local _chain=0
@@ -8115,7 +8122,7 @@ _ft_dispatch_mouse() {
         # and listing them only implied they could.
         case ${_wtgt:+${FT_TYPE[$_wtgt]:-}} in
             "") _chain=1 ;;
-            *)  local _wp=${FT_CLASS_WHEEL_PROBE[${FT_TYPE[$_wtgt]:-}]:-}
+            *)  local _wp=${FT_PROTO_WHEEL_PROBE[${FT_TYPE[$_wtgt]:-}]:-}
                 [[ -n "$_wp" ]] && ! "$_wp" "$_wtgt" && _chain=1 ;;
         esac
         if (( _chain )); then
@@ -8139,7 +8146,7 @@ _ft_dispatch_mouse() {
     fi
     if (( b & 32 )); then                     # drag (motion with a button held)
         declare -F _ft_beacon_mouse_drag >/dev/null && _ft_beacon_mouse_drag "$x" "$y" && return 0
-        # A gutter grab is held by a CONTAINER, which has no class mouse handler — keep
+        # A gutter grab is held by a CONTAINER, which has no prototype mouse handler — keep
         # scrolling it directly, and (unlike the thumb) follow the pointer even when it
         # slides off the one-cell-wide bar, as a desktop scrollbar does.
         if [[ -n "$_FT_GUTTER_GRAB" ]]; then
@@ -8211,7 +8218,7 @@ _ft_dispatch_mouse() {
     return 0
 }
 
-# ft_activate [TARGET] — run TARGET's class activation behavior, then its
+# ft_activate [TARGET] — run TARGET's prototype activation behavior, then its
 # instance hook. Bound plain (ENTER=ft_activate) the focused name arrives as
 # $1; bound with an argument ("ft_activate btnOk", the accessKey sugar) the
 # target does. A disabled control (or one inside a disabled container) is
@@ -8341,7 +8348,7 @@ _ft_tab_activate() {            # tabname
     return 0
 }
 
-# Shared class-default keymap for anything ENTER/SPACE-activatable: a class that says
+# Shared prototype-default keymap for anything ENTER/SPACE-activatable: a prototype that says
 # `keymap=activate` gets this built for it, once. (button/radio/multitoggle/checkbox.)
 _ft_define_keymap_activate() {
     ft-bindkeys ft_keymap_activate ENTER=ft_activate SPACE=ft_activate

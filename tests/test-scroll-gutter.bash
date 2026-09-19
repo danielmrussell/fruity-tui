@@ -90,8 +90,8 @@ ft-modify visibleLabel overflowY=visible;  _paint_cold
 
 # The shorthand-vs-axis rule is asked of the DIV, not the label: ft-label deliberately defaults
 # overflowY=auto (controls/ft-label.bash:71, documented in its header), so the axis property is
-# never unset there and the shorthand can never be the one deciding. Asking on a control whose
-# class pins the answer would be a test that cannot fail for the reason it claims.
+# never unset there and the shorthand can never be the one deciding. Asking on a control
+# whose prototype pins the answer would be a test that cannot fail for the reason it claims.
 ft-modify scroller overflow=clip; ft_layout app
 no  "a div with overflow=clip shows no bar"         ft_has_scrollbar scroller y
 ft-modify scroller overflowY=auto; ft_layout app

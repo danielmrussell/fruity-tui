@@ -15,8 +15,9 @@
 #    5  Preferences     — a radio group (Theme) + a checkbox (Notifications)
 #    6  Finished        — backgroundColor + borderColor + color together
 #
-#  No _handle_event anywhere: TAB/arrows and ESC come from the form class
-#  keymap; ENTER/SPACE activate the focused control through its class keymap
+#  No _handle_event anywhere: TAB/arrows and ESC come from the form
+#  prototype keymap; ENTER/SPACE activate the focused control through its
+#  prototype keymap
 #  (radio selects itself, checkbox toggles itself, then the <name>_on_activate
 #  hook updates wizard state); every accessKey= letter is auto-bound on the form.
 #

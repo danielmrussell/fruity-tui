@@ -38,7 +38,7 @@
 #           screen, and why the matrix runs a second time with ft_dirty's drop taken away.
 #    RED    ft_dirty no longer drops the entry              1 FAIL
 #    RED    the token forgets `_fti_<name>__textgen`        9 FAIL
-#    RED    the token forgets FT_CLASS_PAINT_STATE          1 FAIL  ("a selection is made")
+#    RED    the token forgets FT_PROTO_PAINT_STATE          1 FAIL  ("a selection is made")
 #    RED    overlays are served from their blocks           4 FAIL  ("the callout's target moves")
 # ─────────────────────────────────────────────────────────────────────────────
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
@@ -145,7 +145,7 @@ PASS=0
 _retain_resize() { FT_COLS=$(( 100 - PASS )); _ft_setprop app width "$FT_COLS"; ft_layout app; }
 _retain_remove_attr() { ft-modify head color=blue; _paint; _paint; ft_remove_attribute head color; }
 # A callout is placed against a control it does not own, so moving its TARGET changes what it
-# paints while touching none of its own properties, geometry or class state. This is the row
+# paints while touching none of its own properties, geometry or prototype state. This is the row
 # that earns the overlay exclusion in ft_draw_one: with overlays served from their blocks it
 # reports `tip` as a hazard, and it is the only row here that does.
 _retain_move_target() { ft-modify head width=$(( 40 - PASS * 6 )); ft_reflow_flush; }
@@ -191,8 +191,8 @@ _matrix
 # ── EACH MECHANISM ON ITS OWN ────────────────────────────────────────────────
 # Retention has two, and running the matrix with both live cannot tell them apart: whichever
 # one is broken, the other covers for it, and the file scores 41/41 either way. (Measured:
-# removing ft_dirty's drop, removing the write counter from the token, and removing the class
-# paint-state hook — three separate sabotages of the engine — each left this file GREEN.)
+# removing ft_dirty's drop, removing the write counter from the token, and removing the
+# prototype paint-state hook — three separate sabotages of the engine — each left this file GREEN.)
 #
 # So the drop is asserted DIRECTLY, and then the matrix is run again with the drop taken away,
 # which leaves the token holding the whole weight. Sabotage any component of the token now and

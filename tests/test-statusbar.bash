@@ -13,9 +13,9 @@ FT_COLS=80; FT_ROWS=24
 _vis() { LC_ALL=C sed -E $'s/\x1b\\][^\x07]*\x07//g; s/\x1b\\[[0-9;]*[A-Za-z]//g' ; }
 
 note "the control is a one-row, non-focusable block"
-ft_class_init statusbar          # lazy init otherwise waits for the first instance
+ft_prototype_init statusbar          # lazy init otherwise waits for the first instance
 check "height is 1"     "$(_ft_height_statusbar; echo "$FT_RET")" "1"
-check "class not focusable" "${FT_CLASS_FOCUSABLE[statusbar]}" "0"
+check "class not focusable" "${FT_PROTO_FOCUSABLE[statusbar]}" "0"
 
 note "status= accepts a value containing spaces (registered prop)"
 ft-form name=root width=80 height=6

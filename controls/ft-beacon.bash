@@ -2,7 +2,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 #  Fruity TUI — controls/ft-beacon.bash
 #
-#  The "beacon" class: a floating OVERLAY that marks a spot on the screen. A
+#  The "beacon" prototype: a floating OVERLAY that marks a spot on the screen. A
 #  beacon does not live in the layout flow (position:absolute) and is never
 #  focusable — it paints ON TOP of whatever is under it and animates itself.
 #  Three things a beacon can be:
@@ -166,11 +166,11 @@ _ft_beacon_glyph() {            # n → FT_RET (the badge glyph)
     else FT_RET="($n)"; fi
 }
 
-ft_class_beacon() {
+ft_prototype_beacon() {
     # A beacon floats: absolute (out of flow), never focusable, no border of its
     # own (it paints its own rules). Its behaviour props default to a persistent
     # frame — the homing-beacon caller opts into oneshot explicitly.
-    ft_class extends=ft_control \
+    ft_prototype extends=ft_control \
         focusable=false \
         noHit=true \
         defaults="position=absolute variant=frame target= outset=1" \
@@ -180,19 +180,19 @@ ft_class_beacon() {
         defaults="arrowGap=1 smoothing=eighths bounceTravel=auto" \
         keywordProps="size"
         # ^ …and NOT size. A bigarrow's size is one of four authored shapes, named with
-        #   CSS's own `size` keyword ladder, and leaving it out of the class defaults is
-        #   what lets `beacon { size: large }` in a stylesheet reach it at all (a class
+        #   CSS's own `size` keyword ladder, and leaving it out of the prototype defaults is
+        #   what lets `beacon { size: large }` in a stylesheet reach it at all (a prototype
         #   default is applied INLINE, cascade level 1 — see the note below). Unset means "the
         #   largest rung that fits"; see _ft_bigarrow_size.
         #   arrowLength / headAngle / headFraction / shaftFraction are GONE with the rasteriser
         #   that read them: there is no longer a shape to parameterise.
-    FT_CLASS_REPROP[beacon]=_ft_beacon_reprop   # effect=/lifetime=/variant= must RE-ARM, not just repaint
-        # ^ the bigarrow's share of the class. Note what is NOT here: animationTimingFunction
-        #   and animationDuration. A class default is APPLIED AS AN INLINE PROPERTY at
-        #   construction (see _ft_apply_args), and inline is cascade level 1 — so defaulting
-        #   them here would make `beacon { animation-timing-function: … }` in a stylesheet
-        #   permanently unreachable, which is the opposite of the point. Those two are the
-        #   CSS-named properties, they resolve through ft_style, and their fallback is a
+    FT_PROTO_REPROP[beacon]=_ft_beacon_reprop   # effect=/lifetime=/variant= must RE-ARM, not just repaint
+        # ^ the bigarrow's share of the prototype. Note what is NOT here:
+        #   animationTimingFunction and animationDuration. A prototype default is APPLIED AS AN
+        #   INLINE PROPERTY at construction (see _ft_apply_args), and inline is cascade level 1
+        #   — so defaulting them here would make `beacon { animation-timing-function: … }` in a
+        #   stylesheet permanently unreachable, which is the opposite of the point. Those two
+        #   are the CSS-named properties, they resolve through ft_style, and their fallback is a
         #   constant in code (FT_BIGARROW_EASING / FT_BIGARROW_MS) that nothing shadows.
         # ^ borderStyle/borderRadius are read ONLY by the drag GHOST (the chip's own border is
         #   its signature rounded look and does not consult them), so these defaults define the
@@ -216,8 +216,8 @@ ft-beacon() {                   # ft-beacon name=… [target=… | left/top/widt
     # (The z-tier is derived in _ft_beacon_arm, below — the one place BOTH routes into a
     # variant pass. Deriving it here made `ft-modify b variant=callout` a callout at z=0.)
     ft_resolved_prop "$bn" variant frame; local _bv=$FT_RET
-    # A BIGARROW RETIRES UNLESS YOU SAY OTHERWISE. `lifetime` is a class default shared with
-    # every other variant, and a class default is APPLIED AS AN INLINE PROPERTY — so by the time
+    # A BIGARROW RETIRES UNLESS YOU SAY OTHERWISE. `lifetime` is a prototype default shared with
+    # every other variant, and a prototype default is APPLIED AS AN INLINE PROPERTY — so by the time
     # _ft_beacon_arm reads it, "the author asked for persist" and "the author said nothing" are
     # the same string and no reader of the property can tell them apart. The only place that CAN
     # is here, where the constructor's own words are still in "$@". A ring or a badge is one cell
@@ -249,7 +249,7 @@ ft-beacon() {                   # ft-beacon name=… [target=… | left/top/widt
 #
 # THIS BRANCH AND `main` FIXED THAT INDEPENDENTLY, AND ONLY ONE COPY MAY SURVIVE — two would
 # damage every beacon removal twice. The one kept is `_ft_ink_beacon` (above), because it is
-# reached through the ENGINE'S general rule (ft_damage_subtree asks a class where its ink is),
+# reached through the ENGINE'S general rule (ft_damage_subtree asks a prototype where its ink is),
 # which means it also serves `display: none` — a control can go away without being destroyed,
 # and a give-back that only lives in the destroy hook misses that entirely. Destroying is now
 # only teardown again.
@@ -2061,7 +2061,7 @@ _ft_beacon_judge_finalists() {
 # on one drag and not the other.
 #
 # The look comes from the CASCADE, not from here: `_ft_border_glyphs` reads this control's
-# borderStyle/borderWidth/borderRadius, the grab set `dragging=true`, and the class defaults say
+# borderStyle/borderWidth/borderRadius, the grab set `dragging=true`, and the prototype defaults say
 # dashed+rounded — so `beacon:dragging { borderStyle: double }`, or an instance `borderStyle=`,
 # restyles the drag ghost like any other styled thing.
 _ft_beacon_paint_ghost() {      # name T L B R edgeSGR badgeGlyph badgeWidth
@@ -3080,9 +3080,9 @@ _ft_beacon_judge_finalists
 # oneshot runs `cycles` laps then the frame routine destroys it. Called by the
 # ft-beacon constructor, and re-callable to restart.
 # Properties that decide whether this beacon animates at all, and therefore need it re-armed
-# rather than merely repainted. Registered in FT_CLASS_REPROP so ft-modify tells us; nothing in
+# rather than merely repainted. Registered in FT_PROTO_REPROP so ft-modify tells us; nothing in
 # the engine knows what `effect` means. demo/callout-demo.bash used to call _ft_beacon_arm
-# itself after every `ft-modify … effect=…`, which is the app doing the class's job.
+# itself after every `ft-modify … effect=…`, which is the app doing the prototype's job.
 _ft_beacon_reprop() {           # name "key key …"
     # ANY WRITE MAY MOVE ALL OF IT. A beacon finds its placement by searching during the draw —
     # a longer text, another number, a different variant each land the box and leader somewhere
@@ -3108,7 +3108,7 @@ _ft_beacon_arm() {              # name
     # Z-ORDER AMONG OVERLAYS, DERIVED WHERE BOTH ROUTES PASS. A CALLOUT is the most on-top of
     # all — it must never be painted over, not even by another beacon (a frame/number/ghost) —
     # so callouts get z=10 and everything else z=0, and the two-pass composite paints callouts
-    # LAST. Changing `variant` at runtime is a supported route (that is what FT_CLASS_REPROP is
+    # LAST. Changing `variant` at runtime is a supported route (that is what FT_PROTO_REPROP is
     # for, and it lists `variant`), but the tier was derived in the CONSTRUCTOR alone: after
     # `ft-modify b variant=callout` the property said callout and the cached tier still said 0,
     # so a runtime-made callout was painted in the tier-0 pass and any frame beacon could paint
@@ -3229,7 +3229,7 @@ FT_BIGARROW_FRAMES=20           # frames in one flight
 FT_BIGARROW_MS=560              # ms for the whole flight, when nothing in the cascade says
 FT_BIGARROW_EASING=ease-out-back   # …and its timing function. Both are only the FLOOR: an
                                    # instance property or a stylesheet rule outranks them,
-                                   # which is why neither is a class default.
+                                   # which is why neither is a prototype default.
 # The two anchored eighth families, indexed 0..8 by eighths filled. Index 0 is a space and is
 # never emitted — a blank cell is skipped, not painted, so an arrow never stamps its bounding
 # box onto the screen. `smoothing=halves` reuses the same tables at a coarser step (index 0/4/8
@@ -3468,14 +3468,14 @@ declare -A FT_BIGARROW_PC=()       # name → "dir len rows cols top left key" t
 #   exit=none     it vanishes on the frame it retires. Kept as the control.
 FT_BIGARROW_EXIT=retract        # …all four are only the FLOOR: an instance property or a
 FT_BIGARROW_HOLD_MS=2400        #    stylesheet rule outranks them (see _ft_bigarrow_styled_nth);
-FT_BIGARROW_EXIT_MS=420         #    which is why none of them is a class default.
+FT_BIGARROW_EXIT_MS=420         #    which is why none of them is a prototype default.
 FT_BIGARROW_EXIT_EASING=ease-in-back
 FT_BIGARROW_EXIT_FRAMES=12      # frames in the exit — its own count, because a retract is a
                                 # shorter move than the fly-in and does not need as many
 
 # A property whose NAME comes from CSS resolves through the cascade; one that is ours resolves
-# through the class. Both surfaces exist for a reason and mixing them is how a stylesheet rule
-# becomes silently unreachable — see the note on the class defaults above.
+# through the prototype. Both surfaces exist for a reason and mixing them is how a stylesheet rule
+# becomes silently unreachable — see the note on the prototype defaults above.
 _ft_bigarrow_styled() {         # name prop fallback → FT_RET
     if [[ -n "${_FT_CSS_LOADED:-}" ]]; then
         ft_style "$1" "$2"; (( ${#FT_RET} > 0 )) && return 0
@@ -3506,11 +3506,11 @@ _ft_bigarrow_styled_nth() {     # name prop index fallback → FT_RET
     return 0
 }
 # …and the shape properties, read straight from their property variables. Same reason
-# _ft_border and _ft_padding do it (see ft-forms.bash): ft_resolved_prop is ~62µs against ~10µs here,
-# and the geometry reads them EVERY PAINT — a keystroke recomposites every overlay, so these
+# _ft_border and _ft_padding do it (see ft-forms.bash): ft_resolved_prop is ~62µs against ~10µs
+# here, and the geometry reads them EVERY PAINT — a keystroke recomposites every overlay, so these
 # are on the typing path, not just the animation path. Safe because every one of them is
-# a class default, so it is always set on the instance and the ancestor walk ft_resolved_prop does can
-# only ever find the same answer. None of them coerce.
+# a prototype default, so it is always set on the instance and the ancestor walk ft_resolved_prop
+# does can only ever find the same answer. None of them coerce.
 _ft_bigarrow_prop() {           # name prop default → FT_RET
     local v="_ftp_${1}_${2}"; v=${!v-}
     (( ${#v} == 0 )) && v=$3
@@ -3546,8 +3546,8 @@ _ft_bigarrow_num() {            # name prop default [allowAuto] → FT_RET
 # `xx-large` is `x-large`. `larger`/`smaller` are relative to a parent's computed size, which a
 # ladder of four authored shapes has no meaning for, so they are not accepted.
 #
-# UNSET MEANS FIT, AND THAT IS DELIBERATELY NOT A CLASS DEFAULT. A class default is applied as
-# an INLINE property at construction (see _ft_apply_args), i.e. cascade level 1 — measured, and
+# UNSET MEANS FIT, AND THAT IS DELIBERATELY NOT A PROTOTYPE DEFAULT. A prototype default is applied
+# as an INLINE property at construction (see _ft_apply_args), i.e. cascade level 1 — measured, and
 # the reason animationTimingFunction is not one either — so baking `medium` in would make
 # `beacon { size: large }` in a stylesheet permanently unreachable, and would turn every screen
 # with no room for a medium arrow into a screen with no arrow. Unset, the placer takes the
@@ -3555,7 +3555,7 @@ _ft_bigarrow_num() {            # name prop default [allowAuto] → FT_RET
 #
 # `size` is already a paint-kind property in the engine's own table (ft-forms `_ft_pk`), where
 # a textfield's column count lives — so nothing is registered here. One property name, one
-# classification, whatever a class means by it.
+# classification, whatever a prototype means by it.
 _ft_bigarrow_size() {           # name → FT_RET = a rung name, or "" for "fit the largest"
     _ft_bigarrow_styled "$1" size ""
     case "$FT_RET" in
@@ -4174,9 +4174,9 @@ FT_BIGARROW_OUTLINE_MIX=55      # % of the way from the ground to the ink for th
 #     (a TUI border is always exactly one cell) applied unchanged.
 #   · `border-width: 0` and `border-style: none` are CSS's own removal spellings and both work
 #     — but only from INLINE (a constructor argument or ft-modify), because ft_control makes
-#     both of them class defaults and a class default is applied as an inline property, which
-#     is cascade level 1. `border-color: transparent` is the spelling a STYLESHEET can reach,
-#     because borderColor is the one border property no class defaults.
+#     both of them prototype defaults and a prototype default is applied as an inline property,
+#     which is cascade level 1. `border-color: transparent` is the spelling a STYLESHEET can
+#     reach, because borderColor is the one border property no prototype defaults.
 _ft_bigarrow_outline_color() {  # name inkSgr groundSgr → FT_RET (rim SGR); 1 = no outline
     _ft_bigarrow_styled "$1" borderWidth thin
     case "$FT_RET" in 0|none|"") FT_RET=""; return 1 ;; esac
@@ -4316,7 +4316,7 @@ _ft_bigarrow_enter_hold() {     # name
     # animation ended, so the wait this stage has to sit out is (delay - the flight). Honouring
     # that is what makes `animation-delay` the real property rather than `holdDuration` wearing
     # its name: an author who writes 2960ms gets the leave at 2960ms, whatever the flight costs.
-    # The class default is still expressed as a HOLD (FT_BIGARROW_HOLD_MS) because that is the
+    # The prototype default is still expressed as a HOLD (FT_BIGARROW_HOLD_MS) because that is the
     # thing that was tuned by looking at it — the default delay is the flight plus the hold, so
     # the shipped timing is unchanged to the millisecond.
     _ft_bigarrow_styled_nth "$n" animationDuration 1 "$FT_BIGARROW_MS"; flyms=$FT_RET

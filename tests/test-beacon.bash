@@ -2,7 +2,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 #  Tests for controls/ft-beacon.bash — the floating overlay marker.
 #
-#  Covers: class registration; the constructor arming an animation; geometry
+#  Covers: prototype registration; the constructor arming an animation; geometry
 #  (target-relative + outset, and absolute); the circled-number glyph map; the
 #  effect envelope (pulse/blink/bob/none → visibility, colour, vertical hop);
 #  themeable pulse colour; and the two lifetimes (oneshot self-destructs and
@@ -24,12 +24,12 @@ ft_layout root
 FT_ROOT=root
 
 note "the class registers as an absolute, non-focusable overlay with a draw fn"
-ft_class_init beacon        # classes populate their tables lazily on first use
-check "draw fn is _ft_draw_beacon"      "${FT_CLASS_DRAW[beacon]}" "_ft_draw_beacon"
-check "beacons are never focusable"     "${FT_CLASS_FOCUSABLE[beacon]}" "0"
-case " ${FT_CLASS_DEFAULTS[beacon]} " in *" position=absolute "*) check "default position:absolute" 1 1 ;;
+ft_prototype_init beacon        # classes populate their tables lazily on first use
+check "draw fn is _ft_draw_beacon"      "${FT_PROTO_DRAW[beacon]}" "_ft_draw_beacon"
+check "beacons are never focusable"     "${FT_PROTO_FOCUSABLE[beacon]}" "0"
+case " ${FT_PROTO_DEFAULTS[beacon]} " in *" position=absolute "*) check "default position:absolute" 1 1 ;;
                                          *) check "default position:absolute" 0 1 ;; esac
-case " ${FT_CLASS_DEFAULTS[beacon]} " in *" lifetime=persist "*) check "default lifetime:persist" 1 1 ;;
+case " ${FT_PROTO_DEFAULTS[beacon]} " in *" lifetime=persist "*) check "default lifetime:persist" 1 1 ;;
                                          *) check "default lifetime:persist" 0 1 ;; esac
 
 note "the constructor registers the control AND arms its animation"
@@ -250,13 +250,13 @@ note "importance is ACTION DENSITY: static per class, and live per STATE through
 # textfield is nearly inert until the caret is in it, at which point it is the most important
 # thing on screen. This asserts the whole chain the placer actually reads.
 #
-# THE BUG THIS PINS: `importance` was declared as a class default on `ft_control`, and a class
-# default is an instance-level write, which outranks every stylesheet rule exactly as inline
-# style does. So `textfield:focus { importance: crucial }` was a silent no-op and NO state could
-# ever change a control's importance. Nothing failed — it just quietly never worked. The default
-# now lives at the READ instead. Second half of the same bug: `_ft_control_importance` asked
-# `ft_resolved_prop`, which does not consult the stylesheet, so even a working sheet never reached the
-# placer; it asks `ft_style` now.
+# THE BUG THIS PINS: `importance` was declared as a prototype default on `ft_control`, and a
+# prototype default is an instance-level write, which outranks every stylesheet rule exactly as
+# inline style does. So `textfield:focus { importance: crucial }` was a silent no-op and NO state
+# could ever change a control's importance. Nothing failed — it just quietly never worked. The
+# default now lives at the READ instead. Second half of the same bug: `_ft_control_importance` asked
+# `ft_resolved_prop`, which does not consult the stylesheet, so even a working sheet never reached
+# the placer; it asks `ft_style` now.
 ft_stylesheet name=impsheet style='
     textfield        { importance: minor; }
     textfield:focus  { importance: crucial; }
@@ -434,7 +434,7 @@ ft_remove tapp
 
 # ── The z tier follows the variant, WHENEVER the variant is set ──────────────
 # "A callout is the most on-top of all" is a contract about a property, and `variant` is a
-# runtime property: FT_CLASS_REPROP lists it precisely so it can be changed. Derived in the
+# runtime property: FT_PROTO_REPROP lists it precisely so it can be changed. Derived in the
 # constructor alone, the cached tier went stale in both directions — `ft-modify b
 # variant=callout` gave a callout at z=0 that every frame beacon was free to paint over, and a
 # demoted callout kept z=10 and went on suppressing its neighbours. Asserted on the tier AND on

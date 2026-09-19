@@ -4,9 +4,9 @@
 #  thing whatever order an app happens to build its widgets in.
 #
 #  FT_PROP_KIND answers "what does the engine owe when this property changes: a repaint, or a
-#  reflow". Many classes write to it through ft_prop_kind_set, and a class constructor runs
-#  LAZILY — at the first instance of its type. So a second class classifying a name the first
-#  has already classified is not adjusting its own control: it is re-classifying that name for
+#  reflow". Many prototypes write to it through ft_prop_kind_set, and a prototype constructor
+#  runs LAZILY — at the first instance of its type. So a second prototype classifying a name the
+#  first has already classified is not adjusting its own control: it is re-classifying that name for
 #  the WHOLE framework, and the winner is whichever widget the app built first. Measured:
 #
 #      ft-beacon     text         layout → paint
@@ -25,10 +25,10 @@
 #  the whole framework for it.
 #
 #  So the rule this file pins: A KIND MAY ONLY EVER BE STRENGTHENED. paint → layout is allowed,
-#  layout → paint is refused, and every contested name therefore settles on layout whichever
-#  class is instantiated first. That is the direction the table's own rule already points — a
-#  needless reflow is correct, a skipped one is not — and it makes the table order-independent
-#  by construction rather than by everyone remembering.
+#  layout → paint is refused, and every contested name therefore settles on layout
+#  whichever prototype is instantiated first. That is the direction the table's own rule already
+#  points — a needless reflow is correct, a skipped one is not — and it makes the table
+#  order-independent by construction rather than by everyone remembering.
 #
 #  AND THE OTHER HALF: a property that a MEASURE function reads is an input to the control's
 #  SIZE, so it cannot be paint-only. Six were, and each was demonstrated by writing it and
@@ -52,11 +52,11 @@ FT_COLS=90; FT_ROWS=24
 # honest way to show a prospective gate works is to inject the class it watches for and require
 # red. Same idiom as tests/test-clip.bash's FT_CLIP_SABOTAGE.
 #
-# Applied HERE, before any control is built, because a class constructor runs lazily at the first
-# instance of its type — sabotaging the rule after that point would sabotage nothing.
+# Applied HERE, before any control is built, because a prototype constructor runs lazily at the
+# first instance of its type — sabotaging the rule after that point would sabotage nothing.
 _pk_sab=${FT_PROPKIND_SABOTAGE:-}
 case "$_pk_sab" in
-    # The rule itself, reverted to what it was: a kind that any class can weaken, so the last
+    # The rule itself, reverted to what it was: a kind that any prototype can weaken, so the last
     # widget an app happens to build decides how the framework classifies a name.
     kindrule) ft_prop_kind_set() { [[ -z "$1" ]] && return 1
                                    _ft_propkey "$1"; FT_PROP_KIND[$FT_RET]=$2; } ;;
@@ -75,9 +75,9 @@ ft_prop_kind_set _pkProbeA layout
 ft_prop_kind _pkProbeA; check "…and re-stating layout is harmless"       "$FT_RET" "layout"
 
 note "the three names two classes disagreed about all settle on layout"
-# Instantiating a class is what runs its constructor, so this is the state an app is in once it
+# Instantiating a prototype is what runs its constructor, so this is the state an app is in once it
 # has built one of each. The order below is the one that USED to lose.
-for _t in frame tabs tab table scrollbar beacon label; do ft_class_init "$_t" >/dev/null 2>&1; done
+for _t in frame tabs tab table scrollbar beacon label; do ft_prototype_init "$_t" >/dev/null 2>&1; done
 # THE THREE DOWNGRADES ARE ATTEMPTED HERE, not left to history. Those lines were deleted from
 # ft-beacon, ft-tab and ft-scrollbar when this was fixed — so asserting the names are layout
 # after building one of each would only be asserting that the deletions happened, and would pass
@@ -102,7 +102,7 @@ source ./fruity-tui.bash
 ft_init 2>/dev/null || :
 exec {FT_TTY}>/dev/null
 shift
-for t in "$@"; do ft_class_init "$t" >/dev/null 2>&1; done
+for t in "$@"; do ft_prototype_init "$t" >/dev/null 2>&1; done
 for k in "${!FT_PROP_KIND[@]}"; do printf '%s %s\n' "$k" "${FT_PROP_KIND[$k]}"; done | LC_ALL=C sort
 ORDER
 _TYPES=(frame tabs tab table scrollbar beacon label button radio checkbox multitoggle slider select textfield tree statusbar keylegend)
@@ -117,7 +117,7 @@ check "…and holds the names under test"    "$(printf '%s\n' "$_fwd" | grep -cE
 note "a kind is paint or layout — nothing else gets into the table"
 # `ft_prop_kind_set showLineNumbers layout# comment` (no space before the #) stored "layout#", which
 # every reader compares with `== layout` and so treated as paint: toggling a textarea's line numbers
-# widened its preferred size and nothing reflowed it. Every class's kinds, read back whole:
+# widened its preferred size and nothing reflowed it. Every prototype's kinds, read back whole:
 check "every kind in the table is paint or layout" \
       "$(printf '%s\n' "$_fwd" | awk '$2 != "paint" && $2 != "layout" {printf "%s=%s ", $1, $2}')" ""
 ft_prop_kind_set _pkProbeTypo 'layout#' 2>/dev/null
@@ -126,17 +126,17 @@ ft_prop_kind _pkProbeTypo
 check "…leaving the name unclassified (the layout default)" "$FT_RET" "layout"
 
 note "no property a MEASURE function reads is paint-only"
-# A class's registered preferredWidth/height function decides the control's intrinsic size, so
+# A prototype's registered preferredWidth/height function decides the control's intrinsic size, so
 # whatever it reads is an input to that size. Asked at RUNTIME rather than by grepping the
 # source, because the binding is by convention through the inheritance chain — a button's height
 # function IS a label's, and only the populated table knows that.
-for _fn in $(declare -F | sed -n 's/^declare -f ft_class_//p'); do ft_class_init "$_fn" >/dev/null 2>&1; done
+for _fn in $(declare -F | sed -n 's/^declare -f ft_prototype_//p'); do ft_prototype_init "$_fn" >/dev/null 2>&1; done
 _pk_props_read() {              # function-name → one property name per line
     local body; body=$(declare -f "$1" 2>/dev/null) || return 0
     {
         printf '%s\n' "$body" | grep -oE 'ft_resolved_prop +"[^"]+" +[A-Za-z_][A-Za-z0-9_]*'  | awk '{print $NF}'
         printf '%s\n' "$body" | grep -oE '_ft_get_raw +"[^"]+" +[A-Za-z_][A-Za-z0-9_]*'       | awk '{print $NF}'
-        printf '%s\n' "$body" | grep -oE '_ft_prop_or_class +"[^"]+" +[A-Za-z_][A-Za-z0-9_]*' | awk '{print $NF}'
+        printf '%s\n' "$body" | grep -oE '_ft_prop_or_prototype +"[^"]+" +[A-Za-z_][A-Za-z0-9_]*' | awk '{print $NF}'
     } | LC_ALL=C sort -u
 }
 # ONE ASSERTION PER READ, not one aggregate over all of them. A single "nothing is wrong" check
@@ -151,8 +151,8 @@ _pk_props_read() {              # function-name → one property name per line
 # sabotaged, not the rule that maintains it.
 [[ "$_pk_sab" == coherence ]] && FT_PROP_KIND[size]=paint
 _pk_seen=0
-for _ty in $(printf '%s\n' "${!FT_CLASS_READY[@]}" | LC_ALL=C sort); do
-    for _slot in "${FT_CLASS_PREFERRED_WIDTH[$_ty]:-}" "${FT_CLASS_HEIGHT[$_ty]:-}"; do
+for _ty in $(printf '%s\n' "${!FT_PROTO_READY[@]}" | LC_ALL=C sort); do
+    for _slot in "${FT_PROTO_PREFERRED_WIDTH[$_ty]:-}" "${FT_PROTO_HEIGHT[$_ty]:-}"; do
         [[ -n "$_slot" ]] || continue
         while IFS= read -r _p; do
             [[ -n "$_p" ]] || continue

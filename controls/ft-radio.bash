@@ -2,7 +2,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 #  Fruity TUI — controls/ft-radio.bash
 #
-#  The "radio" class: a mutually-exclusive option — a `group` name and a
+#  The "radio" prototype: a mutually-exclusive option — a `group` name and a
 #  `text` label beside a ●/○ glyph. `checked` is the selection, exactly as on
 #  <input type=radio>: writing it selects this one and deselects the group,
 #  reading it says whether this one is on. FT_RADIO_SELECTED[group] is the
@@ -23,9 +23,9 @@
 [[ -n "${_FT_RADIO_LOADED:-}" ]] && return 0
 _FT_RADIO_LOADED=1
 
-ft_class_radio() {
+ft_prototype_radio() {
     _ft_define_keymap_activate
-    ft_class extends=ft_control focusable=true mouse=activate keymap=activate \
+    ft_prototype extends=ft_control focusable=true mouse=activate keymap=activate \
         setProp=_ft_radio_setprop \
         defaults="display=inline-block checked=false"
 }

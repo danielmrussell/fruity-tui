@@ -371,7 +371,7 @@ fi
                         end_ft_select
                     end_ft_frame
                 end_ft_div ;;
-            11) # One ft-textfield class, two sizes: a single-line field and a
+            11) # One ft-textfield prototype, two sizes: a single-line field and a
                 # multi-line text box (rows=5). Both edit with readline keys.
                 ft-div name=tbox display=flex flexDirection=column gap=1 alignItems=start
                     ft-div name=trowN display=flex gap=1 alignItems=center

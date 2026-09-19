@@ -13,7 +13,7 @@
 #  survives, because it is dirty for its own reasons.
 #
 #  Found this way: a Ctrl+S confirmation whose one-row repair blanked the entire UI
-#  (FT_CLASS_FILLS_BACKGROUND never listed `form`), and a css-demo callout whose hand-rolled erase took the
+#  (FT_PROTO_FILLS_BACKGROUND never listed `form`), and a css-demo callout whose hand-rolled erase took the
 #  tail off the Quit button and never put it back.
 #
 #  SLOW BY NATURE — every check is two real pty runs of a real app. Keep the list short and

@@ -123,7 +123,7 @@ check "geometry untouched" "${FT_ABSOLUTE_X[fSolid]},${FT_MEASURED_WIDTH[fSolid]
 #
 #  And "does this control have a border" had two implementations that disagreed about an empty
 #  value: the draw read "" as false and drew nothing, while _ft_border and _ft_inset4 read "" as
-#  "nothing was set", fell through to the class default, and reserved the cell anyway.
+#  "nothing was set", fell through to the prototype default, and reserved the cell anyway.
 # ─────────────────────────────────────────────────────────────────────────────
 BOXGLYPHS='[─│┌┐└┘━┃┏┓┗┛╭╮╰╯═║╔╗╚╝┄┆┅┇┈┊┉┋]'
 _painted_glyphs() {             # name → FT_RET = the box-drawing glyphs it actually emitted

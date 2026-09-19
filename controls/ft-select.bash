@@ -2,7 +2,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 #  Fruity TUI — controls/ft-select.bash
 #
-#  The "select" class — HTML's <select> with ft-option children:
+#  The "select" prototype — HTML's <select> with ft-option children:
 #
 #      ft-select name=theme size=3
 #          ft-option value=light text="Light"
@@ -35,7 +35,7 @@
 [[ -n "${_FT_SELECT_LOADED:-}" ]] && return 0
 _FT_SELECT_LOADED=1
 
-# Built once, by the class that declares `keymap=select`.
+# Built once, by the prototype that declares `keymap=select`.
 _ft_define_keymap_select() {
     # INACTIVE — Enter steps in. For a dropdown, stepping in IS opening the list; the rung's
     # enter/exit scripts do that (select_runlevel_browsing_enter/_exit below), so `open` and
@@ -104,10 +104,10 @@ ft_select_copy() {              # name
     ft_clip_copy "$txt"; _ft_announce_copy $? itemCopied
     return 0
 }
-ft_class_select() {
+ft_prototype_select() {
     ft_runlevels browsing=ft_keymap_select_browsing
     ft_prop_kind_set scrollbar paint     # true → draw a scrollbar; default is the ⋯ affordance
-    ft_class extends=ft_control \
+    ft_prototype extends=ft_control \
         defaults="importance=important" \
         focusable=true \
         mouse=select \
@@ -156,7 +156,7 @@ _ft_select_sync() {             # name — value := selection (single or multipl
 # both directions act — `select.selectedIndex = 2` moves `.value`, and `select.value = "c"`
 # moves the selection.
 #
-# Reconciling here rather than in FT_CLASS_REPROP because _ft_setprop is EVERY route in —
+# Reconciling here rather than in FT_PROTO_REPROP because _ft_setprop is EVERY route in —
 # ft-modify, the DSL, a state restore — and REPROP is only the first of them.
 #
 # A MULTIPLE SELECT IS NOT THIS SHAPE: its value is the joined list of every option carrying

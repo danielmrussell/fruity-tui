@@ -59,7 +59,7 @@ declare -A BASELINE=(
                                #   can match, old rules and new — the CSSOM behaviour.
     [callout-demo.bash]=0      # was 11 — step changes handing a removed callout's footprint back
                                #   by hand. ft_remove now gives back every cell the subtree inked,
-                               #   asking the class where its ink is (_ft_ink_<type>) because a
+                               #   asking the prototype where its ink is (_ft_ink_<type>) because a
                                #   bigarrow's is not its extent.
     [tutorial-demo.bash]=0     # was 3 — a label now publishes scrollHeight/clientHeight like a
                                #   container, so "did this overflow?" is the DOM's own question.
@@ -77,10 +77,10 @@ declare -A BASELINE=(
 #
 # What paid for the thirty-four: ft_remove repairs what it removed; ft-modify dirties by property
 # kind, subtree-wide when the property inherits; ft_stylesheet restyles what its own selectors can
-# match; FT_CLASS_REPROP lets a class ACT on a change (a beacon re-arms its effect) instead of an
-# app calling _ft_beacon_arm; labels publish their scroll metrics; ft_dirty_subtree became public,
-# because an app that edits a STYLESHEET at runtime has changed how a branch resolves without
-# touching any property and no ft-modify can see it.
+# match; FT_PROTO_REPROP lets a prototype ACT on a change (a beacon re-arms its effect) instead of
+# an app calling _ft_beacon_arm; labels publish their scroll metrics; ft_dirty_subtree became
+# public, because an app that edits a STYLESHEET at runtime has changed how a branch resolves
+# without touching any property and no ft-modify can see it.
 #
 # The last fourteen were trailing `ft_redraw_dirty` calls, and they went in two groups for two
 # DIFFERENT reasons — both measured, neither assumed:

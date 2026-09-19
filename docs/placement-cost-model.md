@@ -570,10 +570,11 @@ placement for every page/step/size and compare), so every change's effect is vis
   page-4 pixels inside page-1 rectangles because sourcing the demo runs `PAGE=${DEMO_PAGE:-1}` and
   clobbers a page set before it. Measure ink from the rendered screen, and set PAGE *after* the
   source.
-- **Class-level importance resolves correctly** — a button is 200 (`crucial`) by class default.
+- **Prototype-level importance resolves correctly** — a button is 200 (`crucial`) by prototype
+  default.
 - **SETTLED, AND NOW BUILT: a stylesheet rule DOES drive importance per state**, so the dynamic
   half needed no new API. Two bugs were in the way, both silent:
-  1. **`importance` was a class default on `ft_control`** — and a class default is an
+  1. **`importance` was a prototype default on `ft_control`** — and a prototype default is an
      instance-level write, which outranks every stylesheet rule exactly as inline style does. So
      `textfield:focus { importance: crucial }` was a no-op and no state could ever change a
      control's importance. Nothing failed; it just quietly never worked. The `normal` fallback
@@ -584,7 +585,7 @@ placement for every page/step/size and compare), so every change's effect is vis
      obstacle list is built (~17 controls per placement), not per candidate.
 
   Measured across a focus toggle, end to end into the placer: **30 (minor) → 200 (crucial) → 30**,
-  with a button's class default still resolving 200. Pinned by four assertions in
+  with a button's prototype default still resolving 200. Pinned by four assertions in
   `tests/test-beacon.bash`, checked for teeth: restoring *either* bug turns exactly those three
   state assertions red.
 

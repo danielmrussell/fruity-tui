@@ -2,7 +2,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 #  Fruity TUI — controls/ft-multitoggle.bash
 #
-#  The "multitoggle" class: cycles through its ft-option children each
+#  The "multitoggle" prototype: cycles through its ft-option children each
 #  activation. Options separate VALUE from PRESENTATION (HTML's <option>):
 #
 #      ft-multitoggle name=priority text="Priority"
@@ -31,9 +31,9 @@
 [[ -n "${_FT_MULTITOGGLE_LOADED:-}" ]] && return 0
 _FT_MULTITOGGLE_LOADED=1
 
-ft_class_multitoggle() {
+ft_prototype_multitoggle() {
     _ft_define_keymap_activate
-    ft_class extends=ft_control \
+    ft_prototype extends=ft_control \
         focusable=true \
         mouse=activate \
         keymap=activate \
@@ -91,7 +91,8 @@ _ft_multitoggle_setprop() {     # name prop value
 }
 # IF YOU CLAIM THE NAME, YOU KEEP IT TRUE. The reconciler above ACCEPTS `checked=` and maps it to
 # a selection — so it has claimed the name — but it used to write `checked` back only on the
-# subclass, and a bare multitoggle's went stale the moment the state moved any other way:
+# derived prototype, and a bare multitoggle's went stale the moment the state moved any other
+# way:
 #
 #     ft-modify mt checked=true   paint [x]  idx 1  value true   checked true
 #     ft_multitoggle_cycle mt     paint [ ]  idx 0  value false  checked TRUE   ← stale
@@ -105,7 +106,7 @@ _ft_multitoggle_setprop() {     # name prop value
 # the property — its options are not a two-state truth, and inventing one for a three-state
 # control would be a worse lie than the stale one. A CHECKBOX always has it, because its
 # children-complete seeds it (see ft-checkbox.bash); from then on this keeps it current, which is
-# why the subclass no longer needs a reconciler of its own.
+# why the derived prototype no longer needs a reconciler of its own.
 _ft_multitoggle_reflect_checked() {      # name — checked := (value == true), if it has a `checked`
     _ft_has_prop "$1" checked || return 0
     _ft_get_raw "$1" value
@@ -124,12 +125,12 @@ _ft_multitoggle_sync() {        # name — reconcile the names, once the options
     _ft_options "$name"
     (( ${#FT_OPTS[@]} == 0 )) && return 0
     # WHICH NAME DID THE AUTHOR ACTUALLY USE? This ran index→value unconditionally, and the
-    # index at construction is usually still its class default — so `ft-checkbox name=c
+    # index at construction is usually still its prototype default — so `ft-checkbox name=c
     # value=true` was reconciled INTO false, the author's own word overwritten by a default.
-    # The selection is the truth, as the class comment says; but if the author named the VALUE
-    # and not the index, the value is the selection they meant. (The runtime reconciler already
-    # maps value→index; this is the same rule at the one moment it could not run, because the
-    # options did not exist yet when the property was written.)
+    # The selection is the truth, as the prototype comment says; but if the author named the
+    # VALUE and not the index, the value is the selection they meant. (The runtime reconciler
+    # already maps value→index; this is the same rule at the one moment it could not run, because
+    # the options did not exist yet when the property was written.)
     if _ft_has_prop "$name" value && ! _ft_has_prop "$name" selectedIndex; then
         _ft_get_raw "$name" value
         _ft_multitoggle_setprop "$name" value "$FT_RET"

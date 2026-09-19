@@ -26,9 +26,9 @@ grep -rn '' --include='*.bash' . 2>/dev/null | grep -vE ':[0-9]+:[[:space:]]*#' 
 
 # The name shapes the framework CONSTRUCTS and calls without ever spelling them out. Each row
 # names the line that builds it, so this allowlist cannot quietly grow:
-#   _ft_draw_ / _ft_preferred_width_ / _ft_height_   ft-forms.bash _ft_class_bind_by_convention
-#   _ft_mouse_                                        ft-forms.bash _FT_CLASS_SHORT_VALUE_PREFIX
-#   _ft_define_keymap_                                ft-forms.bash _ft_class_resolve_value
+#   _ft_draw_ / _ft_preferred_width_ / _ft_height_   ft-forms.bash _ft_prototype_bind_by_convention
+#   _ft_mouse_                                        ft-forms.bash _FT_PROTO_SHORT_VALUE_PREFIX
+#   _ft_define_keymap_                                ft-forms.bash _ft_prototype_resolve_value
 #   _ft_destroy_ _ft_ink_ _ft_blur_ _ft_focusin_ _ft_tiers_ _ft_caps_   "_ft_<role>_${FT_TYPE[…]}"
 #   _ft_banim_                                        the border-animation style hook
 CONSTRUCTED='^_ft_(draw|preferred_width|height|mouse|define_keymap|destroy|ink|blur|focusin|tiers|caps|banim)_'

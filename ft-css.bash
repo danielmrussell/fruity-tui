@@ -13,11 +13,11 @@
 #  existing store (_ft_setprop / _ft_get_raw for inline, FT_PARENT for ancestry).
 #
 #  ── The cascade (highest precedence first) ───────────────────────────────────
-#    1. inline        a property set at the call site or later — _ft_get_raw
-#    2. app sheets    targeted stylesheets, by CSS specificity then source order
-#    3. inheritance   if the property inherits, the parent's RESOLVED value
-#    4. default sheet  the user/agent default stylesheet (loses to everything above)
-#    5. class default  the control's built-in last-resort value
+#    1. inline             a property set at the call site or later — _ft_get_raw
+#    2. app sheets         targeted stylesheets, by CSS specificity then source order
+#    3. inheritance        if the property inherits, the parent's RESOLVED value
+#    4. default sheet      the user/agent default stylesheet (loses to everything above)
+#    5. prototype default  the control's built-in last-resort value
 #
 #  ── Storage ──────────────────────────────────────────────────────────────────
 #  A stylesheet is parsed into a FLAT list of rules (a `a, b { }` becomes two rules
@@ -213,7 +213,7 @@ declare -A _FT_CSS_MATCH_PROPS=([class]=1 [id]=1)   # #id / .class selectors tes
 #
 # MONOTONIC ON PURPOSE. A property stays once seen, even if the rule that mentioned it is
 # replaced. That cannot be wrong, only slower — the cascade is consulted and answers with the
-# same class default it would have answered without being asked — and it keeps re-registering a
+# same prototype default it would have answered without being asked — and it keeps re-registering a
 # sheet from having to diff two sets. _FT_CSS_MATCH_PROPS has always worked this way.
 declare -A _FT_CSS_DECLARED_PROPS=()
 # ft_css_prop_affects_style PROP RAWPROP → 0 if setting it can change a resolved value.
@@ -232,7 +232,7 @@ ft_css_prop_affects_style() {   # normalisedprop rawprop
 _ft_css_note_match_props() {
     [[ -n "$_FT_CSS_COMPOUND_CLASS" ]] && _FT_CSS_MATCH_PROPS[class]=1
     # Which property each pseudo-class reads comes from the STATE REGISTRY, not a list here —
-    # so a state declared by a control class (a runlevel) is tracked for invalidation the
+    # so a state declared by a control prototype (a runlevel) is tracked for invalidation the
     # moment it is declared, with nothing to keep in step.
     local x p
     for x in $_FT_CSS_COMPOUND_PSEUDO_CLASS; do
@@ -864,7 +864,7 @@ _ft_css_class_has() {           # control className → 0 if the control carries
 _ft_css_state() {               # control pseudo-class → 0 if the control is in that state
     local spec
     # ONE lookup in the common case. A per-TYPE declaration wins, but hardly any state has
-    # one, so the type-scoped key is only built when some class actually declared this name —
+    # one, so the type-scoped key is only built when some prototype actually declared this name —
     # otherwise this pays a string concat and a second lookup on every pseudo-class tested.
     if [[ -n "${FT_STATE_TYPED[$2]:-}" ]]; then
         spec=${FT_STATE_TEST[${FT_TYPE[$1]:-}:$2]:-}
@@ -879,13 +879,13 @@ _ft_css_state() {               # control pseudo-class → 0 if the control is i
     esac
     # The common shapes, pre-parsed at declaration: read the property and compare; `!` negates.
     #
-    # ft_own_prop AND NOT _ft_get_raw, for the same reason `:disabled` resolves through ft_resolved_prop
-    # rather than an attribute shape: a selector asks about the ELEMENT, and a class default is
-    # part of what the element is. Every per-class runlevel state is declared as
-    # `[runlevel=<rung>]` (see _ft_class_finish_runlevels), and `runlevel=unfocused` is a class
-    # default — so with defaults off the instance a raw read answered "" and `label:unfocused`
-    # matched NOTHING, which is `:unfocused` failing to describe a control that is unfocused.
-    # ft_own_prop also still settles a stale `value` out of the line store.
+    # ft_own_prop AND NOT _ft_get_raw, for the same reason `:disabled` resolves through
+    # ft_resolved_prop rather than an attribute shape: a selector asks about the ELEMENT, and a
+    # prototype default is part of what the element is. Every per-prototype runlevel state is
+    # declared as `[runlevel=<rung>]` (see _ft_prototype_finish_runlevels), and `runlevel=unfocused`
+    # is a prototype default — so with defaults off the instance a raw read answered "" and
+    # `label:unfocused` matched NOTHING, which is `:unfocused` failing to describe a control that is
+    # unfocused. ft_own_prop also still settles a stale `value` out of the line store.
     ft_own_prop "$1" "${spec%% *}"
     spec=${spec#* }
     [[ "${spec:0:1}" == '!' ]] && { [[ "$FT_RET" != "${spec:1}" ]]; return; }
@@ -1190,23 +1190,23 @@ _ft_style_compute() {           # control prop → FT_RET
     # 2. targeted app stylesheets
     _ft_css_query "$control" "$prop" app
     if (( _QGOT )); then _ft_css_resolve_value "$control" "$FT_RET"; return; fi
-    # 3. inheritance — only if this property inherits, AND only if this element's own class does
-    #    not declare it. That second clause is CSS's own rule (an inherited value fills in where
-    #    the cascade produced nothing FOR THIS ELEMENT, and a class default is a declaration for
-    #    this element), and it is what keeps the two inherited class defaults where they were:
-    #    a tree does not take a select's `cursor` INDEX, and a button keeps centring its label
-    #    inside a right-aligned container.
-    if _ft_css_inherits "$prop" && ! _ft_class_declares "$control" "$prop"; then
+    # 3. inheritance — only if this property inherits, AND only if this element's own prototype
+    #    does not declare it. That second clause is CSS's own rule (an inherited value fills in
+    #    where the cascade produced nothing FOR THIS ELEMENT, and a prototype default is a
+    #    declaration for this element), and it is what keeps the two inherited prototype defaults
+    #    where they were: a tree does not take a select's `cursor` INDEX, and a button keeps
+    #    centring its label inside a right-aligned container.
+    if _ft_css_inherits "$prop" && ! _ft_prototype_declares "$control" "$prop"; then
         local parent=${FT_PARENT[$control]:-}
         [[ -n "$parent" ]] && { ft_style "$parent" "$prop"; return; }
     fi
     # 4. the user/agent default stylesheet
     _ft_css_query "$control" "$prop" default
     if (( _QGOT )); then _ft_css_resolve_value "$control" "$FT_RET"; return; fi
-    # 5. class built-in default — the control's last resort, and the slot this comment used to
-    #    say was empty. Everything above outranks it, which is what docs/styling-model.md §2 has
+    # 5. prototype built-in default — the control's last resort, and the slot this comment used
+    #    to say was empty. Everything above outranks it, which is what docs/styling-model.md §2 has
     #    always claimed and what stamping defaults onto the instance made false.
-    if _ft_class_default "$control" "$prop"; then _ft_css_resolve_value "$control" "$FT_RET"; return; fi
+    if _ft_prototype_default "$control" "$prop"; then _ft_css_resolve_value "$control" "$FT_RET"; return; fi
     FT_RET=""
 }
 
@@ -1596,7 +1596,7 @@ ft_theme name=ft-ocean style="
 # Merely poised means "the arrows move BETWEEN controls"; engaged means "the arrows
 # now belong to THIS control". Those are opposite meanings for one keypress, and a slider
 # painted byte-for-byte identically in both — the only way to tell was to press an arrow and
-# watch what moved. ONE rule covers every class and every runlevel NAME (adjusting / browsing
+# watch what moved. ONE rule covers every prototype and every runlevel NAME (adjusting / browsing
 # / editing / scrolling / perusing …) because it asks the only question that generalises: is
 # this control still at rest?
 #
@@ -1609,7 +1609,7 @@ ft_theme name=ft-ocean style="
 # theme that says nothing still gets a sane default.
 # ── The ENGAGED marker ───────────────────────────────────────────────────────
 # A control that has taken the keys must LOOK like it. `:engaged` (ft-forms.bash) is true for
-# any control at a runlevel other than `unfocused`, whatever that class calls it, so one rule
+# any control at a runlevel other than `unfocused`, whatever that prototype calls it, so one rule
 # covers every control there will ever be.
 #
 # An ORDINARY sheet, deliberately not the theme/default one. A default sheet is cascade level 4

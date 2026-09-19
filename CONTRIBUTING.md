@@ -33,7 +33,7 @@ should make them think *"ah — of course."*
 
 **The recurring root cause in this codebase, by a distance: the same predicate on one route and
 not its siblings.** Removing a control repaired the screen; hiding it did not. `ft-modify`
-repainted; `ft_remove_attribute` did not. A class default was documented at cascade level 5 and
+repainted; `ft_remove_attribute` did not. A prototype default was documented at cascade level 5 and
 implemented at level 1. When you fix a guard, *enumerate every route into that state* and fix
 them together, or write down why the others differ.
 
@@ -58,16 +58,16 @@ them call (`_ft_focusable_apply`, `_ft_accel_register` / `_ft_accel_unregister`)
 writing the table in each. And when the two halves disagree about what is registered, make the
 *undo* read the REGISTRY, not the property — the property is exactly what has just changed.
 
-### The same shape one level down: a property the CLASS has to act on
+### The same shape one level down: a property the PROTOTYPE has to act on
 
-Sweeping the engine tables finds the properties above. Sweeping the *classes* finds the next
+Sweeping the engine tables finds the properties above. Sweeping the *prototypes* finds the next
 one. `activeTab` on `ft-tabs` was declared layout-kind, so writing it reflowed the subtree — and
 the reflow faithfully re-laid out the wrong tab, because which body is visible is `display` on
 each body and only `_ft_tabs_show_only` writes those. `ft-modify tabs activeTab=1` moved the
 number and switched nothing.
 
 A property *kind* says what the ENGINE owes a change: repaint, reflow, restyle. It cannot say
-what the CLASS owes. That is `FT_CLASS_REPROP[type]` — before `ft-tabs`, only `ft-beacon`
+what the CLASS owes. That is `FT_PROTO_REPROP[type]` — before `ft-tabs`, only `ft-beacon`
 declared one. **If a property names the control's own state — `activeTab`, `selectedIndex`,
 `value` — writing it has to do the work, not merely record the intention.** In the DOM every one
 of those is settable and acts.
@@ -84,9 +84,9 @@ set, because each looks different and is the same bug:
 | `radio.checked` | nothing at all | drew an empty circle at construction and at runtime |
 | `label.scrollTop` | stored verbatim | painted line 9 of 12, property said 99 |
 
-**Three mechanisms, and picking the wrong one is most of the work.** `FT_CLASS_REPROP` is told by
+**Three mechanisms, and picking the wrong one is most of the work.** `FT_PROTO_REPROP` is told by
 `ft-modify` and by nothing else — enough when the state can only change at runtime. `setProp=`
-(`FT_CLASS_SETPROP`) is called from `_ft_setprop`, which is *every* route in: `ft-modify`, the
+(`FT_PROTO_SETPROP`) is called from `_ft_setprop`, which is *every* route in: `ft-modify`, the
 DSL, a state restore. Prefer it whenever **any route other than `ft-modify`** can produce the bad
 state — `ft-slider value=50 max=10` writes the two in that order, and only the second one can fix
 the first.
@@ -98,7 +98,7 @@ covered, and the mechanism looked sufficient. A STATE RESTORE is neither of thos
 through `_ft_setprop` — so a reloaded session came back with `activeTab=1` in the property and
 tab one still on screen. Ask "can this state arrive any way but `ft-modify`", and remember that a
 save file is one of the ways. And
-when the rule belongs to no class at all — a scroll offset is bounded by the box's own published
+when the rule belongs to no prototype at all — a scroll offset is bounded by the box's own published
 `scrollHeight`/`clientHeight`, whatever kind of box it is — it belongs in `_ft_setprop` beside
 the numeric validation.
 
@@ -130,7 +130,7 @@ it.
 
 The same commit closed the plainest instance of the §1 headline there has been: `border=""`.
 `_ft_draw_frame` read the empty string as false and drew no lines; `_ft_border` and `_ft_inset4`
-read it as "nothing was set", fell through to the class default, and reserved the cell — so a
+read it as "nothing was set", fell through to the prototype default, and reserved the cell — so a
 child sat one column inside a frame with no border to sit inside. **When a question already has
 a function, a second reader may not answer it inline**, however short the inline version looks.
 

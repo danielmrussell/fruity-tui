@@ -180,7 +180,7 @@ for _bad in 0 -1 -3; do
     check "step=$_bad is ignored, and reads back 1" "$(_step_of)" "1"
     check "…and the arrows still move by one"       "$(_arrows)" "6,4"
 done
-# …and the step survives being removed: the class default is 1.
+# …and the step survives being removed: the prototype default is 1.
 ft-modify sl step=4
 check "a valid step is kept"                  "$(_step_of)" "4"
 ft_remove_attribute sl step

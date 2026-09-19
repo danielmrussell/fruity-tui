@@ -68,10 +68,10 @@ case "$_rt_sab" in
     # as it was found, the record written to the file and thrown away on the way back in.
     restorelist)
         FT_STATE_RESTORE_PROPS="value scrollTop scrollLeft selectedIndex checked cursor expanded parkedTop parkedLeft" ;;
-    # …and the other half: the property restored, and no class reconciler on the restore route to
-    # act on it, so the number comes back and the screen does not follow it.
+    # …and the other half: the property restored, and no prototype reconciler on the restore route
+    # to act on it, so the number comes back and the screen does not follow it.
     reconciler)
-        ft_class_init tabs >/dev/null 2>&1; FT_CLASS_SETPROP[tabs]="" ;;
+        ft_prototype_init tabs >/dev/null 2>&1; FT_PROTO_SETPROP[tabs]="" ;;
     # …and the third: one control TYPE missing from _ft_state_notify's case list, which is how
     # slider, tabs, tree and scrollbar were all found silent. Wrapped rather than rewritten, so
     # the injection is "this arm is gone" and not a stale copy of the whole function.

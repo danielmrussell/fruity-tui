@@ -262,9 +262,9 @@ for _pair in "xx-small small" "x-small small" "medium medium" "xx-large x-large"
 done
 ft_remove_attribute ga size
 _ft_bigarrow_size ga; check "unset means fit-the-largest" "$FT_RET" ""
-# …and it is NOT a class default, or `beacon { size: large }` could never win.
+# …and it is NOT a prototype default, or `beacon { size: large }` could never win.
 check "size is not baked into the class" \
-      "$(case " ${FT_CLASS_DEFAULTS[beacon]} " in *" size="*) echo "baked in" ;; *) echo free ;; esac)" \
+      "$(case " ${FT_PROTO_DEFAULTS[beacon]} " in *" size="*) echo "baked in" ;; *) echo free ;; esac)" \
       "free"
 ft_stylesheet name=ft-test-arrowsize style="beacon { size: large }"
 _ft_bigarrow_size ga; check "…so a stylesheet rule reaches it" "$FT_RET" "large"
@@ -539,7 +539,7 @@ _ft_bigarrow_arm ga
 
 note "the timing function resolves through the CASCADE, not just the call site"
 check "it is NOT a class default (or a stylesheet could never win)" \
-      "$(case " ${FT_CLASS_DEFAULTS[beacon]} " in *" animationTimingFunction="*) echo "baked in" ;; *) echo free ;; esac)" \
+      "$(case " ${FT_PROTO_DEFAULTS[beacon]} " in *" animationTimingFunction="*) echo "baked in" ;; *) echo free ;; esac)" \
       "free"
 ft_remove_attribute ga animationTimingFunction
 _ft_bigarrow_styled ga animationTimingFunction "$FT_BIGARROW_EASING"

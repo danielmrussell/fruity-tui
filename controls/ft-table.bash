@@ -51,7 +51,7 @@
 [[ -n "${_FT_TABLE_LOADED:-}" ]] && return 0
 _FT_TABLE_LOADED=1
 
-# Built once, by the class that declares `keymap=table`.
+# Built once, by the prototype that declares `keymap=table`.
 _ft_define_keymap_table() {
     # INACTIVE — merely focused. Enter steps in; the arrows still belong to focus
     # navigation. Copy here takes the WHOLE table (see ft_table_copy).
@@ -108,7 +108,7 @@ ft_table_copy() {               # name
     ft_clip_copy "$out"; _ft_announce_copy $? itemCopied
     return 0
 }
-ft_class_table() {
+ft_prototype_table() {
     # A table is styled by BORDER PROPERTIES, like any other control:
     #   borderStyle  none|hidden|solid|heavy|double|rounded|dashed|dotted  (outer box + glyphs)
     #   borderColor  themed/any colour
@@ -123,7 +123,7 @@ ft_class_table() {
     # UNSET borderStyle reads empty and the `style` shorthand can supply it; a
     # user borderStyle=heavy still overrides.
     ft_runlevels browsing=ft_keymap_table_browsing
-    ft_class extends=ft_control \
+    ft_prototype extends=ft_control \
         focusable=true \
         focusSkip=_ft_table_focus_skip \
         keymap=table \
@@ -206,7 +206,7 @@ end_ft_table() { ft-end table; }
 #   ft-table-row    "Ctrl+A" "start of line"       # row-oriented data
 #   ft-table-column "Ctrl+A" "Ctrl+E" "Ctrl+W"     # column-oriented data
 
-ft_class_tableheader() { ft_class extends=ft_control defaults="display=none"; }
+ft_prototype_tableheader() { ft_prototype extends=ft_control defaults="display=none"; }
 # COLUMN ALIGNMENT IS `textAlign`, THE ONE THE FRAMEWORK ALREADY HAD.
 #
 # This control shipped with an invented `align` while CSS's text-align was sitting right there
@@ -223,11 +223,11 @@ ft_class_tableheader() { ft_class extends=ft_control defaults="display=none"; }
 # since it is the author naming this column specifically; otherwise textAlign resolves
 # normally, inheritance and all; left when neither says anything.
 #
-# The class default that used to say `align=left` is GONE, and had to be: a class default is
-# applied as an INLINE property (see _ft_apply_args), so "the author said nothing" and "the
-# author said left" were the same string, and the alias would have out-ranked every textAlign
-# ever written. The `left` fallback now lives where it can be told apart from an answer — in
-# the read below.
+# The prototype default that used to say `align=left` is GONE, and had to be: a prototype
+# default is applied as an INLINE property (see _ft_apply_args), so "the author said nothing"
+# and "the author said left" were the same string, and the alias would have out-ranked every
+# textAlign ever written. The `left` fallback now lives where it can be told apart from an answer —
+# in the read below.
 _ft_table_column_align() {      # column-control → FT_RET = left|center|right
     ft_get "$1" align                       # local-only: did the author name THIS column?
     (( ${#FT_RET} )) && return 0
@@ -246,8 +246,8 @@ ft-table-header() {             # [header] [width=] [textAlign=]  (header text i
     fi
 }
 
-ft_class_tablerow()    { ft_class extends=ft_control defaults="display=none"; }
-ft_class_tablecolumn() { ft_class extends=ft_control defaults="display=none"; }
+ft_prototype_tablerow()    { ft_prototype extends=ft_control defaults="display=none"; }
+ft_prototype_tablecolumn() { ft_prototype extends=ft_control defaults="display=none"; }
 _FT_TR_SEQ=0; _FT_TC_SEQ=0
 # A data element (row OR column): EVERY positional argument is a cell value;
 # name= is the only recognised property. Cells go in _fti_${name}__cells, which
@@ -491,8 +491,9 @@ ft_table_scroll_set() { ft-modify "$1" scrollTop="$2"; }
 # on". A table could therefore never say which row you meant, so copying one was impossible.
 ft_table_cursor_set() { ft-modify "$1" cursor="$2"; }
 
-# The class's setProp reconciler: _ft_setprop is every route in, so a cursor written by an app,
-# by a key, by the DSL or by a state restore is bounded the same way and drags the view after it.
+# The prototype's setProp reconciler: _ft_setprop is every route in, so a cursor written by an
+# app, by a key, by the DSL or by a state restore is bounded the same way and drags the view
+# after it.
 # Stamped, not written back through ft-modify: the setter is our caller.
 _ft_table_setprop() {           # name prop value
     local n=$1 v=$3 last sc
@@ -501,7 +502,8 @@ _ft_table_setprop() {           # name prop value
     _ft_table_metrics "$n"                              # → TBL_NR TBL_SCROLL TBL_VIS TBL_MAXSCROLL
     last=$(( TBL_NR - 1 ))
     # A TABLE WITH NO ROWS HAS NO ROW TO BE ON, and answering 3 would be the same lie in
-    # miniature — so the write lands on the class default it started at rather than being kept.
+    # miniature — so the write lands on the prototype default it started at rather than being
+    # kept.
     (( last < 0 )) && { _ft_stamp_prop "$n" "$2" 0; return 0; }
     if [[ "$2" == cursor ]]; then
         (( v < 0 )) && v=0; (( v > last )) && v=$last

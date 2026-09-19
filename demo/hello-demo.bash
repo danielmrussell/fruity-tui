@@ -6,8 +6,9 @@
 #  API: a nested declarative tree (CSS properties, containers as envelopes),
 #  no parent= (nesting implies it), no focus code (Tab order = declaration
 #  order, assembled at end_ft_form), no event loop code (ENTER/SPACE activate
-#  the focused button via its class keymap; K/Q are accessKey= sugar; Tab/arrows
-#  and ESC come from the form's class keymap). App logic = two functions.
+#  the focused button via its prototype keymap; K/Q are accessKey= sugar;
+#  Tab/arrows and ESC come from the form's prototype keymap). App logic = two
+#  functions.
 #
 #    bash demo/hello-demo.bash
 # ─────────────────────────────────────────────────────────────────────────────

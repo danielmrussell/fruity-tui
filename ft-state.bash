@@ -33,7 +33,7 @@
 #  the ASCII files that is bit-identical, and for the rest it is what they already meant.
 #
 #  Restoring applies onto the tree the app has ALREADY built — it does not reconstruct
-#  controls. That is deliberate: a control's behaviour lives in its class, its hooks and its
+#  controls. That is deliberate: a control's behaviour lives in its prototype, its hooks and its
 #  keymaps, none of which belong in a data file. The app builds its UI as usual and then asks
 #  for the state back.
 #
@@ -161,7 +161,8 @@ _ft_state_notify() {            # name type
             #
             # It did neither. `value == true` is the CHECKBOX's question, and a multitoggle's
             # options are not booleans — so a 3-state control restored to `high` was announced
-            # with on_deactivate, the event the class header defines as "a checkbox unchecking".
+            # with on_deactivate, the event the prototype header defines as "a checkbox
+            # unchecking".
             # And the hook was called with NO ARGUMENT while the header documents "$1 is the new
             # value" and every other route passes it, so a handler written to that contract dies
             # on `$1: unbound variable` in the `set -u` apps this framework has.
@@ -180,8 +181,8 @@ _ft_state_notify() {            # name type
         # EACH ARM PASSES WHAT THAT CONTROL'S OWN VERB PASSES, which is the only contract a
         # handler is written against — ft_slider_set sends the value, _ft_tabs_select the index,
         # the tree its node KEY (not its cursor), ft_scrollbar_set the offset. That is also this
-        # list's whole failure mode: it is a second copy of something each class already knows,
-        # and it has now been wrong three times — the radio sharing the checkbox's arm, the
+        # list's whole failure mode: it is a second copy of something each prototype already
+        # knows, and it has now been wrong three times — the radio sharing the checkbox's arm, the
         # multitoggle called with no argument, and these four missing. tests/test-roundtrip.bash
         # gates the omission now, whoever writes the next control.
         slider)

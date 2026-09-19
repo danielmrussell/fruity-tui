@@ -184,9 +184,9 @@ _ft_sb_transient() {            # name
     FT_RET=$msg
 }
 
-ft_class_statusbar() {
+ft_prototype_statusbar() {
     # A status bar is never a focus stop — Tab always skips it.
-    ft_class extends=ft_control focusable=false defaults="display=block status= importance=crucial"
+    ft_prototype extends=ft_control focusable=false defaults="display=block status= importance=crucial"
     # Register the custom prop so the arg parser accepts a value that CONTAINS SPACES (a
     # synopsis obviously does); otherwise `status="a b"` would be mistaken for bare content.
     # Paint-only — updating it repaints the bar without reflowing the page.
@@ -201,7 +201,7 @@ ft_class_statusbar() {
     ft_prop_kind_set "text[saved]"      paint
 }
 
-# `keys` is registered globally (by the keylegend class), so a statusbar would happily
+# `keys` is registered globally (by the keylegend prototype), so a statusbar would happily
 # accept, store and never draw it — the silent no-op this control's own docs used to
 # recommend. Reject it at construction and name the replacement.
 ft-statusbar() {

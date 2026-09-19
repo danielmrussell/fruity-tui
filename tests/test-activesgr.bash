@@ -65,13 +65,13 @@ check "merely focused: the faded colour" "$FT_RET" "$FT_COLOR_FADED"
 # NO LADDER — unreachable through the public API today (every control inherits at least the
 # form's single `unfocused` rung), so the branch is exercised by clearing both sources the
 # lookup consults. It is still the same defect and the same fix.
-_saved_class=${FT_CLASS_RUNLEVELS[label]:-}
-FT_CLASS_RUNLEVELS[label]=""; FT_RUNLEVELS[plain]=""
+_saved_class=${FT_PROTO_RUNLEVELS[label]:-}
+FT_PROTO_RUNLEVELS[label]=""; FT_RUNLEVELS[plain]=""
 _ft_runlevels_of plain
 check "the no-ladder case really has no ladder" "$FT_RET" ""
 _ft_runlevel_active_sgr plain "$FALLBACK"
 check "no ladder: the fallback SGR survives" "$FT_RET" "$FALLBACK"
-FT_CLASS_RUNLEVELS[label]=$_saved_class
+FT_PROTO_RUNLEVELS[label]=$_saved_class
 
 note "the draw path: a delved-into tree paints colours, not vocabulary"
 ft-modify trec runlevel=browsing

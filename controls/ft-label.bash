@@ -2,7 +2,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 #  Fruity TUI — controls/ft-label.bash
 #
-#  The "label" class: a text box. display=inline-block (labels are
+#  The "label" prototype: a text box. display=inline-block (labels are
 #  inline-level in CSS), overflowY=auto by default — WHEN its content is
 #  taller than its box, a label grows its own scrollbar gutter in its last
 #  column, becomes focusable (Tab reaches it; otherwise focus skips it), and
@@ -59,13 +59,13 @@ _ft_define_keymap_label() {
     ft-bindkeys ft_keymap_label CTRL+c=ft_label_copy ALT+w=ft_label_copy
     ft-keymap-cap ft_keymap_label CTRL+c ft_label_copy "$FT_IMPORTANCE_NORMAL" "Copy all"
 }
-ft_class_label() {
+ft_prototype_label() {
     # draw/height/preferredWidth are bound by convention from _ft_draw_label,
-    # _ft_height_label and _ft_preferred_width_label — see _ft_class_bind_by_convention,
-    # which runs for EACH class in the chain as its constructor fires, so `button` inherits
+    # _ft_height_label and _ft_preferred_width_label — see _ft_prototype_bind_by_convention,
+    # which runs for EACH prototype in the chain as its constructor fires, so `button` inherits
     # label's height and overrides only the draw and width it has of its own.
     ft_runlevels scrolling=ft_keymap_label_scrolling
-    ft_class extends=ft_control focusable=true keymap=label mouse=label \
+    ft_prototype extends=ft_control focusable=true keymap=label mouse=label \
         focusSkip=_ft_label_focus_skip \
         wheelProbe=_ft_label_wheel_probe \
         defaults="display=inline-block overflowY=auto" \
@@ -244,7 +244,7 @@ _ft_label_scroll_by() {
 }
 # A label that has nothing left to scroll DECLINES the key (FT_KEY_BUBBLE=1) instead of
 # swallowing it, so it reaches whatever encloses the label — an overflow=auto pane, or the
-# app. This is what the wheel already did via FT_CLASS_WHEEL_PROBE ("chains to the enclosing
+# app. This is what the wheel already did via FT_PROTO_WHEEL_PROBE ("chains to the enclosing
 # scroll pane — browser-style") and what a textfield already did for the same six keys
 # (ft_textfield_idle_*); a label kept them, so a log inside a scrolling pane could not be scrolled
 # by keyboard at all — the pane scrolled by wheel and by nothing else.

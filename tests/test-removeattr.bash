@@ -74,10 +74,10 @@ check "setting display=none moved focus off it" \
       "$([[ "$FT_FOCUS" != b2 ]] && echo moved || echo stranded)" moved
 ft_remove_attribute b2 display
 ft_reflow_flush
-# _ft_disp, not ft_style: the engine's own "is this drawn?" question. Its answer is the CLASS's
-# display, which for a button is `inline-block` — not the generic `block` this asserted while
-# class defaults were stamped onto instances. Removing an author's property restores what the
-# control IS, and a button is an inline-block; `block` was the old mechanism showing through,
+# _ft_disp, not ft_style: the engine's own "is this drawn?" question. Its answer is the
+# PROTOTYPE's display, which for a button is `inline-block` — not the generic `block` this asserted
+# while prototype defaults were stamped onto instances. Removing an author's property restores what
+# the control IS, and a button is an inline-block; `block` was the old mechanism showing through,
 # because ft_remove_attribute deleted the stamped default along with the author's value and left
 # _ft_disp on its own hardcoded fallback. Same assertion, correct expectation.
 _ft_disp b2
@@ -110,10 +110,10 @@ check "…and a property REMOVAL bumps it too"         "$(( _g3 > _g2 ))" 1
 check "…and the generation is a real counter, not a constant" "$(( _g3 > 0 && _g3 > _g0 ))" 1
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  AND THE CLASS RECONCILER — the sixth item on this file's own list.
+#  AND THE PROTOTYPE RECONCILER — the sixth item on this file's own list.
 #
-#  `setProp=` (FT_CLASS_SETPROP) is the hook a class registers so a property that NAMES its
-#  state does the work on every route in, and its whole selling point over FT_CLASS_REPROP is
+#  `setProp=` (FT_PROTO_SETPROP) is the hook a prototype registers so a property that NAMES its
+#  state does the work on every route in, and its whole selling point over FT_PROTO_REPROP is
 #  that _ft_setprop is EVERY route. It was not: this one never called it.
 #
 #  Measured before the fix, on a checked checkbox — `ft_remove_attribute cb selectedIndex`

@@ -23,8 +23,9 @@
 #  so in as many words one line below the one being edited. The token check below is what makes
 #  that mistake impossible to repeat quietly.
 #
-#  The narrowing is OPT-IN per class (`textProps=`). A class that declares nothing keeps exactly
-#  the old behaviour, so the failure mode of forgetting to opt in is a recompute, never a lie.
+#  The narrowing is OPT-IN per prototype (`textProps=`). A prototype that declares nothing keeps
+#  exactly the old behaviour, so the failure mode of forgetting to opt in is a recompute, never a
+#  lie.
 # ─────────────────────────────────────────────────────────────────────────────
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 source "$here/tests/_harness.bash"
@@ -58,7 +59,7 @@ check "the value wraps to more rows than it has lines" "$(( ${#FT_TEXTFIELD_LINE
 check "…and the memo has a key"  "$(( ${#_FT_TEXTFIELD_LINES_CACHE_KEY} > 0 ))" 1
 
 note "a textfield declares which properties change its text, and only those move the text counter"
-check "it declares them" "${FT_CLASS_TEXT_PROPS[textfield]:-<none>}" "value text"
+check "it declares them" "${FT_PROTO_TEXT_PROPS[textfield]:-<none>}" "value text"
 _t0=$(_tg tf); _w0=$(_wg tf)
 ft-modify tf borderColor=201
 check "an unrelated write does NOT move the text generation" "$(_tg tf)" "$_t0"
@@ -116,7 +117,7 @@ check "…while changing nothing leaves it alone (or retention would be pointles
       "$([[ "$(_token tf)" == "$_tok2" ]] && echo 1 || echo 0)" 1
 
 note "a class that declares NOTHING is untouched — the two counters move together"
-check "a label declares nothing" "${FT_CLASS_TEXT_PROPS[label]:-<none>}" "<none>"
+check "a label declares nothing" "${FT_PROTO_TEXT_PROPS[label]:-<none>}" "<none>"
 _lt=$(_tg lb); _lw=$(_wg lb)
 ft-modify lb color=201
 check "…so an unrelated write moves its text generation too" "$(( $(_tg lb) > _lt ))" 1

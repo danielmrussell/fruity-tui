@@ -540,7 +540,7 @@ _place_variants() {
 _place_arrow() {
     if [[ -n "${FT_TYPE[specArrow]:-}" ]]; then
         # Just remove it. ft_remove gives the cells back — the arrow's erase record is exact and
-        # ft_damage_subtree asks the class for it (see _ft_ink_beacon). This used to call
+        # ft_damage_subtree asks the prototype for it (see _ft_ink_beacon). This used to call
         # _ft_bigarrow_damage_all first, a PRIVATE function, because a bigarrow's ink is not its
         # extent and an app has no way to know that. An app should never have known that.
         ft_remove specArrow 2>/dev/null
@@ -1010,7 +1010,7 @@ _cycle_effect() {
         blink) CALLOUT_EFFECT=bob ;;
         *)     CALLOUT_EFFECT=none ;;
     esac
-    ft-modify stepcallout effect="$CALLOUT_EFFECT"   # re-arms the effect; the class is told
+    ft-modify stepcallout effect="$CALLOUT_EFFECT"   # re-arms the effect; the prototype is told
     _refresh_code_panes
     return 0
 }

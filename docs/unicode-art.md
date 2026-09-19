@@ -618,7 +618,8 @@ was rejected because it reopens the door to the resizing this replaced.
 
 **Unset means fit**: the placer takes the largest rung that fits the free space. **Named means
 named**: that rung or nothing. Nothing ever deforms, and suppression was already a supported
-outcome. `size` is deliberately *not* a class default — a class default is applied as an inline
+outcome. `size` is deliberately *not* a prototype default — a prototype default is applied as
+an inline
 property, i.e. cascade level 1, so baking `medium` in would make a stylesheet rule permanently
 unreachable and turn every screen with no room for a medium arrow into a screen with no arrow.
 

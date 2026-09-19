@@ -5,22 +5,22 @@
 #  Every control carries help text. F1 (unless a control rebinds it) opens a
 #  modal window with one TAB per help entry, each a read-only, scrollable,
 #  selectable text viewer. Help comes from three layers, most-specific first:
-#     1. instance property   helpText (→ entry 0), helpText1, helpText2, …
-#     2. class default       FT_CLASS_HELP[<type>:<n>]  (set by a control class)
-#     3. the library basics  (entry 0 fallback for any control)
+#     1. instance property    helpText (→ entry 0), helpText1, helpText2, …
+#     2. prototype default    FT_PROTO_HELP[<type>:<n>]  (set by a control prototype)
+#     3. the library basics   (entry 0 fallback for any control)
 #  The FIRST LINE of each entry is its tab title; the rest is the body.
 #
-#  Convention: entry 0 is the control class's own help. A subclass/extension or
+#  Convention: entry 0 is the control prototype's own help. A derived prototype or
 #  an app instance adds entries 1, 2, …  (Text fields reserve 0=vi, 1=emacs, so
-#  their extensions start at 2 — see the class defaults below.)
+#  their extensions start at 2 — see the prototype defaults below.)
 #
 #  Depends on ft-core, ft-forms, ft-tabs, ft-frame, ft-textfield.
 # ─────────────────────────────────────────────────────────────────────────────
 [[ -n "${_FT_HELP_LOADED:-}" ]] && return 0
 _FT_HELP_LOADED=1
 
-declare -A FT_CLASS_HELP=()     # [<type>:<index>] = "Title<newline>body…"
-declare -A FT_CLASS_HELPLABEL=() FT_CLASS_HELPACCEL=() # [<type>:<index>] tab label / accessKey
+declare -A FT_PROTO_HELP=()     # [<type>:<index>] = "Title<newline>body…"
+declare -A FT_PROTO_HELPLABEL=() FT_PROTO_HELPACCEL=() # [<type>:<index>] tab label / accessKey
 # helpText<n> = a tab's body, helpLabel<n> = its header, helpAccel<n> = its accessKey.
 # Register 0..9 (only registered props are stored by ft-modify / the DSL).
 for _fh in "" 1 2 3 4 5 6 7 8 9; do
@@ -29,7 +29,7 @@ for _fh in "" 1 2 3 4 5 6 7 8 9; do
     ft_prop_kind_set "helpAccel$_fh" paint
 done; unset _fh
 
-# The library-wide fallback for entry 0 (any control with no class help). The
+# The library-wide fallback for entry 0 (any control with no prototype help). The
 # FIRST LINE is the tab title when no helpLabel is set.
 _FT_HELP_BASE="Basics
 
@@ -42,8 +42,8 @@ activate buttons, checkboxes and menu items.
 
 # Text fields: entry 0 = the Emacs/readline keys IN USE (shown first, since emacs
 # is the default mode); entry 1 = Vi (reserved). Apps/extensions add from 2 up.
-FT_CLASS_HELPLABEL[textfield:0]="Emacs"; FT_CLASS_HELPACCEL[textfield:0]="E"
-FT_CLASS_HELP[textfield:0]="**Emacs / readline** keys — the default mode.
+FT_PROTO_HELPLABEL[textfield:0]="Emacs"; FT_PROTO_HELPACCEL[textfield:0]="E"
+FT_PROTO_HELP[textfield:0]="**Emacs / readline** keys — the default mode.
 
 | Keys | Action |
 |------|--------|
@@ -60,29 +60,29 @@ FT_CLASS_HELP[textfield:0]="**Emacs / readline** keys — the default mode.
 
 Paste is your terminal's own paste (**Ctrl+Shift+V**). A read-only
 field allows move / select / copy but no edits."
-FT_CLASS_HELPLABEL[textfield:1]="Vi"; FT_CLASS_HELPACCEL[textfield:1]="V"
-FT_CLASS_HELP[textfield:1]="Vi-style modal editing is coming (\`keymode=vi\`).
+FT_PROTO_HELPLABEL[textfield:1]="Vi"; FT_PROTO_HELPACCEL[textfield:1]="V"
+FT_PROTO_HELP[textfield:1]="Vi-style modal editing is coming (\`keymode=vi\`).
 
 Text fields are in **Emacs**/readline mode by default — see the Emacs tab."
 
 # Per-control help (entry 0 for each type) so F1 is about the control you're ON,
 # not a generic page. Apps still add their own entries 1,2,… on any instance via
-# helpText<n>/helpLabel<n>/helpAccel<n>. Keys below match each class's keymap.
-FT_CLASS_HELP[button:0]="**Button** — runs an action.
+# helpText<n>/helpLabel<n>/helpAccel<n>. Keys below match each prototype's keymap.
+FT_PROTO_HELP[button:0]="**Button** — runs an action.
 
 **Enter** or **Space** activates it. If it shows an underlined letter,
 that **accelerator** activates it from anywhere on the form."
-FT_CLASS_HELP[radio:0]="**Radio** — pick one of a group.
+FT_PROTO_HELP[radio:0]="**Radio** — pick one of a group.
 
 **Space** or **Enter** selects this option (clearing the others in its
 group). **Tab** / arrows move between the group's buttons."
 # A checkbox IS a two-state multitoggle (\`[ ]\` / \`[x]\`), so both share this.
-FT_CLASS_HELP[multitoggle:0]="**Toggle** — steps through a set of values; a
+FT_PROTO_HELP[multitoggle:0]="**Toggle** — steps through a set of values; a
 **checkbox** is just the two-state case (\`[ ]\` / \`[x]\`).
 
 **Space** or **Enter** advances to the next value (and back to the first
 after the last); the accelerator does the same."
-FT_CLASS_HELP[select:0]="**Select** — a drop-down / list picker.
+FT_PROTO_HELP[select:0]="**Select** — a drop-down / list picker.
 
 | Keys | Action |
 |------|--------|
@@ -91,14 +91,14 @@ FT_CLASS_HELP[select:0]="**Select** — a drop-down / list picker.
 | Enter | choose the highlighted item |
 | Home / End | first / last item |
 | Esc | close without changing |"
-FT_CLASS_HELP[slider:0]="**Slider** — pick a number on a range.
+FT_PROTO_HELP[slider:0]="**Slider** — pick a number on a range.
 
 | Keys | Action |
 |------|--------|
 | Left / Right (or Up / Down) | step by one |
 | PgUp / PgDn | step by a larger amount |
 | Home / End | jump to the minimum / maximum |"
-FT_CLASS_HELP[tree:0]="**Tree** — a collapsible hierarchy.
+FT_PROTO_HELP[tree:0]="**Tree** — a collapsible hierarchy.
 
 | Keys | Action |
 |------|--------|
@@ -108,14 +108,14 @@ FT_CLASS_HELP[tree:0]="**Tree** — a collapsible hierarchy.
 | Enter / Space | toggle a branch · activate a leaf |
 | Home / End | first / last row |
 | PgUp / PgDn | move by a page |"
-FT_CLASS_HELP[table:0]="**Table** — a scrollable grid.
+FT_PROTO_HELP[table:0]="**Table** — a scrollable grid.
 
 | Keys | Action |
 |------|--------|
 | Up / Down | move by a row |
 | PgUp / PgDn | move by a page |
 | Home / End | jump to the first / last row |"
-FT_CLASS_HELP[tabs:0]="**Tabs** — switch between panels.
+FT_PROTO_HELP[tabs:0]="**Tabs** — switch between panels.
 
 | Keys | Action |
 |------|--------|
@@ -125,17 +125,17 @@ FT_CLASS_HELP[tabs:0]="**Tabs** — switch between panels.
 
 **Tab** moves focus into the active panel's contents."
 # Clean one-word tab titles for the per-control help (the body keeps its heading).
-FT_CLASS_HELPLABEL[button:0]="Button"
-FT_CLASS_HELPLABEL[radio:0]="Radio"
-FT_CLASS_HELPLABEL[multitoggle:0]="Toggle"
+FT_PROTO_HELPLABEL[button:0]="Button"
+FT_PROTO_HELPLABEL[radio:0]="Radio"
+FT_PROTO_HELPLABEL[multitoggle:0]="Toggle"
 # A checkbox is now its own type but IS a two-state multitoggle — share its Toggle help.
-FT_CLASS_HELP[checkbox:0]=${FT_CLASS_HELP[multitoggle:0]}
-FT_CLASS_HELPLABEL[checkbox:0]=${FT_CLASS_HELPLABEL[multitoggle:0]}
-FT_CLASS_HELPLABEL[select:0]="Select"
-FT_CLASS_HELPLABEL[slider:0]="Slider"
-FT_CLASS_HELPLABEL[tree:0]="Tree"
-FT_CLASS_HELPLABEL[table:0]="Table"
-FT_CLASS_HELPLABEL[tabs:0]="Tabs"
+FT_PROTO_HELP[checkbox:0]=${FT_PROTO_HELP[multitoggle:0]}
+FT_PROTO_HELPLABEL[checkbox:0]=${FT_PROTO_HELPLABEL[multitoggle:0]}
+FT_PROTO_HELPLABEL[select:0]="Select"
+FT_PROTO_HELPLABEL[slider:0]="Slider"
+FT_PROTO_HELPLABEL[tree:0]="Tree"
+FT_PROTO_HELPLABEL[table:0]="Table"
+FT_PROTO_HELPLABEL[tabs:0]="Tabs"
 
 # Gather a control's help into parallel FT_HELP_TITLE[] / FT_HELP[] / FT_HELP_ACCEL[]
 # arrays (one slot per BUILT tab). A missing helpText entry is SPARSE — skipped,
@@ -148,12 +148,12 @@ _ft_help_texts() {              # name
     for (( i=0; i<=9; i++ )); do
         prop=helpText; (( i > 0 )) && prop=helpText$i
         _ft_get_raw "$name" "$prop"; txt=$FT_RET
-        [[ -z "$txt" ]] && txt=${FT_CLASS_HELP[$t:$i]:-}
+        [[ -z "$txt" ]] && txt=${FT_PROTO_HELP[$t:$i]:-}
         (( i == 0 )) && [[ -z "$txt" ]] && txt=$_FT_HELP_BASE
         [[ -z "$txt" ]] && continue                       # sparse → no tab for this index
         prop=helpLabel; (( i > 0 )) && prop=helpLabel$i
         _ft_get_raw "$name" "$prop"; lbl=$FT_RET
-        [[ -z "$lbl" ]] && lbl=${FT_CLASS_HELPLABEL[$t:$i]:-}
+        [[ -z "$lbl" ]] && lbl=${FT_PROTO_HELPLABEL[$t:$i]:-}
         if [[ -n "$lbl" ]]; then title=$lbl; body=$txt     # explicit label → full body
         else                                               # else the first line IS the title
             title=${txt%%$'\n'*}
@@ -161,7 +161,7 @@ _ft_help_texts() {              # name
         fi
         prop=helpAccel; (( i > 0 )) && prop=helpAccel$i
         _ft_get_raw "$name" "$prop"; acc=$FT_RET
-        [[ -z "$acc" ]] && acc=${FT_CLASS_HELPACCEL[$t:$i]:-}
+        [[ -z "$acc" ]] && acc=${FT_PROTO_HELPACCEL[$t:$i]:-}
         FT_HELP_TITLE+=("$title"); FT_HELP+=("$body"); FT_HELP_ACCEL+=("$acc")
     done
 }

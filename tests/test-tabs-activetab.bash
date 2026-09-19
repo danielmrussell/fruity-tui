@@ -12,7 +12,7 @@
 #  wrong tab.
 #
 #  In the DOM an index property that names the state is settable and acts — `select.selectedIndex`
-#  moves the selection — so the class acts on the change, via FT_CLASS_REPROP.
+#  moves the selection — so the prototype acts on the change, via FT_PROTO_REPROP.
 # ─────────────────────────────────────────────────────────────────────────────
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 source "$here/tests/_harness.bash"

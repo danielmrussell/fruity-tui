@@ -68,7 +68,7 @@ ft-modify cb6 checkmarkVariant=UNICODE
 ft_get cb6 checkmarkVariant;  check "…and a keyword is case-insensitive"    "$FT_RET" "unicode"
 # `[ ]` is three columns and `☐` is one, so the variant decides the control's width.
 # Asserted against the TABLE, not against ft_prop_kind: an unregistered name already answers
-# `layout` (the conservative default), so asking the accessor would pass whatever the class did.
+# `layout` (the conservative default), so asking the accessor would pass whatever the prototype did.
 check "checkmarkVariant is registered layout, not merely defaulted" \
       "${FT_PROP_KIND[checkmarkVariant]:-<unregistered>}" "layout"
 ft_prop_kind glyph;            check "glyph -> layout, for the same reason" "$FT_RET" "layout"

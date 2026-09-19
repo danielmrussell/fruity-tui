@@ -369,7 +369,7 @@ what "important" is worth. `FT_IMPORTANCE_MINOR` (30) was added below the three 
 for content whose whole job is to be READ: a paragraph reads around an obstruction, a button does
 not work around one.
 
-Class defaults: button / checkbox / select / slider `important`, keylegend / statusbar `crucial`,
+Prototype defaults: button / checkbox / select / slider `important`, keylegend / statusbar `crucial`,
 textfield and table `normal` (inherited), label `minor`. Any instance or stylesheet overrides it
 like any other property.
 
@@ -387,7 +387,7 @@ below on all 43 steps — but the search now spends its coverage on prose, which
 for.
 
 **The one trap, and it is the FT_RET clobber again.** `_ft_importance` returns through FT_RET, and
-class constructors declare their key bindings in tables interleaved with other FT_RET-returning
+prototype constructors declare their key bindings in tables interleaved with other FT_RET-returning
 calls — so calling it from `ft-keymap-cap` without restoring FT_RET silently corrupted whatever
 the caller had in flight. The scrollbar's arrow bindings stopped dispatching entirely
 (test-scrollbar 29/33, test-dispatch 44/47) while every importance VALUE was perfectly correct.
@@ -473,7 +473,7 @@ writes every requested page:step frame to /tmp/frame.txt at the invoking tty's s
 
 **`:dragging` is a real state.** `ft_state :dragging '[dragging=true]'` (global, generic — anything
 draggable can set it). The beacon's grab sets `dragging=true`, release removes it, and the drag
-ghost resolves its border through the CASCADE via `_ft_border_glyphs`: beacon class defaults say
+ghost resolves its border through the CASCADE via `_ft_border_glyphs`: beacon prototype defaults say
 `borderStyle=dashed borderRadius=1`, so the ghost is a dashed rounded outline restylable with
 `beacon:dragging { borderStyle: double }` or an instance `borderStyle=`. The chip's own border
 stays its hardcoded rounded look and does not consult these — the defaults exist for the ghost.
@@ -482,7 +482,7 @@ Caught in flight by tests/test-notrace.bash, worth remembering: `borderRadius=tr
 numeric-prop validation (legal: 0 square, >=1 rounded — 'true' is tolerated only at the frame's
 read site), and the write-time error printed on every step change, leaking literal text like
 `rRadius="tru` onto the pty screen. Both the notrace and render "failures" were that one leak.
-A class default is a WRITE and goes through validation; the resolver's leniency does not.
+A prototype default is a WRITE and goes through validation; the resolver's leniency does not.
 
 **The degenerate anchor gets a second chance.** When anchor=auto produces no drawable line (zero
 length or swallowed head — FT_LEADER_HEAD_INSIDE_BOX), `_ft_beacon_leader` is now a wrapper over

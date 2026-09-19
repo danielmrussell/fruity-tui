@@ -126,7 +126,7 @@ check "removing it restores the original ring" "${FT_FOCUS_RING[*]}" "alpha omeg
 note "NOTHING may write to stderr when handed a control that has been removed"
 # THE SIGNATURE FAILURE OF THIS CODEBASE. A control's NAME outlives it — in the focus ring, as
 # the mouse-capture target, in a handler that runs after the removal — and the code then asks
-# for its TYPE to look up a class table. `${SOME_ASSOC[""]}` is a bash ERROR, printed to
+# for its TYPE to look up a prototype table. `${SOME_ASSOC[""]}` is a bash ERROR, printed to
 # stderr, which in a TUI is the alt screen the user is looking at; worse, the surrounding
 # `[[ -n … ]]` can still take its TRUE branch, so the caller acts on garbage.
 # Found four separate sites this way. This drives every entry point that reaches such a
@@ -177,7 +177,7 @@ note "a control removed BETWEEN the press and the release"
 # A press captures its target by NAME until the release. A row that deletes itself, a button
 # that closes its own panel — the control is gone before the release arrives. The capture then
 # pointed at a corpse: the release was delivered to it, the next press fought a stale capture,
-# and asking for the class mouse handler of a control with no type subscripted an associative
+# and asking for the prototype mouse handler of a control with no type subscripted an associative
 # array with "", which bash reports on stderr — the alt screen.
 ft_remove ap 2>/dev/null
 ft-form name=mp width=70 height=10

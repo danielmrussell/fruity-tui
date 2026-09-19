@@ -2,7 +2,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 #  Fruity TUI — controls/ft-slider.bash
 #
-#  The "slider" class — HTML's <input type=range>: min/max/step/value, one
+#  The "slider" prototype — HTML's <input type=range>: min/max/step/value, one
 #  row tall, drawn in one of several Unicode styles:
 #
 #    variant=track   ├────●─────┤     (default: light rail, round knob)
@@ -27,7 +27,7 @@
 [[ -n "${_FT_SLIDER_LOADED:-}" ]] && return 0
 _FT_SLIDER_LOADED=1
 
-# Built once, by the class that declares `keymap=slider`.
+# Built once, by the prototype that declares `keymap=slider`.
 _ft_define_keymap_slider() {
     # INACTIVE — merely focused. Enter steps in. The arrows are NOT bound here on purpose:
     # a slider you are only passing through must not change its value, which is exactly what
@@ -54,9 +54,9 @@ _ft_define_keymap_slider() {
     ft-keymap-cap ft_keymap_slider_adjusting END   ft_slider_key_max    "$FT_IMPORTANCE_NORMAL"    "Maximum"
     ft-keymap-cap ft_keymap_slider_adjusting ESC   ft_key_undelve       "$FT_IMPORTANCE_IMPORTANT" "Leave"
 }
-ft_class_slider() {
+ft_prototype_slider() {
     ft_runlevels adjusting=ft_keymap_slider_adjusting
-    ft_class extends=ft_control \
+    ft_prototype extends=ft_control \
         defaults="importance=important" \
         focusable=true \
         mouse=slider \
@@ -79,8 +79,9 @@ ft_class_slider() {
 # question, which is the ft-option "no value= of its own" shape one control over.
 #
 # Materialised HERE rather than in the reconciler because a slider built with no min, max, step
-# OR value writes none of the four, so the reconciler never runs for it — the class defaults are
-# not stamped onto instances. The constructor is the one place every slider passes through.
+# OR value writes none of the four, so the reconciler never runs for it — the prototype
+# defaults are not stamped onto instances. The constructor is the one place every slider passes
+# through.
 ft-slider() {
     ft_new slider "$@" || return
     local n=$FT_RET
@@ -121,10 +122,10 @@ _ft_slider_sanitize() {         # name value → FT_RET
     (( v > mx )) && v=$(( mn + ((mx - mn) / st) * st ))        # …and back inside the range
     FT_RET=$v
 }
-# The class's setProp reconciler: `value` has to be sanitized whenever it changes OR whenever the
-# range it is measured against does. _ft_setprop is every route in — ft-modify, the DSL, a state
-# restore — which matters most at CONSTRUCTION, where `ft-slider value=50 max=10` writes the two
-# in that order and only the second one can fix the first.
+# The prototype's setProp reconciler: `value` has to be sanitized whenever it changes OR
+# whenever the range it is measured against does. _ft_setprop is every route in — ft-modify, the
+# DSL, a state restore — which matters most at CONSTRUCTION, where `ft-slider value=50 max=10`
+# writes the two in that order and only the second one can fix the first.
 # Writes go through _ft_stamp_prop, not _ft_setprop: the setter is our caller.
 _ft_slider_sanitize_prop() {    # name prop value
     case $2 in min|max|step|value) : ;; *) return 0 ;; esac

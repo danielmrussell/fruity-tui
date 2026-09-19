@@ -2,7 +2,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 #  Fruity TUI — controls/ft-frame.bash
 #
-#  The "frame" class: a plain container whose only specialization over the
+#  The "frame" prototype: a plain container whose only specialization over the
 #  root ft_control is a border by default (its whole purpose — same idea as
 #  <fieldset> in browsers) and a draw function: border + optional centered
 #  title + interior fill so stale content never shows through a repaint.
@@ -136,11 +136,11 @@ _ft_border_glyphs() {           # name
     fi
 }
 
-ft_class_frame() {
+ft_prototype_frame() {
     # A frame's content is its TITLE (drawn over the top border, never
     # inside) — so its bare-argument/content property is `title`, not text:
     #     ft-frame name=win " My Window "
-    ft_class extends=ft_control textProp=title topEdgeProp=title defaults="border=true"
+    ft_prototype extends=ft_control textProp=title topEdgeProp=title defaults="border=true"
     ft_prop_kind_set title layout   # same cheap size-unchanged path text takes
 }
 
@@ -153,8 +153,8 @@ _ft_draw_frame() {                       # name
     # THE predicate, not a fourth reading of it. `ft_resolved_prop "$name" border` answered ""
     # for a frame written `border=""`, took the borderless branch, and drew no lines — while
     # _ft_inset4 and _ft_border read that same empty value as "nothing was set" and fell through
-    # to the class default, reserving the cell anyway. A child sat at (1,1) inside a frame with
-    # no border to sit inside. One question, one implementation, and this one also answers for
+    # to the prototype default, reserving the cell anyway. A child sat at (1,1) inside a frame
+    # with no border to sit inside. One question, one implementation, and this one also answers for
     # `borderStyle: none`, which the layout now agrees is no border.
     _ft_border "$name"; local bordered=$FT_RET
     ft_resolved_prop "$name" title;  local title=$FT_RET

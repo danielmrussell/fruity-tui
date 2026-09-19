@@ -2,7 +2,7 @@
 # Tests for ft-css.bash: the CSS cascade engine — parsing (comments, selector lists,
 # compound selectors, specificity, declarations), selector matching (type / #id /
 # .class / :focus / :disabled / :root / descendant), and the 5-level resolver
-# (inline > app sheets > inheritance > default sheet > class default) with custom
+# (inline > app sheets > inheritance > default sheet > prototype default) with custom
 # properties + var(). M1 is invisible: this exercises the engine directly.
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 source "$here/tests/_harness.bash"
@@ -453,7 +453,7 @@ ft_stylesheet name=hdrid style='#hhead { color: 99; }'
 _ft_compose_sgr hhead "$FT_COLOR_HEADING"; hasc "$FT_RET" "38;5;99"; check "#id out-specifies 'heading { … }'" "$FT_RET" yes
 _ft_height_boxheader; check "a boxheader is 3 rows tall" "$FT_RET" 3
 _ft_height_heading;   check "a heading is 1 row tall"    "$FT_RET" 1
-check "neither is a focus stop" "${FT_CLASS_FOCUSABLE[boxheader]}${FT_CLASS_FOCUSABLE[heading]}" "00"
+check "neither is a focus stop" "${FT_PROTO_FOCUSABLE[boxheader]}${FT_PROTO_FOCUSABLE[heading]}" "00"
 
 # ── Attribute selectors (the six operators + presence) ───────────────────────
 note "attribute selectors: [a] [a=v] [a^=] [a\$=] [a*=] [a~=] [a|=]"
@@ -608,9 +608,9 @@ note "an attribute tested INSIDE :not() invalidates the style cache when it chan
 # A CUSTOM property, so none of the many sheets this suite already installs can reach it —
 # with `color` the answer came back from an unrelated rule and the test measured that instead.
 FT_TYPE[nq]=slider; FT_PARENT[nq]=""
-# A PLAIN attribute, not `runlevel`: a runlevel value is validated against the class that
-# declared it, and this control is synthetic (FT_TYPE poked in, no class ever built), so the
-# write would be refused and the test would measure the refusal instead of the cache.
+# A PLAIN attribute, not `runlevel`: a runlevel value is validated against the prototype
+# that declared it, and this control is synthetic (FT_TYPE poked in, no prototype ever built), so
+# the write would be refused and the test would measure the refusal instead of the cache.
 ft_stylesheet name=notdep style=':not([mode=rest]) { --nq-mark: 99; }'
 _ft_setprop nq mode rest
 ft_style nq --nq-mark; check "at rest the rule does not apply"        "${FT_RET:-none}" none
@@ -626,14 +626,14 @@ _ft_setprop nq disabled true
 ft_style nq --nq-en; check "disabled → it stops applying"               "${FT_RET:-none}" none
 
 note ":engaged — the one question every class answers the same way"
-# `runlevel` is per-class: a slider adjusts, a textfield edits, a tree browses. So a
+# `runlevel` is per-prototype: a slider adjusts, a textfield edits, a tree browses. So a
 # stylesheet cannot ask "is this control activated?" by VALUE without naming every level
-# every class might invent. :engaged asks the question that is class-independent — is it off
-# the universal zero rung? It is a predicate rather than the obvious `:not([runlevel=unfocused])`
-# because an attribute test is TRUE when the attribute is ABSENT: every control that has no
-# runlevel at all (a label, a form, the theme's probe control) would read as activated.
-# The rules are TYPE-scoped on purpose. Custom properties inherit, so an unscoped `:poised`
-# would match the enclosing FORM — which has no runlevel and so is always at rest — and
+# every prototype might invent. :engaged asks the question that is prototype-independent — is it
+# off the universal zero rung? It is a predicate rather than the obvious
+# `:not([runlevel=unfocused])` because an attribute test is TRUE when the attribute is ABSENT: every
+# control that has no runlevel at all (a label, a form, the theme's probe control) would read as
+# activated. The rules are TYPE-scoped on purpose. Custom properties inherit, so an unscoped
+# `:poised` would match the enclosing FORM — which has no runlevel and so is always at rest — and
 # cascade down onto the engaged slider, hiding the very thing under test.
 ft-form name=eg width=40 height=8
     ft-slider name=egs  min=0 max=100 value=40
@@ -786,12 +786,12 @@ check "the SGR the painter gets carries the app's colour" "$FT_RET" $'\e[38;5;10
 
 
 # ═══ THE LAYOUT ASKS THE CASCADE ═════════════════════════════════════════════
-# Second of the two faults behind "a stylesheet cannot set padding". The first was that a class
-# default outranked every sheet; this is that the LAYOUT never consulted a sheet at all. It
-# resolves through ft_resolved_prop and the raw fast paths, and ft_style is the PAINT path — 49 calls to
-# the one against 9 to the other in ft-forms.bash. Proven on a property NO class defaults, so
-# the level fix cannot be the cause: with `#lfr { width: 30; height: 7 }` registered, ft_style
-# answered 30 and 7, ft_resolved_prop answered nothing, and the frame laid out 90x3.
+# Second of the two faults behind "a stylesheet cannot set padding". The first was that a
+# prototype default outranked every sheet; this is that the LAYOUT never consulted a sheet at all.
+# It resolves through ft_resolved_prop and the raw fast paths, and ft_style is the PAINT path — 49
+# calls to the one against 9 to the other in ft-forms.bash. Proven on a property NO prototype
+# defaults, so the level fix cannot be the cause: with `#lfr { width: 30; height: 7 }` registered,
+# ft_style answered 30 and 7, ft_resolved_prop answered nothing, and the frame laid out 90x3.
 note "a stylesheet reaches the LAYOUT, not just the paint"
 ft-form name=lapp width=90 height=30
     ft-frame name=lfr title="L"

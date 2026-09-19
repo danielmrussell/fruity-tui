@@ -7,7 +7,7 @@
 #  an OK button that reports the live selection state.
 #
 #  Note how little app code there is: activating a radio SELECTS it and a
-#  checkbox TOGGLES it as class behavior inside ft_activate — the app only
+#  checkbox TOGGLES it as prototype behavior inside ft_activate — the app only
 #  hooks btnOk_on_activate to read the state back. Focus order is declaration
 #  order; every accessKey= letter is auto-bound on the form.
 #

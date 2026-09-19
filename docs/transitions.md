@@ -397,7 +397,7 @@ split handed `cubic-bezier(0.34` to the solver, which fell back to linear withou
 **One deviation, deliberate, and it is in the delay's *default*, not its meaning.** CSS measures
 `animation-delay` from when the element starts animating, and that is honoured: the hold is
 `delay − flight`, so an author who writes `2960ms` gets the leave at 2960 ms whatever the flight
-costs. But the *class default* is still expressed as a hold (`FT_BIGARROW_HOLD_MS=2400`), and
+costs. But the *prototype default* is still expressed as a hold (`FT_BIGARROW_HOLD_MS=2400`), and
 the default delay is computed as flight + hold — because 2400 ms is the number that was tuned by
 looking at the thing, and a rename must not silently retime it. Verified: the shipped default
 hold is still 2400 ms to the millisecond.

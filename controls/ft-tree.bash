@@ -25,7 +25,7 @@
 [[ -n "${_FT_TREE_LOADED:-}" ]] && return 0
 _FT_TREE_LOADED=1
 
-# Built once, by the class that declares `keymap=tree`.
+# Built once, by the prototype that declares `keymap=tree`.
 _ft_define_keymap_tree() {
     # THE INACTIVE RUNG — merely focused. Almost nothing is bound: the arrows still belong
     # to focus navigation, so passing THROUGH a tree does not drive its cursor. Enter steps
@@ -93,13 +93,13 @@ ft_tree_copy() {                # name
     ft_clip_copy "$out"; _ft_announce_copy $? itemCopied
     return 0
 }
-ft_class_tree() {
+ft_prototype_tree() {
     # ONE RUNG IN. `browsing` is where the cursor lives and where the arrows are the tree's;
     # `unfocused` is standing next to it. Declaring the ladder also registers the CSS states
     # `tree:unfocused` / `tree:browsing`, so a theme can style the cursor row differently at
     # each — which is how the highlight is shown faded until you have actually stepped in.
     ft_runlevels browsing=ft_keymap_tree_browsing
-    ft_class extends=ft_control \
+    ft_prototype extends=ft_control \
         focusable=true \
         mouse=tree \
         keymap=tree \
@@ -111,8 +111,8 @@ ft_class_tree() {
 }
 # Nodes are display=none data holders (never laid out or drawn on their own —
 # the tree draws them), exactly like ft-table's rows.
-ft_class_treenode() {
-    ft_class extends=ft_control defaults="display=none depth=0 expanded=false key="
+ft_prototype_treenode() {
+    ft_prototype extends=ft_control defaults="display=none depth=0 expanded=false key="
     # Register key/depth/expanded so the arg parser accepts them as PROPERTIES
     # even when the value contains a space — a file named "my report.txt" makes
     # key="f:my report.txt", and without this the parser would mistake the whole

@@ -17,8 +17,8 @@
 [[ -n "${_FT_HEADING_LOADED:-}" ]] && return 0
 _FT_HEADING_LOADED=1
 
-ft_class_heading() {
-    ft_class extends=ft_control focusable=false \
+ft_prototype_heading() {
+    ft_prototype extends=ft_control focusable=false \
         defaults="display=block text="
 }
 

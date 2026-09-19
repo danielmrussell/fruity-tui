@@ -33,7 +33,7 @@ check "its nested grandchild is gone" "${FT_TYPE[grandchild]+set}"  ""
 check "the grandchild's own dirty entry is gone too" "${FT_DIRTY[grandchild]+set}" ""
 
 note "ft_remove cleans up a control's own instance-overlay keymap"
-# (Class-default keymaps are shared and survive — only the per-instance
+# (Prototype-default keymaps are shared and survive — only the per-instance
 # overlay, created by a trailing `keymap k=action` section, is torn down.)
 ft-scrollbar name=sb parent=app width=1 height=5 keymap UP=ft_quit
 km="${FT_KEYMAP[sb]}"

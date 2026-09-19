@@ -2,8 +2,8 @@
 # ─────────────────────────────────────────────────────────────────────────────
 #  Fruity TUI — controls/ft-button.bash
 #
-#  The "button" class — the framework's showcase of constructor-chain
-#  inheritance: its class-constructor calls label's (inheriting text sizing,
+#  The "button" prototype — the framework's showcase of constructor-chain
+#  inheritance: its prototype-constructor calls label's (inheriting text sizing,
 #  wrapping, and the inline-block default wholesale), then overrides only
 #  what a button genuinely owns: its draw function (focus styling + accessKey
 #  underline), focusability, and the shared ENTER/SPACE→ft_activate keymap.
@@ -14,7 +14,7 @@
 [[ -n "${_FT_BUTTON_LOADED:-}" ]] && return 0
 _FT_BUTTON_LOADED=1
 
-ft_class_button() {
+ft_prototype_button() {
     # A button is a focusable label that activates. (draw and preferredWidth bind themselves
     # from _ft_draw_button / _ft_preferred_width_button; focusSkip=none clears label's
     # "skip me when I have nothing to scroll" — a button is always a focus stop.)
@@ -32,15 +32,15 @@ ft_class_button() {
     # around an obstruction, a button does not work around one.
     # textAlign=center is the BUTTON'S OWN default, not an accident of the painter. A real
     # <button> centres its label from the UA stylesheet, which is why a page-level
-    # `text-align: right` does not re-align one — the class default says exactly that here, and
-    # says it where a reader looks for it. It also has to be a default rather than a constant in
+    # `text-align: right` does not re-align one — the prototype default says exactly that here,
+    # and says it where a reader looks for it. It also has to be a default rather than a constant in
     # the draw, because the whole point is that an author can override it: `textAlign=left` on
     # the instance is a sentence the framework already knows how to say.
-    # (A class default is applied as an INLINE property, so a stylesheet's `button { text-align:
-    # … }` cannot outrank it — the trade-off ft-beacon's class comment records. It costs nothing
-    # today: ft_resolved_prop, which every control's painter reads through, does not consult the cascade
-    # for any property on any control.)
-    ft_class extends=label focusable=true focusSkip=none keymap=activate mouse=activate \
+    # (A prototype default is applied as an INLINE property, so a stylesheet's `button
+    # { text-align: … }` cannot outrank it — the trade-off ft-beacon's prototype comment
+    # records. It costs nothing today: ft_resolved_prop, which every control's painter reads
+    # through, does not consult the cascade for any property on any control.)
+    ft_prototype extends=label focusable=true focusSkip=none keymap=activate mouse=activate \
         defaults="importance=crucial textAlign=center"
 }
 

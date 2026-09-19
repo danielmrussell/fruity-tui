@@ -58,7 +58,7 @@ _INC_TYPES=(label textfield textviewer button checkbox radio multitoggle slider 
 
 # ── the sample for each property ─────────────────────────────────────────────
 # `!` means "the opposite of what the control has now", for booleans whose default differs by
-# class. A TYPE:NAME entry overrides NAME for that control type.
+# prototype. A TYPE:NAME entry overrides NAME for that control type.
 declare -A _INC_SAMPLE=(
     [acceptsTab]=false         [accessKey]=z              [activateToEdit]='!'
     [activeTab]=1              [alignItems]=center        [alignSelf]=center
@@ -333,12 +333,12 @@ if [[ "${1:-}" == --fixture ]]; then
     _inc_base "build the $_INC_TYPE fixture"
 
     # ── every property, written and put back ──
-    # EVERY class initialised first: a constructor runs lazily at its first instance, so the
+    # EVERY prototype initialised first: a constructor runs lazily at its first instance, so the
     # kinds table of a process that built only a slider holds only the names a slider's scene
     # registered — and "every property on every subject" would quietly mean "the ones this
     # fixture happened to meet".
-    for _class in $(declare -F | sed -n 's/^declare -f ft_class_//p'); do
-        ft_class_init "$_class" >/dev/null 2>&1
+    for _class in $(declare -F | sed -n 's/^declare -f ft_prototype_//p'); do
+        ft_prototype_init "$_class" >/dev/null 2>&1
     done
     mapfile -t _INC_NAMES < <(printf '%s\n' "${!FT_PROP_KIND[@]}" | LC_ALL=C sort)
     for _subject in $_INC_SUBJECTS; do
@@ -368,7 +368,7 @@ if [[ "${1:-}" == --fixture ]]; then
         done
     done
 
-    # ── the class's own public verbs ──
+    # ── the prototype's own public verbs ──
     case $_INC_TYPE in
         label)       _inc_case "verb" ft_label_scroll_set sub 3 ;;
         textfield)   _inc_case "verb" ft_textfield_select_all sub
@@ -418,11 +418,11 @@ fi
 _INC_WORK=$(mktemp -d); trap 'rm -rf "$_INC_WORK"' EXIT
 
 note "every property FT_PROP_KIND knows has a sample or a stated reason not to"
-# The kinds table is only complete once every class has been initialised — constructors run
+# The kinds table is only complete once every prototype has been initialised — constructors run
 # lazily — so ask a fresh interpreter that has built one of each.
 _inc_names=$(bash -c '
     cd "$1" && source ./fruity-tui.bash && ft_init >/dev/null 2>&1; exec {FT_TTY}>/dev/null
-    for c in $(declare -F | sed -n "s/^declare -f ft_class_//p"); do ft_class_init "$c" >/dev/null 2>&1; done
+    for c in $(declare -F | sed -n "s/^declare -f ft_prototype_//p"); do ft_prototype_init "$c" >/dev/null 2>&1; done
     printf "%s\n" "${!FT_PROP_KIND[@]}" | LC_ALL=C sort' _ "$here")
 _inc_unsampled=""
 for _i in $_inc_names; do

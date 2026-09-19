@@ -21,8 +21,8 @@
 [[ -n "${_FT_BOXHEADER_LOADED:-}" ]] && return 0
 _FT_BOXHEADER_LOADED=1
 
-ft_class_boxheader() {
-    ft_class extends=ft_control focusable=false \
+ft_prototype_boxheader() {
+    ft_prototype extends=ft_control focusable=false \
         defaults="display=block text="
 }
 

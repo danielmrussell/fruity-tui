@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Unit tests for the ft-frame TITLE — the frame's content property.
 #
-# A frame's content is its title (ft_class_frame declares textProp=title), and content is not
+# A frame's content is its title (ft_prototype_frame declares textProp=title), and content is not
 # chrome: a <fieldset> with border:none still shows its <legend>. Two ways this disagreed with
 # `ft_get title`, both of them in the draw:
 #

@@ -36,8 +36,8 @@ picker_on_change() { _status "switched to tab #$(( $1 + 1 ))"; }   # ft-tabs on_
 btnQuit_on_activate() { ft_quit; }
 
 # Instance accelerators: keys 1..4 jump straight to a tab (NOT built into the
-# ft-tabs class — just this demo's form keymap). A focused text field still eats
-# the digit (types it), so this only fires when you're not editing a field.
+# ft-tabs prototype — just this demo's form keymap). A focused text field still
+# eats the digit (types it), so this only fires when you're not editing a field.
 _tab1() { ft_tabs_select picker 0; }
 _tab2() { ft_tabs_select picker 1; }
 _tab3() { ft_tabs_select picker 2; }

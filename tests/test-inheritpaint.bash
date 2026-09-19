@@ -11,7 +11,7 @@
 #  this survived: the demos set colours inline.
 #
 #  THE NARROWNESS WAS LOAD-BEARING, and the fix must not undo it. `ft_style` also applies a
-#  class's built-in default, so asking it for `backgroundColor` on an unstyled label answers 39
+#  prototype's built-in default, so asking it for `backgroundColor` on an unstyled label answers 39
 #  — a real colour where the engine requires NOTHING, because an unset background must stay a
 #  HOLE that shows whatever is behind it (docs: the transparent-background rule). So the
 #  cascade is consulted only for properties that actually INHERIT; background keeps the old
@@ -76,7 +76,7 @@ painted_fg_of kidP
 check "…so the paint sets no foreground of its own" "$FT_RET" ""
 
 note "AN UNSET BACKGROUND IS STILL A HOLE"
-# ft_style would answer a class default here; the compose path must not ask it. The label
+# ft_style would answer a prototype default here; the compose path must not ask it. The label
 # establishes only the background it INHERITS from an ancestor that actually declares one —
 # never one of its own invention.
 ft_style plainbox backgroundColor

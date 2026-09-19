@@ -197,8 +197,8 @@ rm -f "$_cberr"
 #  A BARE MULTITOGGLE'S `checked` WENT STALE, AND THEN WEDGED THE CONTROL.
 #
 #  The reconciler ACCEPTS `checked=` — it maps it to a selection — so it has claimed the name.
-#  It wrote the name back only on the checkbox subclass, so a plain multitoggle's went stale the
-#  moment the state moved any other way, and ft-modify's "skip a write equal to the stored
+#  It wrote the name back only on the checkbox derived prototype, so a plain multitoggle's went
+#  stale the moment the state moved any other way, and ft-modify's "skip a write equal to the stored
 #  value" then made `checked=true` a no-op:
 #
 #      ft-modify mt checked=true   paint [x]  value true   checked true

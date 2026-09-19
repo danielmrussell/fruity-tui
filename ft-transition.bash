@@ -501,13 +501,13 @@ _ft_transition_claim() {        # start end
 # ── The two layers → transition runs ─────────────────────────────────────────
 # A run is a stretch of one row over which BOTH layers hold one style, so every cell in it
 # blends identically. Runs that share a style PAIR share a blend class, and the colour
-# arithmetic is done per class per frame — six classes, not 320 cells.
-declare -a _FT_RUN_PREFIX=() _FT_RUN_CLASS=() _FT_RUN_TEXT_FROM=() _FT_RUN_TEXT_TO=()
-declare -a _FT_CLASS_FG_FROM=() _FT_CLASS_BG_FROM=() _FT_CLASS_ATTR_FROM=() \
-           _FT_CLASS_FG_TO=()   _FT_CLASS_BG_TO=()   _FT_CLASS_ATTR_TO=()
-declare -A _FT_CLASS_ID=()
+# arithmetic is done per blend class per frame — six of them, not 320 cells.
+declare -a _FT_RUN_PREFIX=() _FT_RUN_BLEND=() _FT_RUN_TEXT_FROM=() _FT_RUN_TEXT_TO=()
+declare -a _FT_BLEND_FG_FROM=() _FT_BLEND_BG_FROM=() _FT_BLEND_ATTR_FROM=() \
+           _FT_BLEND_FG_TO=()   _FT_BLEND_BG_TO=()   _FT_BLEND_ATTR_TO=()
+declare -A _FT_BLEND_ID=()
 _FT_RUN_COUNT=0
-_FT_CLASS_COUNT=0
+_FT_BLEND_COUNT=0
 declare -a _FT_GROUND_COLUMN=() _FT_GROUND_WIDTH=() _FT_GROUND_TEXT=() _FT_GROUND_STYLE=() \
            _FT_GROUND_ROW_START=() _FT_GROUND_ROW_COUNT=()
 # OWNER FIRST, AND IT IS NOT OPTIONAL. These arrays are shared by every transition, and the
@@ -521,10 +521,10 @@ declare -a _FT_GROUND_COLUMN=() _FT_GROUND_WIDTH=() _FT_GROUND_TEXT=() _FT_GROUN
 _ft_transition_runs() {         # owner top left height width
     local owner=$1 top=$2 left=$3 height=$4 width=$5
     _FT_TRANSITION_RUNS_OWNER=$owner
-    _FT_RUN_PREFIX=(); _FT_RUN_CLASS=(); _FT_RUN_TEXT_FROM=(); _FT_RUN_TEXT_TO=()
-    _FT_CLASS_FG_FROM=(); _FT_CLASS_BG_FROM=(); _FT_CLASS_ATTR_FROM=()
-    _FT_CLASS_FG_TO=();   _FT_CLASS_BG_TO=();   _FT_CLASS_ATTR_TO=()
-    _FT_CLASS_ID=(); _FT_RUN_COUNT=0; _FT_CLASS_COUNT=0
+    _FT_RUN_PREFIX=(); _FT_RUN_BLEND=(); _FT_RUN_TEXT_FROM=(); _FT_RUN_TEXT_TO=()
+    _FT_BLEND_FG_FROM=(); _FT_BLEND_BG_FROM=(); _FT_BLEND_ATTR_FROM=()
+    _FT_BLEND_FG_TO=();   _FT_BLEND_BG_TO=();   _FT_BLEND_ATTR_TO=()
+    _FT_BLEND_ID=(); _FT_RUN_COUNT=0; _FT_BLEND_COUNT=0
     local row ground top_index ground_end top_end start end key id
     local last_row=-1 last_end=-1 screen_row screen_column
     local ground_style ground_text top_style top_text
@@ -563,15 +563,15 @@ _ft_transition_runs() {         # owner top left height width
                     printf -v ground_text '%*s' $(( end - start )) ''
                 fi
                 key="$ground_style|$top_style"
-                id=${_FT_CLASS_ID[$key]:-}
+                id=${_FT_BLEND_ID[$key]:-}
                 if [[ -z "$id" ]]; then
-                    id=$_FT_CLASS_COUNT; _FT_CLASS_ID[$key]=$id
-                    IFS='|' read -r _FT_CLASS_FG_FROM[id] _FT_CLASS_BG_FROM[id] _FT_CLASS_ATTR_FROM[id] \
-                                    _FT_CLASS_FG_TO[id]   _FT_CLASS_BG_TO[id]   _FT_CLASS_ATTR_TO[id] <<< "$key"
-                    (( _FT_CLASS_COUNT++ ))
+                    id=$_FT_BLEND_COUNT; _FT_BLEND_ID[$key]=$id
+                    IFS='|' read -r _FT_BLEND_FG_FROM[id] _FT_BLEND_BG_FROM[id] _FT_BLEND_ATTR_FROM[id] \
+                                    _FT_BLEND_FG_TO[id]   _FT_BLEND_BG_TO[id]   _FT_BLEND_ATTR_TO[id] <<< "$key"
+                    (( _FT_BLEND_COUNT++ ))
                 fi
                 screen_row=$(( top + row )); screen_column=$(( left + start ))
-                _FT_RUN_CLASS[_FT_RUN_COUNT]=$id
+                _FT_RUN_BLEND[_FT_RUN_COUNT]=$id
                 _FT_RUN_TEXT_FROM[_FT_RUN_COUNT]=$ground_text
                 _FT_RUN_TEXT_TO[_FT_RUN_COUNT]=$top_text
                 # a run that continues where the last one ended needs no cursor address
@@ -657,11 +657,11 @@ _ft_transition_blend() {        # frames schedule slotBase cutAt
     local mid_bg_r mid_bg_g mid_bg_b mid_fg_r mid_fg_g mid_fg_b
     local half attributes attribute_codes index_background
     _FT_TRANSITION_SGR=()
-    for (( class=0; class<_FT_CLASS_COUNT; class++ )); do
-        part=${_FT_CLASS_FG_FROM[class]}; from_fg_r=${part%%,*}; part=${part#*,}; from_fg_g=${part%%,*}; from_fg_b=${part#*,}
-        part=${_FT_CLASS_BG_FROM[class]}; from_bg_r=${part%%,*}; part=${part#*,}; from_bg_g=${part%%,*}; from_bg_b=${part#*,}
-        part=${_FT_CLASS_FG_TO[class]};   to_fg_r=${part%%,*};   part=${part#*,}; to_fg_g=${part%%,*};   to_fg_b=${part#*,}
-        part=${_FT_CLASS_BG_TO[class]};   to_bg_r=${part%%,*};   part=${part#*,}; to_bg_g=${part%%,*};   to_bg_b=${part#*,}
+    for (( class=0; class<_FT_BLEND_COUNT; class++ )); do
+        part=${_FT_BLEND_FG_FROM[class]}; from_fg_r=${part%%,*}; part=${part#*,}; from_fg_g=${part%%,*}; from_fg_b=${part#*,}
+        part=${_FT_BLEND_BG_FROM[class]}; from_bg_r=${part%%,*}; part=${part#*,}; from_bg_g=${part%%,*}; from_bg_b=${part#*,}
+        part=${_FT_BLEND_FG_TO[class]};   to_fg_r=${part%%,*};   part=${part#*,}; to_fg_g=${part%%,*};   to_fg_b=${part#*,}
+        part=${_FT_BLEND_BG_TO[class]};   to_bg_r=${part%%,*};   part=${part#*,}; to_bg_g=${part%%,*};   to_bg_b=${part#*,}
         # his schedule's two midpoints are frame-independent, so they are hoisted out
         mid_bg_r=$(( (from_bg_r+to_bg_r)/2 )); mid_bg_g=$(( (from_bg_g+to_bg_g)/2 )); mid_bg_b=$(( (from_bg_b+to_bg_b)/2 ))
         mid_fg_r=$(( (from_fg_r+to_fg_r)/2 )); mid_fg_g=$(( (from_fg_g+to_fg_g)/2 )); mid_fg_b=$(( (from_fg_b+to_fg_b)/2 ))
@@ -711,8 +711,8 @@ _ft_transition_blend() {        # frames schedule slotBase cutAt
             (( fg_r < 0 )) && fg_r=0; (( fg_r > 255 )) && fg_r=255
             (( fg_g < 0 )) && fg_g=0; (( fg_g > 255 )) && fg_g=255
             (( fg_b < 0 )) && fg_b=0; (( fg_b > 255 )) && fg_b=255
-            if (( f < cut_at )); then attributes=${_FT_CLASS_ATTR_FROM[class]}
-            else                      attributes=${_FT_CLASS_ATTR_TO[class]}; fi
+            if (( f < cut_at )); then attributes=${_FT_BLEND_ATTR_FROM[class]}
+            else                      attributes=${_FT_BLEND_ATTR_TO[class]}; fi
             attribute_codes='22;24'
             [[ "$attributes" == *1* ]] && attribute_codes+=';1'
             [[ "$attributes" == *4* ]] && attribute_codes+=';4'
@@ -732,11 +732,11 @@ _ft_transition_blend() {        # frames schedule slotBase cutAt
         buffer=""
         if (( f < cut_at )); then
             for (( run=0; run<_FT_RUN_COUNT; run++ )); do
-                buffer+="${_FT_RUN_PREFIX[run]}${_FT_TRANSITION_SGR[_FT_RUN_CLASS[run]*frames+f]}${_FT_RUN_TEXT_FROM[run]}"
+                buffer+="${_FT_RUN_PREFIX[run]}${_FT_TRANSITION_SGR[_FT_RUN_BLEND[run]*frames+f]}${_FT_RUN_TEXT_FROM[run]}"
             done
         else
             for (( run=0; run<_FT_RUN_COUNT; run++ )); do
-                buffer+="${_FT_RUN_PREFIX[run]}${_FT_TRANSITION_SGR[_FT_RUN_CLASS[run]*frames+f]}${_FT_RUN_TEXT_TO[run]}"
+                buffer+="${_FT_RUN_PREFIX[run]}${_FT_TRANSITION_SGR[_FT_RUN_BLEND[run]*frames+f]}${_FT_RUN_TEXT_TO[run]}"
             done
         fi
         _FT_TRANSITION_FRAME[slot_base+f]="$buffer$FT_COLOR_RESET"
@@ -887,9 +887,9 @@ _ft_transition_arm() {          # name
         printf 'TR readtop  %sms %s pieces\n' $(( FT_RET-mark )) "$_FT_PIECE_COUNT" >&2; mark=$FT_RET; }
     _ft_transition_runs "$name" "$top" "$left" "$height" "$width"
     [[ -n "${FT_TRANSITION_PROFILE:-}" ]] && { ft_now_ms
-        printf 'TR runs     %sms %s runs %s classes\n' $(( FT_RET-mark )) "$_FT_RUN_COUNT" "$_FT_CLASS_COUNT" >&2; mark=$FT_RET; }
+        printf 'TR runs     %sms %s runs %s classes\n' $(( FT_RET-mark )) "$_FT_RUN_COUNT" "$_FT_BLEND_COUNT" >&2; mark=$FT_RET; }
     FT_TRANSITION_LAST_RUNS=$_FT_RUN_COUNT
-    FT_TRANSITION_LAST_CLASSES=$_FT_CLASS_COUNT
+    FT_TRANSITION_LAST_CLASSES=$_FT_BLEND_COUNT
     if (( _FT_RUN_COUNT == 0 )); then _ft_transition_unmark "$name"; return 1; fi
 
     _ft_transition_plan "$frames" "$FT_TRANSITION_TIMING"

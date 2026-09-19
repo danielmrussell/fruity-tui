@@ -22,7 +22,7 @@ fits. Don't import DOM verbosity. Lock names before apps depend on them — rena
 | `el.parentNode` / `el.children` | `ft_parent name` / `ft_children name` → `FT_RET` | |
 | `getComputedStyle(el).p` | `ft_style name p` → `FT_RET` | DOM name is the verbose one; kept |
 | `el.getAttribute(p)` / `el.p` | `ft_get name p` → `FT_RET` | |
-| (no DOM equivalent — the resolver a control reads through) | `ft_resolved_prop name p [default]` → `FT_RET` | author value → app sheet → an ancestor's if the property inherits → class default → `default`, coerced. NOT called "computed": `ft_style` is the full five-level cascade and this deliberately is not it (was `ft_cprop`, where `c` meant "coerced") |
+| (no DOM equivalent — the resolver a control reads through) | `ft_resolved_prop name p [default]` → `FT_RET` | author value → app sheet → an ancestor's if the property inherits → prototype default → `default`, coerced. NOT called "computed": `ft_style` is the full five-level cascade and this deliberately is not it (was `ft_cprop`, where `c` meant "coerced") |
 | `Object.hasOwnProperty` sense of *own* (not inherited) | `ft_own_prop name p` → `FT_RET` | the same read with the inheritance walk switched off; "own" is JS's own word for exactly this distinction (was `ft_cget`) |
 | (no DOM equivalent — the resolver's raw half) | `ft_resolve name p` → `FT_RET` | the same walk with no default and no coercion. `ft_resolved_prop` **is** this plus those two steps, and is what controls call; `ft_resolve` is for a test or an engine path that wants the stored string exactly as resolved |
 | (no DOM equivalent — the compositor is not exposed on the web) | `ft_publish_paint_rect name T L B R` | a draw that puts ink OUTSIDE its layout box says where, so `ft_damage_subtree` can give those cells back (was `ft_paint_rect`) |
@@ -45,7 +45,8 @@ fits. Don't import DOM verbosity. Lock names before apps depend on them — rena
 
 There is NO name-convention magic: a function named `<name>_on_<event>` is just a function —
 wire it (`onEvent=fn` or `ft_add_listener`) or it never runs. (`<type>_on_children_complete`
-is different: a CLASS-level lifecycle hook dispatched by type, part of defining a control class.)
+is different: a PROTOTYPE-level lifecycle hook dispatched by type, part of defining a control
+prototype.)
 
 ## Property names
 
@@ -60,12 +61,12 @@ Constructor/`ft-modify` properties use the DOM's **camelCase** spelling (`access
 | `border-radius` | `borderRadius=N` (cells) | was `borderRounded`; numeric like CSS — 0 square, ≥1 arc corners; radii >1 clamp to the terminal's one arc glyph (a richer glyph set could honour them later) |
 | (n/a — variant look) | `variant=` (slider track/fill/blocks/dots; table grid/lines/minimal; beacon frame/number/callout) | freed `style` for its HTML meaning |
 | `el.cloneNode(deep)` | `ft_clone SRC DST [deep]` → detached | descendants of a deep clone get generated names; listeners copy (deviation, documented) |
-| `el.removeAttribute(p)` | `ft_remove_attribute NAME PROP` | truly unsets (≠ setting ""); falls back to sheet/class default |
+| `el.removeAttribute(p)` | `ft_remove_attribute NAME PROP` | truly unsets (≠ setting ""); falls back to sheet/prototype default |
 | `overflow: auto\|scroll` on a container | `overflow=auto\|scroll` (vertical) · `overflowX=auto\|scroll` (horizontal) | children keep natural size; a viewport (scrollTop/scrollLeft) slides over them; scrollHeight/Width + clientHeight/Width published; a STABLE gutter (right column / bottom row) holds the proportional bar, drawn only while content overflows (NB: `overflowY` is the per-control own-scrollbar convention, not container scrolling) |
 | `el.scrollTop = n` | `ft_scroll_set NAME N` | clamped; incremental subtree shift, no relayout (the fast wheel path) |
 | `el.scrollTo(x, y)` | `ft_scroll_to NAME X Y` | both axes, same incremental path |
 | `el.scrollIntoView()` | `ft_scroll_into_view NAME` | both axes, 'nearest'; runs automatically when focus lands on a control (like browser keyboard nav) |
-| wheel scroll chaining | automatic | wheel over an inert spot scrolls the nearest pane; over a control whose class wheel-probe says "content fits" (label, textfield) it CHAINS to the pane, browser-style |
+| wheel scroll chaining | automatic | wheel over an inert spot scrolls the nearest pane; over a control whose prototype wheel-probe says "content fits" (label, textfield) it CHAINS to the pane, browser-style |
 
 ## Deliberate keeps (DOM name is worse or absent)
 
@@ -101,7 +102,7 @@ Rejected on the way there:
   a bash framework that word is spoken for.
 - **`ft_published_ink`** — a noun phrase reads as a getter, which is the same disease in the
   other direction. And `ink` is already load-bearing elsewhere: `_ft_ink_<type>` is the hook a
-  class defines when its ink is **not** its paint rect (a bigarrow publishes where it will land,
+  prototype defines when its ink is **not** its paint rect (a bigarrow publishes where it will land,
   not where it is mid-flight). Two names for two different things must not share the word that
   distinguishes them.
 - **`ft_set_paint_rect`** — accurate, and it would have been fine. It says only that a variable
@@ -130,7 +131,7 @@ So today: **ask after a paint, or ask a container.** `demo/tutorial-demo.bash` a
 build time and reads the previous frame.
 
 Fixing it properly means publishing from layout for every control that can overflow, and the
-obvious shape — a per-class hook called from `_ft_pass_arrange` — is the one thing that
+obvious shape — a per-prototype hook called from `_ft_pass_arrange` — is the one thing that
 function's own comments rule out (*"a call is ~25µs and this is per control per pass"*). So it
 wants a measurement first, not a patch.
 

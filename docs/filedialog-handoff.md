@@ -623,11 +623,11 @@ The REQ-03 assertion is: each glyph's `ft_display_width` equals the number writt
 - **REQ-29** — **←/→ switch panes** when not in Tree view; **Tab** moves between panes;
   **Backspace** goes up a level (per the golden's legend). This **collides with `ft-select`**, which
   binds `LEFT`/`RIGHT` to cursor movement in its `browsing` runlevel (`_ft_define_keymap_select`,
-  controls/ft-select.bash:51) — and that keymap is **class-level, shared by every select in the host
-  app, so you may not unbind it globally.** Resolve by subclassing (`ft_class extends=select` for
-  the listing and Places panes, each with its own keymap) or by scoping ←/→ to the undelved rung.
-  Assert **both**: ←/→ switches panes in the dialog, **and** a plain `ft-select` elsewhere in the
-  same test still moves its cursor on ←/→.
+  controls/ft-select.bash:51) — and that keymap is **prototype-level, shared by every select in the
+  host app, so you may not unbind it globally.** Resolve by deriving a prototype (`ft_prototype
+  extends=select` for the listing and Places panes, each with its own keymap) or by scoping ←/→
+  to the undelved rung. Assert **both**: ←/→ switches panes in the dialog, **and** a plain
+  `ft-select` elsewhere in the same test still moves its cursor on ←/→.
 - **REQ-30** — **the contextual Enter legend**: on a directory `Enter: cd`, on a file
   `Enter: Select file`, changing with the highlighted row. **`ft-select` fires nothing when the
   cursor moves** — `_ft_select_cursor_to` has no hook, and `on_change` fires only from the commit
@@ -635,9 +635,9 @@ The REQ-03 assertion is: each glyph's `ft_display_width` equals the number writt
   with the newly-hovered value; assert it in `tests/test-select.bash` too, then re-run
   `tests/test-selection.bash` and `tests/test-scroll.bash`. Do **not** poll the cursor property from
   the dialog's event loop — that is the per-case fix §2 forbids, and it will not fire for the mouse
-  or for Home/End. A keymap LABEL is static and class-scoped, so the legend text must come from
-  `_ft_caps_<type>` (ft-forms.bash:5361) hung off a **subclass**; assert that a plain `ft-select` in
-  the same test does not gain the `Enter: cd` cap. Assert directly: cursor on a directory row →
+  or for Home/End. A keymap LABEL is static and prototype-scoped, so the legend text must come
+  from `_ft_caps_<type>` (ft-forms.bash:5361) hung off a **derived prototype**; assert that a
+  plain `ft-select` in the same test does not gain the `Enter: cd` cap. Assert directly: cursor on a directory row →
   legend reads `Enter: cd`; on a file row → `Enter: Select file`; and that the two DIFFER.
 - **REQ-31** — **selecting a file populates Directory Path + Filename but does NOT submit.**
   Never auto-submit merely because a file was selected. (Activating a file previously did

@@ -198,7 +198,7 @@ note "a beacon overlay is TRANSPARENT to the mouse — clicks pass through to th
 FT_ROOT=app2; FT_FOCUS=""
 ft-beacon name=bov target=dd variant=frame parent=app2       # a real child, declared AFTER dd
 # Park its hit-rect exactly over dd. Declared later, it would SHADOW dd in the hit walk —
-# unless it is pointer-transparent (FT_CLASS_NOHIT), which is the whole point.
+# unless it is pointer-transparent (FT_PROTO_NOHIT), which is the whole point.
 FT_ABSOLUTE_X[bov]=${FT_ABSOLUTE_X[dd]}; FT_ABSOLUTE_Y[bov]=${FT_ABSOLUTE_Y[dd]}; FT_MEASURED_WIDTH[bov]=${FT_MEASURED_WIDTH[dd]}; FT_MEASURED_HEIGHT[bov]=${FT_MEASURED_HEIGHT[dd]}
 _ft_hit_test "${FT_ABSOLUTE_X[dd]}" "${FT_ABSOLUTE_Y[dd]}"
 check "the hit lands on the control, not the beacon over it" "$FT_HIT" dd
@@ -243,7 +243,7 @@ check "with the box elsewhere the slider gets its press" "$_FT_MOUSE_DOWN" sl
 ft_remove cov
 
 note "an INERT control never claims a click it is merely standing in front of"
-# _ft_mouse_target tested `focusable` with -n, which is true for the "0" every inert class
+# _ft_mouse_target tested `focusable` with -n, which is true for the "0" every inert prototype
 # stores, so a heading/statusbar/keylegend claimed the click. ft_focus refused to move, so
 # this looked fine — the damage was that the wheel stopped chaining past them and a callout
 # could not be dragged off any cell they covered.
@@ -270,7 +270,7 @@ _wheel_chains() {               # node → yes/no, exactly as the wheel router d
     _ft_mouse_target "$n" && t=$FT_RET
     case ${t:+${FT_TYPE[$t]:-}} in
         "") echo yes; return ;;
-        *)  wp=${FT_CLASS_WHEEL_PROBE[${FT_TYPE[$t]:-}]:-}
+        *)  wp=${FT_PROTO_WHEEL_PROBE[${FT_TYPE[$t]:-}]:-}
             if [[ -n "$wp" ]] && ! "$wp" "$t"; then echo yes; else echo no; fi ;;
     esac
 }

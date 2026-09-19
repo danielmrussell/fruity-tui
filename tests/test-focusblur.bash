@@ -2,7 +2,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 #  LEAVING A CONTROL ENDS ITS ACTIVATION — on EVERY route that leaves it.
 #
-#  _ft_focus_blur's own comment says so "for EVERY class": a field must drop back to idle so
+#  _ft_focus_blur's own comment says so "for EVERY prototype": a field must drop back to idle so
 #  Tabbing in later does not land you mid-edit. ft_focus_move runs it, and _ft_focus_set_try
 #  runs it — but ft_focus_first landed ring[0] without it, and so did ft_focus_ring_build when
 #  an autofocus= control steals focus from a live FT_FOCUS. The abandoned control kept its

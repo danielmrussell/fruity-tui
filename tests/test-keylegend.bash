@@ -23,9 +23,9 @@ _ft_kl_split "F1=Help  |  Q=Quit"
 check "bare separator survives" "${FT_KEYLEGEND_PAIRS[1]}" "|"
 
 note "the control is a one-row, non-focusable block"
-ft_class_init keylegend          # lazy init otherwise waits for the first instance
+ft_prototype_init keylegend          # lazy init otherwise waits for the first instance
 check "height is 1"     "$(_ft_height_keylegend; echo "$FT_RET")" "1"
-check "class not focusable" "${FT_CLASS_FOCUSABLE[keylegend]}" "0"
+check "class not focusable" "${FT_PROTO_FOCUSABLE[keylegend]}" "0"
 
 note "keys= accepts a value containing spaces (registered prop)"
 ft-form name=root width=80 height=6
