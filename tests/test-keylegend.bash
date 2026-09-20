@@ -68,8 +68,8 @@ FT_MODE_HINT=""
 # ── Derived, importance-sorted legend ────────────────────────────────────────
 note "a cap carries importance+label but dispatch still resolves only the CODE"
 ft_keymap kmt
-ft_keymap_set kmt key=UP   keyCap="Scroll up"  keyImp=200 keyCode='act_up $this' \
-                  key=PGUP keyCap="Page up"    keyImp=120 keyCode='act_pgup $this' \
+ft_keymap_set kmt key=UP   keyCap="Scroll up"  keyImp=200 onKey='act_up $this' \
+                  key=PGUP keyCap="Page up"    keyImp=120 onKey='act_pgup $this' \
                   key=TAB  keyCap="Next field" keyImp=90
                   # TAB is legend-only — a cap with no code: advertised here, handled by
                   # whoever really owns it (engine Tab traversal), so it must not dispatch.
@@ -94,7 +94,7 @@ _ft_keycap_glyph CTRL+PGUP; check "modifier spelled + dash" "$FT_RET" "Ctrl-PgUp
 _ft_keycap_glyph x;        check "bare char stays itself" "$FT_RET" "x"
 
 note "keys=auto DERIVES the legend from the focused control's chain, sorted, Up/Down leading"
-ft-form name=lroot width=80 height=8 key='[Kk]' keyCode=noop
+ft-form name=lroot width=80 height=8 key='[Kk]' onKey=noop
   ft-label name=big2 text=$'a\nb\nc\nd\ne\nf\ng\nh\ni\nj\nk\nl' width=20 maxHeight=4
   ft-keylegend name=lbar keys=auto
 end_ft_form
@@ -187,7 +187,7 @@ before=$(_legend_text)
 check "the legend starts on the button's own key" \
       "$(case "$before" in *Activate*) echo yes ;; *) echo "${before:-empty}" ;; esac)" "yes"
 
-FT_DIRTY=(); ft-modify slbtn key=Z keyCap="Zap it" keyImp=crucial keyCode='ft_quit'
+FT_DIRTY=(); ft-modify slbtn key=Z keyCap="Zap it" keyImp=crucial onKey='ft_quit'
 check "binding a key marks the legend dirty"  "${FT_DIRTY[sllegend]:-no}" "1"
 check "…and the new cap is what it draws" \
       "$(case "$(_legend_text)" in *Zap*) echo yes ;; *) echo missing ;; esac)" "yes"

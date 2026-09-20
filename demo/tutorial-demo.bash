@@ -702,7 +702,7 @@ _resize() {
 # budget -- _show_step rebuilds the STAGE's contents, the bar stays put.
 ft-form name=app width="$FT_COLS" height="$FT_ROWS" \
         display=flex flexDirection=column \
-        key='[Qq]' keyCode=ft_quit
+        key='[Qq]' onKey=ft_quit
     # overflow=hidden CLIPS an over-tall page to the stage so it can never paint
     # over the bar; minHeight=0 lets the stage actually shrink (a flex item's
     # default min-height is its content, which would otherwise shove the bar off).
@@ -729,5 +729,5 @@ ft-modify app \
     key=TAB keyCap="Next field" keyImp=90 \
     key=ESC keyCap="Exit edit" keyImp=80 \
     key='[Bb]' keyCap="Back" keyImp=50 \
-    key='[Qq]' keyCap="Quit" keyImp=40 keyCode=ft_quit
+    key='[Qq]' keyCap="Quit" keyImp=40 onKey=ft_quit
 ft-run app _show_step _resize "" _show_step

@@ -167,7 +167,7 @@ _ft_fd_build() {
 
     ft-form name=__fd width="$FT_COLS" height="$FT_ROWS" \
             display=flex justifyContent=center alignItems=center \
-            key=BACKSPACE keyCode=__fd_up key=ALT+up keyCode=__fd_up
+            key=BACKSPACE onKey=__fd_up key=ALT+up onKey=__fd_up
         ft-frame name=__fdwin title=" $_FT_FILE_DIALOG_TITLE " borderStyle=double \
                  display=flex flexDirection=column gap=0 padding=1 width="$ww" height="$wh"
 

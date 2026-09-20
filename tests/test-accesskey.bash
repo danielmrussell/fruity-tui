@@ -38,7 +38,7 @@ ft_layout f2; FT_ROOT=f2
 ok "two controls sharing H is not reported" ft_accesskey_conflicts
 
 note "…but a plain binding for the same letter silently wins, and that IS a conflict"
-ft_keymap_set "${FT_KEYMAP[f2]}" key='[Hh]' keyCode=ft_quit
+ft_keymap_set "${FT_KEYMAP[f2]}" key='[Hh]' onKey=ft_quit
 no "an override on a SHARED letter is reported" ft_accesskey_conflicts
 case "$FT_RET" in
     *"hide H ft_quit"*)   check "…naming the control that lost its shortcut" 1 1 ;;
@@ -54,7 +54,7 @@ ft-form name=f3 width=60 height=8
 end_ft_form
 ft_layout f3; FT_ROOT=f3
 ft_keymap_set "${FT_KEYMAP[f3]}" \
-    key='[Qq]' keyCap="Quit" keyImp=40 keyCode=ft_quit
+    key='[Qq]' keyCap="Quit" keyImp=40 onKey=ft_quit
 ok "a single owner's relabelled cap passes" ft_accesskey_conflicts
 
 note "the real app it was found in stays clean"

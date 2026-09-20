@@ -254,7 +254,7 @@ ft_prototype_label() { ft_prototype extends=ft_control keymap=label … ; }
 
 _ft_define_keymap_label() {
     ft_keymap_set ft_keymap_label \
-        key=UP keyCap="Scroll up" keyImp=crucial keyCode='ft_label_key_up $this'
+        key=UP keyCap="Scroll up" keyImp=crucial onKey='ft_label_key_up $this'
     …
 }
 ```

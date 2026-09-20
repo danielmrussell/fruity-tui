@@ -1002,11 +1002,11 @@ _ft_define_keymap_form() {
     # None of these take the control or the key: they move THE FOCUS, which the ring owns —
     # so the code is the call, with no arguments invented for it.
     ft_keymap_set ft_keymap_form \
-        key=TAB   keyCode=ft_focus_next    key=BTAB  keyCode=ft_focus_prev \
-        key=RIGHT keyCode=ft_focus_right   key=LEFT  keyCode=ft_focus_left \
-        key=DOWN  keyCode=ft_focus_down    key=UP    keyCode=ft_focus_up \
-        key=ESC   keyCode=ft_esc_action \
-        key='.'   keyCap=Locate keyImp=normal keyCode=ft_focus_ping
+        key=TAB   onKey=ft_focus_next    key=BTAB  onKey=ft_focus_prev \
+        key=RIGHT onKey=ft_focus_right   key=LEFT  onKey=ft_focus_left \
+        key=DOWN  onKey=ft_focus_down    key=UP    onKey=ft_focus_up \
+        key=ESC   onKey=ft_esc_action \
+        key='.'   keyCap=Locate keyImp=normal onKey=ft_focus_ping
         # '.' = "where am I?" — flash a locator frame around the focused control. Bubbles
         # here from any idle control (printable keys are unbound on controls); while a field
         # is in EDIT mode it types a period instead, which is what you want.
@@ -1458,7 +1458,7 @@ ft_prop_kind_set() { [[ -z "$1" ]] && return 1
 # ── Shared arg parser: properties, content, and key fields ──────────────────
 # keymap=NAME is a property: a SHARED keymap attached by reference (a space-separated LIST,
 # last wins), consulted by dispatch between the instance overlay and the prototype default.
-# A control's OWN keys are written as key fields — `key=ENTER keyCode='…'` — which the loop
+# A control's OWN keys are written as key fields — `key=ENTER onKey='…'` — which the loop
 # below collects and folds into its instance overlay. They replace a bare `keymap` token
 # that opened a section of PATTERN=ACTION arguments, a second grammar for the same thing.
 #
@@ -1527,7 +1527,7 @@ _ft_apply_args() {              # name args...
         # KEY FIELDS are not properties — a control binds many keys and the property store
         # holds one value per name — so they are collected here and folded into this
         # control's own keymap (its instance overlay) once the arguments are read.
-        case $arg in key=*|keyCap=*|keyImp=*|keyCode=*) _kf+=("$arg"); continue ;; esac
+        case $arg in key=*|keyCap=*|keyImp=*|onKey=*) _kf+=("$arg"); continue ;; esac
         if _ft_is_assignment "$arg"; then
             _ft_setprop "$name" "${arg%%=*}" "${arg#*=}"
         else
@@ -2014,8 +2014,16 @@ ft_prototype_init() {               # type
     # FT_PROTO_DEFAULTS[$t] already carries the whole extends chain, appended base-first, so
     # one pass gives the flat table with later declarations overriding earlier ones — which is
     # what lets `button` say `importance=crucial` after `label` said `importance=minor`.
+    # A PROTOTYPE MAY BRING A HANDLER, not only a value. `on<Event>=` is not an ordinary
+    # property — _ft_setprop intercepts it and appends to the control's eventListeners plist —
+    # so a prototype default for one resolved to nothing at all: the control looked wired and
+    # was not. They are collected here instead, and applied to each instance as it is built.
     local _kv
+    FT_PROTO_LISTENERS[$t]=""
     for _kv in ${FT_PROTO_DEFAULTS[$t]:-}; do
+        case ${_kv%%=*} in
+            on[A-Z]*) FT_PROTO_LISTENERS[$t]+="${FT_PROTO_LISTENERS[$t]:+ }$_kv"; continue ;;
+        esac
         FT_PROTO_DEFAULT["$t ${_kv%%=*}"]=${_kv#*=}
     done
     # A prototype default is the last level of every instance's resolution, and a prototype may be
@@ -2098,7 +2106,7 @@ _ft_accel_register() {          # name — bind NAME's accelerators from its cur
         # legend and ft_accesskey_conflicts compare against — they used to match a literal
         # they each spelled out, and a change to how a binding is stored broke both readers
         # at once while the accelerator itself went on working.
-        ft_keymap_set "$km" key="[${ac}${ac,,}]" keyCode="_ft_accel_dispatch $form $ac"
+        ft_keymap_set "$km" key="[${ac}${ac,,}]" onKey="_ft_accel_dispatch $form $ac"
     done
     FT_ACCEL_FORM[$name]=$form
     return 0
@@ -2231,6 +2239,12 @@ ft_new() {                      # TYPE args...
     # stylesheet. They are resolved at level 5 now (see FT_PROTO_DEFAULT). A control is built
     # with exactly the properties its caller named, which is also why ft_state_save now writes a
     # reader's choices instead of forty-two of the prototype's.
+    # The prototype's handlers first, the app's after — the same order as every other level of
+    # resolution, and the same order they will run in: a prototype contributes behaviour, the
+    # app adds to it. (Listeners ACCUMULATE here, exactly as two `onActivate=` arguments in one
+    # call do; a prototype handler is not replaced by an instance one. Clear it with onX="".)
+    local _pl
+    for _pl in ${FT_PROTO_LISTENERS[$type]:-}; do _ft_setprop "$name" "${_pl%%=*}" "${_pl#*=}"; done
     _ft_apply_args "$name" "$@"
     _FT_TEXTPROP=text
     if (( ! parent_explicit )) && (( ${#FT_NEST_STACK[@]} > 0 )); then
@@ -2598,7 +2612,7 @@ ft-modify() {                   # name args...
         # KEY FIELDS are not properties — a control binds many keys and the property store
         # holds one value per name — so they are collected here and folded into this
         # control's own keymap (its instance overlay) once the arguments are read.
-        case $arg in key=*|keyCap=*|keyImp=*|keyCode=*) _kf+=("$arg"); continue ;; esac
+        case $arg in key=*|keyCap=*|keyImp=*|onKey=*) _kf+=("$arg"); continue ;; esac
         _ft_is_assignment "$arg" || arg="$textprop=$arg"   # bare arg = content
         key="${arg%%=*}"; val="${arg#*=}"
         _ft_get_raw "$name" "$key"
@@ -4927,6 +4941,7 @@ declare -A FT_PROTO_FILLS_BACKGROUND=()
 # Per-prototype property RECONCILER: <fn> NAME PROP VALUE, run by _ft_setprop after the property is
 # stored, for prototypes whose real state lives in another property (see the checkbox note there).
 declare -A FT_PROTO_SETPROP=()
+declare -A FT_PROTO_LISTENERS=()    # type → "onActivate=fn onChange=g …" from its defaults
 # A keys=auto keylegend derives its caps from the FOCUSED control (and its current state —
 # edit mode, an active selection, …), so it must be repainted whenever any of that changes —
 # otherwise the legend freezes on the first control's keys and looks dead. Cheap: normally a
@@ -7778,7 +7793,7 @@ _ft_keymap_layers() {           # name → FT_KEYMAP_LAYERS, in precedence order
     local _r; for _r in $refkm; do FT_KEYMAP_LAYERS=("${FT_KEYMAP_LAYERS[0]}" "$_r" "${FT_KEYMAP_LAYERS[@]:1}"); done
     # `defaultKeys=false` silences THE KEYS THE PROTOTYPE PROVIDES — its own map and the map
     # for the runlevel it is in — and leaves every key the app wrote. It is the blunt
-    # instrument; `keyCode=bubble` on one key is the scalpel. It INHERITS, so it silences a
+    # instrument; `onKey=bubble` on one key is the scalpel. It INHERITS, so it silences a
     # subtree.
     #
     # Asked only when there is something to silence. Reading it costs a cascade resolve, and
@@ -7802,7 +7817,7 @@ declare -a FT_KEYMAP_LAYERS=()
 # objection to reading that back was exact: "A bare word should not be a function name.
 # Where are your arguments???" The convention also priced every key at one named function,
 # which is how this framework arrived at 341 public functions with 106 of them existing
-# only to be the right-hand side of a binding. `key=ENTER keyCode='ft_activate $this'` says
+# only to be the right-hand side of a binding. `key=ENTER onKey='ft_activate $this'` says
 # what happens and what it happens to, and a two-line action no longer needs a name at all.
 #
 # Four faults this function was written to fix, all still fixed:
@@ -8415,8 +8430,8 @@ _ft_define_keymap_activate() {
     # the cap that leads the legend for the whole activate family; Space does the same and is
     # deliberately unshown.
     ft_keymap_set ft_keymap_activate \
-        key=SPACE keyCode='ft_activate $this' \
-        key=ENTER keyCap=Activate keyImp=crucial keyCode='ft_activate $this'
+        key=SPACE onKey='ft_activate $this' \
+        key=ENTER keyCap=Activate keyImp=crucial onKey='ft_activate $this'
 }
 
 # ── Run loop ─────────────────────────────────────────────────────────────────

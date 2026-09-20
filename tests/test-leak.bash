@@ -192,7 +192,7 @@ ft_style spec color; check "same name rebuilt as .cool resolves .cool" "$FT_RET"
 
 pressed=""
 hit_x() { pressed+="X "; }
-ft_keymap km_leak; ft_keymap_set km_leak key=x keyCode='hit_x $this'
+ft_keymap km_leak; ft_keymap_set km_leak key=x onKey='hit_x $this'
 ft_remove p2 2>/dev/null
 ft-form name=p3 width=80 height=8
     ft-button name=btn "Press" keymap=km_leak

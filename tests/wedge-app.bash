@@ -21,7 +21,7 @@ ft-form name=app width=40 height=8
 end_ft_form
 
 ft_keymap wedge_map
-ft_keymap_set wedge_map key=W keyCode='wedge_now $this'
+ft_keymap_set wedge_map key=W onKey='wedge_now $this'
 ft-modify app keymap=wedge_map
 
 _setup() { ft_layout app; }

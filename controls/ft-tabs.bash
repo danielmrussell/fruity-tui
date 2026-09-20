@@ -35,19 +35,19 @@ _ft_define_keymap_tabs() {
     # INACTIVE — Enter steps into the strip. Left/Right are not bound here: arrowing ACROSS
     # a form must not switch tabs under you, which reflows the whole page.
     ft_keymap_set ft_keymap_tabs \
-        key=ENTER keyCap="Switch tabs" keyImp=crucial keyCode='ft_key_delve $this $key'
+        key=ENTER keyCap="Switch tabs" keyImp=crucial onKey='ft_key_delve $this $key'
 
     # BROWSING — inside the strip, every arrow is the strip's. Labelled, so they reach the
     # derived legend: switching tabs IS what a tab strip is for, and unlabelled these bound
     # fine but the bar showed nothing but "Locate", leaving it undiscoverable.
     ft-keymap ft_keymap_tabs_browsing
-        ft-key key=LEFT  keyCap="Previous tab" keyImp=crucial   keyCode='ft_tabs_prev $this'
-        ft-key key=RIGHT keyCap="Next tab"     keyImp=crucial   keyCode='ft_tabs_next $this'
-        ft-key key=UP                                           keyCode='ft_tabs_prev $this'
-        ft-key key=DOWN                                         keyCode='ft_tabs_next $this'
-        ft-key key=HOME  keyCap="First tab"    keyImp=normal    keyCode='ft_tabs_first $this'
-        ft-key key=END   keyCap="Last tab"     keyImp=normal    keyCode='ft_tabs_last $this'
-        ft-key key=ESC   keyCap="Leave"        keyImp=important keyCode='ft_key_undelve $this'
+        ft-key key=LEFT  keyCap="Previous tab" keyImp=crucial   onKey='ft_tabs_prev $this'
+        ft-key key=RIGHT keyCap="Next tab"     keyImp=crucial   onKey='ft_tabs_next $this'
+        ft-key key=UP                                           onKey='ft_tabs_prev $this'
+        ft-key key=DOWN                                         onKey='ft_tabs_next $this'
+        ft-key key=HOME  keyCap="First tab"    keyImp=normal    onKey='ft_tabs_first $this'
+        ft-key key=END   keyCap="Last tab"     keyImp=normal    onKey='ft_tabs_last $this'
+        ft-key key=ESC   keyCap="Leave"        keyImp=important onKey='ft_key_undelve $this'
     end_ft_keymap
 }
 ft_prototype_tabs() {

@@ -32,27 +32,27 @@ _ft_define_keymap_tree() {
     # inside. Copy is here too, because copying what you are standing next to needs no
     # permission (and at this rung it takes the WHOLE tree — see ft_tree_copy).
     ft_keymap_set ft_keymap_tree \
-        key=ENTER keyCap="Open tree" keyImp=crucial keyCode='ft_key_delve $this $key'
+        key=ENTER keyCap="Open tree" keyImp=crucial onKey='ft_key_delve $this $key'
 
     # THE BROWSING RUNG — one Enter in. NOW the arrows are the tree's, all of them, and they
     # never bubble: once you have stepped into a control, exploring its keys must not be able
     # to throw you out of it. Esc leaves, Tab leaves.
     ft-keymap ft_keymap_tree_browsing
-        ft-key key=UP     keyCap="Up"       keyImp=crucial   keyCode='ft_tree_key_up $this'
-        ft-key key=DOWN   keyCap="Down"     keyImp=crucial   keyCode='ft_tree_key_down $this'
+        ft-key key=UP     keyCap="Up"       keyImp=crucial   onKey='ft_tree_key_up $this'
+        ft-key key=DOWN   keyCap="Down"     keyImp=crucial   onKey='ft_tree_key_down $this'
         # Backward before forward, so the legend reads ◀ Collapse then ▶ Expand — the same order
         # as the keys themselves on the keyboard.
-        ft-key key=LEFT   keyCap="Collapse" keyImp=important keyCode='ft_tree_key_left $this'
-        ft-key key=RIGHT  keyCap="Expand"   keyImp=important keyCode='ft_tree_key_right $this'
-        ft-key key=HOME                                      keyCode='ft_tree_key_home $this'
-        ft-key key=END                                       keyCode='ft_tree_key_end $this'
-        ft-key key=PGUP                                      keyCode='ft_tree_key_pgup $this'
-        ft-key key=PGDN                                      keyCode='ft_tree_key_pgdn $this'
-        ft-key key=ENTER  keyCap="Open"     keyImp=important keyCode='ft_tree_key_enter $this'
-        ft-key key=SPACE                                     keyCode='ft_tree_key_enter $this'
-        ft-key key=CTRL+c                                    keyCode='ft_tree_copy $this'
-        ft-key key=ALT+w                                     keyCode='ft_tree_copy $this'
-        ft-key key=ESC    keyCap="Leave"    keyImp=important keyCode='ft_key_undelve $this'
+        ft-key key=LEFT   keyCap="Collapse" keyImp=important onKey='ft_tree_key_left $this'
+        ft-key key=RIGHT  keyCap="Expand"   keyImp=important onKey='ft_tree_key_right $this'
+        ft-key key=HOME                                      onKey='ft_tree_key_home $this'
+        ft-key key=END                                       onKey='ft_tree_key_end $this'
+        ft-key key=PGUP                                      onKey='ft_tree_key_pgup $this'
+        ft-key key=PGDN                                      onKey='ft_tree_key_pgdn $this'
+        ft-key key=ENTER  keyCap="Open"     keyImp=important onKey='ft_tree_key_enter $this'
+        ft-key key=SPACE                                     onKey='ft_tree_key_enter $this'
+        ft-key key=CTRL+c                                    onKey='ft_tree_copy $this'
+        ft-key key=ALT+w                                     onKey='ft_tree_copy $this'
+        ft-key key=ESC    keyCap="Leave"    keyImp=important onKey='ft_key_undelve $this'
     end_ft_keymap
     # COPY IS Ctrl+C, with Alt+W beside it — the pair the text field already uses, and the
     # only two spellings of copy this framework has. Ctrl+C is taken from the tty on purpose
@@ -62,8 +62,8 @@ _ft_define_keymap_tree() {
     # SIGINT before Ctrl+C can arrive as a key. Bind both or the key works on some terminals
     # and not others.
     ft_keymap_set ft_keymap_tree \
-        key=CTRL+c keyCap="Copy tree" keyImp=normal keyCode='ft_tree_copy $this' \
-        key=ALT+w                                   keyCode='ft_tree_copy $this'
+        key=CTRL+c keyCap="Copy tree" keyImp=normal onKey='ft_tree_copy $this' \
+        key=ALT+w                                   onKey='ft_tree_copy $this'
 }
 # Copy THE WHOLE TREE, drawn the way it is on screen — indentation and the same ▾/▸ glyphs,
 # so what you paste looks like what you were looking at.

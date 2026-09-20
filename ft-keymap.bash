@@ -8,7 +8,7 @@
 #  that cascades root→focused-leaf.
 #
 #  ── A binding is written as FIELDS ───────────────────────────────────────────
-#      key=<pattern>  [keyCap="<label>"]  [keyImp=<importance>]  [keyCode='<code>']
+#      key=<pattern>  [keyCap="<label>"]  [keyImp=<importance>]  [onKey='<code>']
 #
 #  A `key=` opens a group; the fields after it describe that group until the next `key=`.
 #  They are SEPARATE SHELL WORDS, which is the whole point: bash quoting does all the
@@ -21,7 +21,7 @@
 #      key=EQUALS           the `=` key — the one key the field=value shape cannot spell
 #      keyImp=              crucial | important | normal | minor, or a raw 0–255 weight
 #      keyCap=              what the legend prints; no cap ⇒ bound but not advertised
-#      keyCode=             CODE (see below), or the reserved words `bubble` / `drop`
+#      onKey=             CODE (see below), or the reserved words `bubble` / `drop`
 #
 #  A cap WITHOUT code is legend-only: it advertises a key that somebody else handles
 #  (engine Tab traversal), which is what the old `-` action meant.
@@ -35,7 +35,7 @@
 #  value per name, so each group is folded into a keymap instead.
 #
 #  ── An ACTION IS CODE ────────────────────────────────────────────────────────
-#  `keyCode` holds shell code, evaluated with `$this` (the control the key was dispatched
+#  `onKey` holds shell code, evaluated with `$this` (the control the key was dispatched
 #  to) and `$key` (the token) in scope — the same bargain HTML makes with onclick=, and
 #  the reason the author asked for it: a binding used to be a FUNCTION NAME, invoked with
 #  the control and the token appended silently. That convention had two costs. It was
@@ -43,8 +43,8 @@
 #  function to hold one line, which is most of why this framework had 341 public
 #  functions — 106 of them existed only to be the right-hand side of a binding.
 #
-#      key=ENTER keyCode='ft_activate $this'
-#      key=s     keyCode='ft_set status text="Saved"; ft_save'
+#      key=ENTER onKey='ft_activate $this'
+#      key=s     onKey='ft_set status text="Saved"; ft_save'
 #
 #  Measured before adopting it: eval costs 8µs against 4µs for a direct call, per keypress.
 #  A frame is milliseconds. Injection is not the risk it looks like — the string is code
@@ -121,8 +121,8 @@ ft_keymap() {
 # table of keys rather than a column of repeated map names:
 #
 #     ft-keymap ft_keymap_textfield_scrolling
-#         ft-key key=UP    keyCap=Scroll keyImp=crucial keyCode='ft_textfield_up $this'
-#         ft-key key=ENTER keyCap=Edit   keyImp=crucial keyCode='ft_textfield_edit $this'
+#         ft-key key=UP    keyCap=Scroll keyImp=crucial onKey='ft_textfield_up $this'
+#         ft-key key=ENTER keyCap=Edit   keyImp=crucial onKey='ft_textfield_edit $this'
 #     end_ft_keymap
 #
 # `ft-key` exists because a bash line needs a command word; the hyphen says DECLARATION,
@@ -164,7 +164,7 @@ _ft_keyfields() {               # map field…
                 [[ -z "$pat" ]] && { printf 'ft: %s: key= with no pattern\n' "$map" >&2; bad=1; } ;;
             keyCap=*)  if (( open )); then cap=${f#keyCap=};  else _ft_keyfield_orphan "$map" "$f"; bad=1; fi ;;
             keyImp=*)  if (( open )); then imp=${f#keyImp=};  else _ft_keyfield_orphan "$map" "$f"; bad=1; fi ;;
-            keyCode=*) if (( open )); then code=${f#keyCode=}; else _ft_keyfield_orphan "$map" "$f"; bad=1; fi ;;
+            onKey=*) if (( open )); then code=${f#onKey=}; else _ft_keyfield_orphan "$map" "$f"; bad=1; fi ;;
             *) printf 'ft: %s: "%s" is not a key field\n' "$map" "$f" >&2; bad=1 ;;
         esac
     done
@@ -187,7 +187,7 @@ _ft_keyfield_orphan() {
 _ft_keyfield_put() {            # map pattern code importance cap
     local map=$1 pat=$2 code=$3 imp=${4:-} cap=${5:-}
     if [[ -z "$code" && -z "$cap" ]]; then
-        printf 'ft: %s: key=%s has neither keyCode= nor keyCap=\n' "$map" "$pat" >&2
+        printf 'ft: %s: key=%s has neither onKey= nor keyCap=\n' "$map" "$pat" >&2
         return 1
     fi
     case $imp in
@@ -287,7 +287,7 @@ _ft_keymap_default() {
     local -n L="_fti_${1}__list"
     local i rest
     for (( i=${#L[@]}-1; i>=0; i-- )); do
-        # FIELD TWO, not "everything after the first tab": `key=default keyCode=drop` writes a
+        # FIELD TWO, not "everything after the first tab": `key=default onKey=drop` writes a
         # full four-field entry like any other group, and reading the rest of the line gave
         # "drop<TAB>0<TAB>", which equals neither `drop` nor `bubble` — so a drop default
         # silently stopped dropping.

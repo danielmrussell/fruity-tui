@@ -53,14 +53,14 @@ _ft_define_keymap_scrollbar() {
     # stay unlabelled, so the bar shows one "Scroll" pair rather than four rows of the
     # same thing. That is what a group with no keyCap= is FOR: bound, not advertised.
     ft_keymap_set ft_keymap_scrollbar \
-        key=UP    keyCap="Scroll up"   keyImp=crucial   keyCode='ft_scrollbar_key_prev $this' \
-        key=DOWN  keyCap="Scroll down" keyImp=crucial   keyCode='ft_scrollbar_key_next $this' \
-        key=PGUP  keyCap="Page up"     keyImp=important keyCode='ft_scrollbar_key_pgprev $this' \
-        key=PGDN  keyCap="Page down"   keyImp=important keyCode='ft_scrollbar_key_pgnext $this' \
-        key=HOME  keyCap=Top           keyImp=normal    keyCode='ft_scrollbar_key_home $this' \
-        key=END   keyCap=Bottom        keyImp=normal    keyCode='ft_scrollbar_key_end $this' \
-        key=LEFT                                        keyCode='ft_scrollbar_key_prev $this' \
-        key=RIGHT                                       keyCode='ft_scrollbar_key_next $this'
+        key=UP    keyCap="Scroll up"   keyImp=crucial   onKey='ft_scrollbar_key_prev $this' \
+        key=DOWN  keyCap="Scroll down" keyImp=crucial   onKey='ft_scrollbar_key_next $this' \
+        key=PGUP  keyCap="Page up"     keyImp=important onKey='ft_scrollbar_key_pgprev $this' \
+        key=PGDN  keyCap="Page down"   keyImp=important onKey='ft_scrollbar_key_pgnext $this' \
+        key=HOME  keyCap=Top           keyImp=normal    onKey='ft_scrollbar_key_home $this' \
+        key=END   keyCap=Bottom        keyImp=normal    onKey='ft_scrollbar_key_end $this' \
+        key=LEFT                                        onKey='ft_scrollbar_key_prev $this' \
+        key=RIGHT                                       onKey='ft_scrollbar_key_next $this'
 }
 ft_prototype_scrollbar() {
     ft_prototype extends=ft_control \

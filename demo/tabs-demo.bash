@@ -140,6 +140,6 @@ _build() {
 
 ft-form name=app width="$FT_COLS" height="$FT_ROWS" \
         display=flex justifyContent=center alignItems=center \
-        key='[Qq]' keyCode=ft_quit key=1 keyCode=_tab1 key=2 keyCode=_tab2 key=3 keyCode=_tab3 key=4 keyCode=_tab4
+        key='[Qq]' onKey=ft_quit key=1 onKey=_tab1 key=2 onKey=_tab2 key=3 onKey=_tab3 key=4 onKey=_tab4
 end_ft_form
 ft-run app _build

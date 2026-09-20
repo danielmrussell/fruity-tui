@@ -34,22 +34,22 @@ _ft_define_keymap_slider() {
     # it used to do. Moving across a form with the arrows silently edited every slider on
     # the way, and nothing on screen said a value had changed.
     ft_keymap_set ft_keymap_slider \
-        key=ENTER keyCap=Adjust keyImp=crucial keyCode='ft_key_delve $this $key'
+        key=ENTER keyCap=Adjust keyImp=crucial onKey='ft_key_delve $this $key'
 
     # ADJUSTING — one Enter in, and now every arrow is the slider's. Up/Down too: a
     # horizontal slider has no vertical axis, but once you have stepped inside a control an
     # arrow with nothing to do must do NOTHING, not throw you out of it.
     # Up/Down are bound but uncaptioned: the legend advertises the horizontal pair.
     ft-keymap ft_keymap_slider_adjusting
-        ft-key key=LEFT  keyCap=Decrease        keyImp=crucial   keyCode='ft_slider_key_dec $this'
-        ft-key key=RIGHT keyCap=Increase        keyImp=crucial   keyCode='ft_slider_key_inc $this'
-        ft-key key=UP                                            keyCode='ft_slider_key_inc $this'
-        ft-key key=DOWN                                          keyCode='ft_slider_key_dec $this'
-        ft-key key=PGUP  keyCap="Big step down" keyImp=important keyCode='ft_slider_key_bigdec $this'
-        ft-key key=PGDN  keyCap="Big step up"   keyImp=important keyCode='ft_slider_key_biginc $this'
-        ft-key key=HOME  keyCap=Minimum         keyImp=normal    keyCode='ft_slider_key_min $this'
-        ft-key key=END   keyCap=Maximum         keyImp=normal    keyCode='ft_slider_key_max $this'
-        ft-key key=ESC   keyCap=Leave           keyImp=important keyCode='ft_key_undelve $this'
+        ft-key key=LEFT  keyCap=Decrease        keyImp=crucial   onKey='ft_slider_key_dec $this'
+        ft-key key=RIGHT keyCap=Increase        keyImp=crucial   onKey='ft_slider_key_inc $this'
+        ft-key key=UP                                            onKey='ft_slider_key_inc $this'
+        ft-key key=DOWN                                          onKey='ft_slider_key_dec $this'
+        ft-key key=PGUP  keyCap="Big step down" keyImp=important onKey='ft_slider_key_bigdec $this'
+        ft-key key=PGDN  keyCap="Big step up"   keyImp=important onKey='ft_slider_key_biginc $this'
+        ft-key key=HOME  keyCap=Minimum         keyImp=normal    onKey='ft_slider_key_min $this'
+        ft-key key=END   keyCap=Maximum         keyImp=normal    onKey='ft_slider_key_max $this'
+        ft-key key=ESC   keyCap=Leave           keyImp=important onKey='ft_key_undelve $this'
     end_ft_keymap
 }
 ft_prototype_slider() {

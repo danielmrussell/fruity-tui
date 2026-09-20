@@ -637,13 +637,13 @@ _show_page() {
     # caps appear in declaration order — declaring Next first put "▶ Next step" to the LEFT of
     # "◀ Prev step", which reads backwards against the very buttons it describes.
     ft-modify app \
-        key='<' keyCap="Prev step" keyImp=important keyCode=btnStepPrev_on_activate \
-        key='>' keyCap="Next step" keyImp=important keyCode=btnStepNext_on_activate \
-        key='[Bb]' keyCap="Back ← page" keyImp=normal keyCode=btnBack_on_activate \
-        key='[Kk]' keyCap="Okay → next page" keyImp=normal keyCode=btnOk_on_activate \
-        key='[Ww]' keyCap="↩ wrap marks" keyImp=normal keyCode=_toggle_wrap \
-        key='[Nn]' keyCap="¶ newline marks" keyImp=normal keyCode=_toggle_nl \
-        key='[Qq]' keyCap="Quit" keyImp=40 keyCode=ft_quit
+        key='<' keyCap="Prev step" keyImp=important onKey=btnStepPrev_on_activate \
+        key='>' keyCap="Next step" keyImp=important onKey=btnStepNext_on_activate \
+        key='[Bb]' keyCap="Back ← page" keyImp=normal onKey=btnBack_on_activate \
+        key='[Kk]' keyCap="Okay → next page" keyImp=normal onKey=btnOk_on_activate \
+        key='[Ww]' keyCap="↩ wrap marks" keyImp=normal onKey=_toggle_wrap \
+        key='[Nn]' keyCap="¶ newline marks" keyImp=normal onKey=_toggle_nl \
+        key='[Qq]' keyCap="Quit" keyImp=40 onKey=ft_quit
     ft_refresh
     ft_focus css || ft_focus_first
 }
@@ -669,7 +669,7 @@ _resize() { ft-modify app width="$FT_COLS" height="$FT_ROWS"; _show_page; }
 # ── App scaffold ──────────────────────────────────────────────────────────────
 ft-form name=app width="$FT_COLS" height="$FT_ROWS" \
         display=flex flexDirection=column \
-        key='[Qq]' keyCode=ft_quit
+        key='[Qq]' onKey=ft_quit
     ft-div name=stage flexGrow=1 flexShrink=1 minHeight=0 overflow=hidden \
              display=flex justifyContent=center alignItems=center
     end_ft_div

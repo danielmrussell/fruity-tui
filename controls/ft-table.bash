@@ -56,24 +56,24 @@ _ft_define_keymap_table() {
     # INACTIVE — merely focused. Enter steps in; the arrows still belong to focus
     # navigation. Copy here takes the WHOLE table (see ft_table_copy).
     ft_keymap_set ft_keymap_table \
-        key=ENTER  keyCap="Browse rows" keyImp=crucial keyCode='ft_key_delve $this $key' \
-        key=CTRL+c keyCap="Copy table"  keyImp=normal  keyCode='ft_table_copy $this' \
-        key=ALT+w                                      keyCode='ft_table_copy $this'
+        key=ENTER  keyCap="Browse rows" keyImp=crucial onKey='ft_key_delve $this $key' \
+        key=CTRL+c keyCap="Copy table"  keyImp=normal  onKey='ft_table_copy $this' \
+        key=ALT+w                                      onKey='ft_table_copy $this'
 
     # BROWSING — one Enter in, and NOW there is a current row: the arrows move it, it is
     # highlighted, and copy takes that row rather than the whole table. Nothing here bubbles.
     ft-keymap ft_keymap_table_browsing
-        ft-key key=UP     keyCap="Up a row"   keyImp=crucial   keyCode='ft_table_key_up $this'
-        ft-key key=DOWN   keyCap="Down a row" keyImp=crucial   keyCode='ft_table_key_down $this'
-        ft-key key=LEFT                                        keyCode='ft_table_key_up $this'
-        ft-key key=RIGHT                                       keyCode='ft_table_key_down $this'
-        ft-key key=PGUP   keyCap="Page up"    keyImp=important keyCode='ft_table_key_pgup $this'
-        ft-key key=PGDN   keyCap="Page down"  keyImp=important keyCode='ft_table_key_pgdn $this'
-        ft-key key=HOME   keyCap="Top"        keyImp=normal    keyCode='ft_table_key_home $this'
-        ft-key key=END    keyCap="Bottom"     keyImp=normal    keyCode='ft_table_key_end $this'
-        ft-key key=CTRL+c keyCap="Copy row"   keyImp=normal    keyCode='ft_table_copy $this'
-        ft-key key=ALT+w                                       keyCode='ft_table_copy $this'
-        ft-key key=ESC    keyCap="Leave"      keyImp=important keyCode='ft_key_undelve $this'
+        ft-key key=UP     keyCap="Up a row"   keyImp=crucial   onKey='ft_table_key_up $this'
+        ft-key key=DOWN   keyCap="Down a row" keyImp=crucial   onKey='ft_table_key_down $this'
+        ft-key key=LEFT                                        onKey='ft_table_key_up $this'
+        ft-key key=RIGHT                                       onKey='ft_table_key_down $this'
+        ft-key key=PGUP   keyCap="Page up"    keyImp=important onKey='ft_table_key_pgup $this'
+        ft-key key=PGDN   keyCap="Page down"  keyImp=important onKey='ft_table_key_pgdn $this'
+        ft-key key=HOME   keyCap="Top"        keyImp=normal    onKey='ft_table_key_home $this'
+        ft-key key=END    keyCap="Bottom"     keyImp=normal    onKey='ft_table_key_end $this'
+        ft-key key=CTRL+c keyCap="Copy row"   keyImp=normal    onKey='ft_table_copy $this'
+        ft-key key=ALT+w                                       onKey='ft_table_copy $this'
+        ft-key key=ESC    keyCap="Leave"      keyImp=important onKey='ft_key_undelve $this'
     end_ft_keymap
 }
 # WHAT COPY TAKES IS A FUNCTION OF HOW FAR IN YOU ARE. Standing next to the table, there is

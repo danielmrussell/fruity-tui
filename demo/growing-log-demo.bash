@@ -42,7 +42,7 @@ clear_log()  { lines=0; log_text=""; add_lines 0; }
 # just suppress the label's own and duplicate it.)
 ft-form name=app width="$FT_COLS" height="$FT_ROWS" \
         display=flex flexDirection=column \
-        key='[Aa]' keyCode=add_one key='[Tt]' keyCode=add_ten key='[Xx]' keyCode=clear_log key='[Qq]' keyCode=ft_quit
+        key='[Aa]' onKey=add_one key='[Tt]' onKey=add_ten key='[Xx]' onKey=clear_log key='[Qq]' onKey=ft_quit
 
     ft-frame name=viewport title=" output " flexGrow=1 flexShrink=1 minHeight=0 \
              display=flex flexDirection=column
@@ -54,10 +54,10 @@ ft-form name=app width="$FT_COLS" height="$FT_ROWS" \
 end_ft_form
 
 ft-modify app \
-    key='[Aa]' keyCap="Add a line" keyImp=crucial keyCode=add_one \
-    key='[Tt]' keyCap="Add ten" keyImp=important keyCode=add_ten \
-    key='[Xx]' keyCap="Clear" keyImp=normal keyCode=clear_log \
-    key='[Qq]' keyCap="Quit" keyImp=40 keyCode=ft_quit
+    key='[Aa]' keyCap="Add a line" keyImp=crucial onKey=add_one \
+    key='[Tt]' keyCap="Add ten" keyImp=important onKey=add_ten \
+    key='[Xx]' keyCap="Clear" keyImp=normal onKey=clear_log \
+    key='[Qq]' keyCap="Quit" keyImp=40 onKey=ft_quit
 
 setup() { add_lines 3; }
 ft-run app setup

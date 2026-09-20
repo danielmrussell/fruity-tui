@@ -35,7 +35,7 @@ _log_text=$'nothing here yet\nsecond line\nthird line\nfourth line\nfifth line\n
 _readme=$'This field is readOnly.\n\nEnter takes it to `scrolling`, and a second\nEnter to `perusing` — a caret you can move\nand select with, but nothing you type\nchanges the text.\n\nTry Backspace in here: nothing happens,\nbecause the mutating keys are not bound\nat this runlevel at all.'
 
 ft-form name=app width="$FT_COLS" height="$FT_ROWS" display=flex flexDirection=column \
-        key='[Qq]' keyCode=ft_quit key='[Bb]' keyCode=toggle_caps
+        key='[Qq]' onKey=ft_quit key='[Bb]' onKey=toggle_caps
     ft-frame name=win title="Runlevels" display=flex flexDirection=column gap=1 \
              padding=1 flexGrow=1
         ft-label name=hint text="Tab between the three fields. Enter climbs a rung, Esc leaves. Watch the legend."
@@ -75,8 +75,8 @@ toggle_caps() {
 # Re-declaring the same patterns as caps upgrades them in place (same pattern = replace).
 _bind_app_keys() {
     ft-modify app \
-        key='[Bb]' keyCap="Legend style" keyImp=normal keyCode=toggle_caps \
-        key='[Qq]' keyCap="Quit" keyImp=normal keyCode=ft_quit
+        key='[Bb]' keyCap="Legend style" keyImp=normal onKey=toggle_caps \
+        key='[Qq]' keyCap="Quit" keyImp=normal onKey=ft_quit
 }
 
 _setup() { _bind_app_keys; ft_layout app; ft_focus one; }

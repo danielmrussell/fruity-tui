@@ -979,13 +979,13 @@ _show_page() {
     # legend sorts stably by importance, so declaring Next first would print it to the LEFT of
     # Prev and read backwards against the very buttons it describes.
     ft-modify app \
-        key='<' keyCap="Prev step" keyImp=important keyCode=btnStepPrev_on_activate \
-        key='>' keyCap="Next step" keyImp=important keyCode=btnStepNext_on_activate \
-        key='[Bb]' keyCap="Back ← page" keyImp=normal keyCode=btnBack_on_activate \
-        key='[Kk]' keyCap="Okay → next page" keyImp=normal keyCode=btnOk_on_activate \
-        key='[Ee]' keyCap="effect=" keyImp=normal keyCode=_cycle_effect \
-        key='[Rr]' keyCap="un-drag" keyImp=normal keyCode=_reset_drag \
-        key='[Qq]' keyCap="Quit" keyImp=40 keyCode=ft_quit
+        key='<' keyCap="Prev step" keyImp=important onKey=btnStepPrev_on_activate \
+        key='>' keyCap="Next step" keyImp=important onKey=btnStepNext_on_activate \
+        key='[Bb]' keyCap="Back ← page" keyImp=normal onKey=btnBack_on_activate \
+        key='[Kk]' keyCap="Okay → next page" keyImp=normal onKey=btnOk_on_activate \
+        key='[Ee]' keyCap="effect=" keyImp=normal onKey=_cycle_effect \
+        key='[Rr]' keyCap="un-drag" keyImp=normal onKey=_reset_drag \
+        key='[Qq]' keyCap="Quit" keyImp=40 onKey=ft_quit
     ft_refresh
     ft_focus call || ft_focus_first
     _p3_reconcile
@@ -1026,7 +1026,7 @@ _resize() { ft-modify app width="$FT_COLS" height="$FT_ROWS"; _show_page; }
 # ── App scaffold ──────────────────────────────────────────────────────────────
 ft-form name=app width="$FT_COLS" height="$FT_ROWS" \
         display=flex flexDirection=column \
-        key='[Qq]' keyCode=ft_quit
+        key='[Qq]' onKey=ft_quit
     # alignItems=stretch, not center: `win` then fills the stage's height, and its own flex
     # column can hand the leftover rows to the demonstration frame instead of overflowing.
     ft-div name=stage flexGrow=1 flexShrink=1 minHeight=0 overflow=hidden \

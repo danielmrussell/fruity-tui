@@ -81,7 +81,7 @@ note "the engine's per-control SIDE TABLES are namespaced too (_fti_*)"
 # Same hazard, different variables: the wrap/extent caches, table cells, tab signatures and
 # keymap lists are all per-control arrays living in the global namespace.
 ft_keymap kmns
-ft_keymap_set kmns key=UP keyCode='act_up $this'
+ft_keymap_set kmns key=UP onKey='act_up $this'
 check "a keymap list lives under _fti_*"      "${_fti_kmns__list+set}" "set"
 check "…and not under the bare name"          "${kmns__list+set}"      ""
 _ft_keymap_lookup kmns UP

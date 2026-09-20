@@ -124,6 +124,6 @@ _setup() { _build_dialog 1; }
 
 ft-form name=app width="$FT_COLS" height="$FT_ROWS" \
         display=flex justifyContent=center alignItems=center \
-        key='[Qq]' keyCode=ft_quit
+        key='[Qq]' onKey=ft_quit
 end_ft_form
 ft-run app _setup

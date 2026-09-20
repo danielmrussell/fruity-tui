@@ -66,7 +66,7 @@ ft_stylesheet name=transition-demo style='
 '
 
 ft-form name=app width="$FT_COLS" height="$FT_ROWS" \
-        key='[Qq]' keyCode=ft_quit key='[Rr]' keyCode=replay_all key='[Ss]' keyCode=switch_schedule \
+        key='[Qq]' onKey=ft_quit key='[Rr]' onKey=replay_all key='[Ss]' onKey=switch_schedule \
                1=replay_one 2=replay_two 3=replay_three 4=replay_four
     ft-frame name=page position=absolute left=1 top=0 \
              width=$(( FT_COLS - 2 )) height=$(( FT_ROWS - 3 )) \

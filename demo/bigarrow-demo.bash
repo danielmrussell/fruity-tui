@@ -185,12 +185,12 @@ _arm_arrow() {
 
 _legend() {
     ft-modify app \
-        key='<' keyCap="Prev step" keyImp=important keyCode=_prev_step \
-        key='>' keyCap="Next step" keyImp=important keyCode=_next_step \
-        key='[Bb]' keyCap="Back ← page" keyImp=normal keyCode=_prev_page \
-        key='[Nn]' keyCap="Next → page" keyImp=normal keyCode=_next_page \
-        key='[Rr]' keyCap="Replay" keyImp=normal keyCode=_replay \
-        key='[Qq]' keyCap="Quit" keyImp=40 keyCode=ft_quit
+        key='<' keyCap="Prev step" keyImp=important onKey=_prev_step \
+        key='>' keyCap="Next step" keyImp=important onKey=_next_step \
+        key='[Bb]' keyCap="Back ← page" keyImp=normal onKey=_prev_page \
+        key='[Nn]' keyCap="Next → page" keyImp=normal onKey=_next_page \
+        key='[Rr]' keyCap="Replay" keyImp=normal onKey=_replay \
+        key='[Qq]' keyCap="Quit" keyImp=40 onKey=ft_quit
 }
 
 _show() {
@@ -218,7 +218,7 @@ _resize() { ft-modify app width="$FT_COLS" height="$FT_ROWS"; _show; }
 # ── App scaffold ─────────────────────────────────────────────────────────────
 ft-form name=app width="$FT_COLS" height="$FT_ROWS" \
         display=flex flexDirection=column \
-        key='[Qq]' keyCode=ft_quit
+        key='[Qq]' onKey=ft_quit
     ft-div name=body flexGrow=1 flexShrink=1 minHeight=0 overflow=hidden \
            display=flex flexDirection=column
     end_ft_div

@@ -40,9 +40,9 @@ check "on_activate hook ran" "$ACT" "yes"
 
 note "instance overlay beats shared ref beats class default"
 ft_keymap sharedNav
-ft_keymap_set sharedNav key=ENTER keyCode='_hit ref $this $key'
+ft_keymap_set sharedNav key=ENTER onKey='_hit ref $this $key'
 ft-form name=app2 width=40 height=10
-    ft-button name=b2 text=" B " keymap=sharedNav key=ENTER keyCode='_hit overlay $this $key'
+    ft-button name=b2 text=" B " keymap=sharedNav key=ENTER onKey='_hit overlay $this $key'
     ft-button name=b3 text=" C " keymap=sharedNav
     ft-button name=b4 text=" D " onActivate=b4_on_activate
 end_ft_form
@@ -59,7 +59,7 @@ ft_dispatch_event ENTER
 check "class default remains for b4" "$ACT2" "yes"
 
 note "editing the SHARED keymap changes every control attached by reference"
-ft_keymap_set sharedNav key=ENTER keyCode='_hitplain $this $key'
+ft_keymap_set sharedNav key=ENTER onKey='_hitplain $this $key'
 ft_focus b3; HIT=""
 ft_dispatch_event ENTER
 check "b3 sees the updated shared binding" "$HIT" "plain:b3:ENTER"
@@ -110,7 +110,7 @@ check "destroyed accessKey no longer fires" "$GACT" ""
 
 note "a drop default swallows keys instead of bubbling"
 ft-form name=app5 width=40 height=10
-    ft-button name=b5 text=" B " key=default keyCode=drop
+    ft-button name=b5 text=" B " key=default onKey=drop
 end_ft_form
 FT_ROOT=app5
 QUITS=0
@@ -144,7 +144,7 @@ KA_OUTER=0; KA_INNER=0
 ka_outer() { KA_OUTER=1; }
 ka_inner() { KA_INNER=1; }
 ka_args()  { KA_ARGS="$*"; }
-ft_keymap ka_outer_map; ft_keymap_set ka_outer_map key=X keyCode=ka_outer
+ft_keymap ka_outer_map; ft_keymap_set ka_outer_map key=X onKey=ka_outer
 _ka_build() {                   # innermap
     ft_remove ka 2>/dev/null
     KA_OUTER=0; KA_INNER=0; KA_ARGS=""
@@ -165,17 +165,17 @@ note "…the reserved words the keymap docs promise"
 # "An ACTION is a function name, or the reserved words bubble / drop." Neither was
 # implemented: `bubble` announced "bubble: command not found" on the alt screen and then
 # SWALLOWED the key — the exact opposite of what it says on the tin.
-ft_keymap ka_bub; ft_keymap_set ka_bub key=X keyCode=bubble
+ft_keymap ka_bub; ft_keymap_set ka_bub key=X onKey=bubble
 _ka_build ka_bub; _ka_err
 check "bubble declines, so the ancestor gets the key" "$KA_OUTER" "1"
 check "…in silence"                                   "${FT_RET:-clean}" "clean"
-ft_keymap ka_drop; ft_keymap_set ka_drop key=X keyCode=drop
+ft_keymap ka_drop; ft_keymap_set ka_drop key=X onKey=drop
 _ka_build ka_drop; _ka_err
 check "drop swallows it here"                         "$KA_OUTER" "0"
 check "…in silence"                                   "${FT_RET:-clean}" "clean"
 
 note "…an action naming a function that is not there"
-ft_keymap ka_gone; ft_keymap_set ka_gone key=X keyCode=ka_no_such_function
+ft_keymap ka_gone; ft_keymap_set ka_gone key=X onKey=ka_no_such_function
 _ka_build ka_gone; _ka_err
 check "nothing is announced on the screen the user is looking at" "${FT_RET:-clean}" "clean"
 check "and the key is NOT claimed — it bubbles to something that works" "$KA_OUTER" "1"
@@ -191,7 +191,7 @@ note "…an EMPTY action, which used to run the CONTROL'S OWN NAME"
 # `"${words[@]}" "$name" "$tok"` then had the control name in the command position. Names
 # are identifiers, so a control called `rm` or `clear` ran rm or clear.
 ft_keymap ka_empty_map
-no "a group with no keyCode and no keyCap is refused" ft_keymap_set ka_empty_map key=X
+no "a group with no onKey and no keyCap is refused" ft_keymap_set ka_empty_map key=X
 ft_keymap ka_empty
 _ft_keymap_put ka_empty X $'X\t'          # …and forced past that, dispatch still refuses
 _ka_build ka_empty; _ka_err
@@ -216,14 +216,14 @@ check "a control named after a real command does not run it" \
 # only honest if BOTH halves hold, so both are asserted: unquoted expands, quoted does not.
 note "a glob in an action is a glob, and quoting it makes it literal"
 mkdir -p "$XDG_STATE_HOME/globdir"; : > "$XDG_STATE_HOME/globdir/aaa"; : > "$XDG_STATE_HOME/globdir/bbb"
-ft_keymap ka_glob; ft_keymap_set ka_glob key=X keyCode='ka_args * "$this" "$key"'
+ft_keymap ka_glob; ft_keymap_set ka_glob key=X onKey='ka_args * "$this" "$key"'
 _ka_build ka_glob
 pushd "$XDG_STATE_HOME/globdir" >/dev/null
 ft_dispatch_event X >/dev/null 2>&1
 popd >/dev/null
 check "unquoted, it expands where the handler runs" "$KA_ARGS" "aaa bbb kabtn X"
 
-ft_keymap ka_glob_q; ft_keymap_set ka_glob_q key=X keyCode='ka_args "*" "$this" "$key"'
+ft_keymap ka_glob_q; ft_keymap_set ka_glob_q key=X onKey='ka_args "*" "$this" "$key"'
 _ka_build ka_glob_q
 pushd "$XDG_STATE_HOME/globdir" >/dev/null
 ft_dispatch_event X >/dev/null 2>&1

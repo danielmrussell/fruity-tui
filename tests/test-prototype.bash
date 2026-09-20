@@ -191,7 +191,7 @@ _build; _build; _build
 check "declared exactly once across three asks" "$_KM_BUILDS" 1
 check "…and the keymap really exists"        "$(declare -p _fti_ft_keymap_probe_once__list >/dev/null 2>&1 && echo yes)" yes
 # The thing the guard exists to prevent: a second ask must not EMPTY what the first bound.
-ft_keymap_set ft_keymap_probe_once key=X keyCode='probe_x $this'
+ft_keymap_set ft_keymap_probe_once key=X onKey='probe_x $this'
 _build
 check "a repeat ask leaves the bindings alone" "$(ft_keymap_dump ft_keymap_probe_once | cut -f1)" "X"
 
@@ -377,5 +377,38 @@ if declare -f ft_stylesheet >/dev/null; then
     ft_stylesheet name=_t_boxsheet style='#nothing_matches_this { padding: 4; }'
     check "…and declaring one opens it" "${_FT_CSS_FASTPATH_DECLARED:-unset}" "1"
 fi
+
+
+# ── A prototype may bring a HANDLER, not only a value ───────────────────────
+# `on<Event>=` is not an ordinary property: _ft_setprop intercepts it and appends to the
+# control's eventListeners plist. A prototype default never passes through that path — it is
+# consulted during RESOLUTION — so `defaults="onActivate=fn"` resolved to nothing at all and the
+# control looked wired while being inert. Found by writing ft-button-quit and watching Q do
+# nothing.
+note "a prototype default on<Event>= really registers a listener"
+PSEQ=""
+p_handler() { PSEQ+="proto "; }
+a_handler() { PSEQ+="app "; }
+ft_prototype_wired() { ft_prototype extends=button defaults="onActivate=p_handler"; }
+ft-wired() { ft_new wired "$@"; }
+ft-form name=plapp width=40 height=8
+    ft-wired name=pl1
+    ft-wired name=pl2 onActivate=a_handler
+end_ft_form
+FT_ROOT=plapp; ft_layout plapp
+PSEQ=""; ft_activate pl1
+check "the prototype's handler runs"            "$PSEQ" "proto "
+# Listeners ACCUMULATE, exactly as two onActivate= arguments in one call do — the instance adds
+# to the prototype, it does not replace it. Prototype first, because that is the order every
+# other level of resolution uses.
+PSEQ=""; ft_activate pl2
+check "the app's handler adds to it, in that order" "$PSEQ" "proto app "
+ft-modify pl2 onActivate=
+PSEQ=""; ft_activate pl2
+check "onActivate= clears both, like el.onactivate = null" "${PSEQ:-nothing}" "nothing"
+# It must not become a phantom PROPERTY while it is at it.
+ft_get pl1 onActivate
+check "it is a listener, not a property"        "${FT_RET:-unset}" "unset"
+check "…and it is on the listener plist"        "$(ft_has_listener pl1 activate && echo yes)" "yes"
 
 summary

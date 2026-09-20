@@ -343,7 +343,7 @@ The REQ-03 assertion is: each glyph's `ft_display_width` equals the number writt
   `__fdlegend` is a hardcoded string today (`keys="S=Save Enter=Open …"`, ft-filedialog.bash:211);
   change it to **`keys=auto`** (controls/ft-keylegend.bash:11,93) and declare every toolbar key
   with key fields — `key=PATTERN keyCap="Label" keyImp=crucial|important|normal|minor
-  keyCode='code'` — on the control itself or in its keymap. Once it is `auto` the legend's
+  onKey='code'` — on the control itself or in its keymap. Once it is `auto` the legend's
   wording comes from your `keyCap=` values, so §4.1's golden legend line becomes a target for the
   labels you write, not a string to reproduce.
 - **REQ-06** — disabled items **look** disabled: Paste with an empty clipboard, Parent at `/`,
