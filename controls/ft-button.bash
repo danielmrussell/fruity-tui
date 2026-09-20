@@ -101,3 +101,56 @@ _ft_draw_button() {                      # name
     fi
     ft_print_at "$row" "$col" "$sgr$out$FT_COLOR_RESET"
 }
+
+# ── The buttons every app writes anyway ─────────────────────────────────────
+# Ten prototypes that are a button plus the letter people already reach for. The letter is an
+# `accessKey`, which is a SHORTCUT: it works anywhere on the screen, not only while the button
+# has focus, and when several controls claim the same letter the first VISIBLE and ENABLED one
+# wins — which is why every page in an app can have its own Save on `s`.
+#
+#     ft-button-ok                       → [ OK ]      with k
+#     ft-button-save "Save As…"          → your text, still on s
+#
+# THE LETTERS, and why these and not the initials:
+#   ok        k    "o" reads as the letter O next to 0, and OK's K is unmistakable
+#   cancel    c
+#   yes       y  ·  no  n
+#   new       n    shares with `no`, which is fine: a dialog has one or the other, never both
+#   quit      q  ·  help  h  ·  save  s
+#   back      b  ·  forward  f    less/man/vim's pair, which leaves `n` free for no/new
+#
+# Each letter appears in its default label, so the underline lands on a real character rather
+# than being appended as " (K)".
+#
+# THEY CARRY NO DEFAULT ACTION, including `quit` and `help`, where there is exactly one thing
+# either could mean and the framework already has the verb. `defaults="onActivate=ft_quit"` was
+# written here first and DOES NOT WORK: a listener is registered when `on<Event>=` is written as
+# an instance property, while a prototype default is consulted during resolution and never
+# becomes one. So the button would have looked wired, underlined its Q, and done nothing —
+# the same promise-without-delivery this file's accessKey fix just removed. Worth having the
+# engine support (a prototype ought to be able to bring a handler), but that is a change to how
+# listeners are registered, not something to smuggle in behind a button.
+#
+# Declared from a table rather than written out ten times: the table IS the documentation, and
+# ten hand-copies of one line is how the tenth ends up with the ninth's letter.
+_FT_BUTTON_KINDS=(
+    "ok      k  OK"
+    "cancel  c  Cancel"
+    "yes     y  Yes"
+    "no      n  No"
+    "new     n  New"
+    "quit    q  Quit"
+    "help    h  Help"
+    "save    s  Save"
+    "back    b  Back"
+    "forward f  Forward"
+)
+for _ft_bk in "${_FT_BUTTON_KINDS[@]}"; do
+    read -r _ft_bk_kind _ft_bk_letter _ft_bk_label _ft_bk_extra <<< "$_ft_bk"
+    eval "ft_prototype_button_${_ft_bk_kind}() {
+              ft_prototype extends=button \\
+                  defaults=\"accessKey=${_ft_bk_letter} text=${_ft_bk_label} ${_ft_bk_extra}\"
+          }
+          ft-button-${_ft_bk_kind}() { ft_new button_${_ft_bk_kind} \"\$@\"; }"
+done
+unset _ft_bk _ft_bk_kind _ft_bk_letter _ft_bk_label _ft_bk_extra

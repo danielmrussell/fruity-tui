@@ -754,6 +754,10 @@ _ft_truthy() { case "$1" in true|1|yes|on) return 0 ;; *) return 1 ;; esac; }
 declare -A FT_INHERITED_PROP=(
     [color]=1 [visibility]=1 [cursor]=1 [textAlign]=1 [fontWeight]=1 [fontStyle]=1
     [disabled]=1
+    # `defaultKeys` INHERITS so a container can silence a whole subtree's prototype keys with
+    # one word — the same reach `disabled` has, and for the same reason: the thing you want to
+    # say is "not in here", not "not on this one, and this one, and this one".
+    [defaultKeys]=1
 )
 
 # ── The STATE registry (what a pseudo-class asks) ────────────────────────────
@@ -1393,7 +1397,7 @@ _ft_pk paint color backgroundColor borderColor overflowY \
        scrollTop scrollLeft scrollHeight scrollWidth clientHeight clientWidth \
        selectedIndex group keymap draw focusable name parent for \
        borderRadius borderGlyph \
-       value disabled type min max step style multiple open visibility \
+       value disabled defaultKeys type min max step style multiple open visibility \
        autofocus wrapIndicator textAlign \
        animation animationDuration animationTimingFunction animationDelay \
        eventListeners variant importance
@@ -2073,7 +2077,13 @@ _ft_accel_unregister() {        # name — drop every accelerator currently regi
 }
 _ft_accel_register() {          # name — bind NAME's accelerators from its current accessKey
     local name=$1
-    _ft_get_raw "$name" accessKey
+    # RESOLVED, not raw. The letter may come from the PROTOTYPE — ft-button-ok is a button whose
+    # default accessKey is k — or from a stylesheet, and a raw read sees neither. The draw has
+    # always resolved it (_ft_draw_button underlines through ft_resolved_prop), so a
+    # prototype-provided letter was UNDERLINED ON SCREEN AND BOUND TO NOTHING: the exact shape
+    # of promise-without-delivery that ft_accesskey_conflicts exists to catch, arriving by a
+    # route that function cannot see because no binding was ever made.
+    ft_resolved_prop "$name" accessKey
     [[ -n "$FT_RET" ]] || return 0
     local letters=$FT_RET ac       # save it: _ft_enclosing_form_of overwrites FT_RET
     _ft_enclosing_form_of "$name"
@@ -7757,7 +7767,20 @@ _ft_keymap_layers() {           # name → FT_KEYMAP_LAYERS, in precedence order
     # made the map about the control rather than about the behaviour.
     FT_KEYMAP_LAYERS=("${FT_KEYMAP[$name]:-}")
     local _r; for _r in $refkm; do FT_KEYMAP_LAYERS=("${FT_KEYMAP_LAYERS[0]}" "$_r" "${FT_KEYMAP_LAYERS[@]:1}"); done
-    FT_KEYMAP_LAYERS+=("$_rlkm" "${type:+${FT_PROTO_KEYMAP[$type]:-}}")
+    # `defaultKeys=false` silences THE KEYS THE PROTOTYPE PROVIDES — its own map and the map
+    # for the runlevel it is in — and leaves every key the app wrote. It is the blunt
+    # instrument; `keyCode=bubble` on one key is the scalpel. It INHERITS, so it silences a
+    # subtree.
+    #
+    # Asked only when there is something to silence. Reading it costs a cascade resolve, and
+    # a resolve is not cheap even warm: measured 33µs, against 136µs for the rest of this
+    # function and 571µs for a whole dispatch — 6% of a keypress. Containers and any prototype
+    # with no map of its own now skip it outright, which is most of the bubble chain.
+    local _proto=${type:+${FT_PROTO_KEYMAP[$type]:-}}
+    [[ -z "$_rlkm" && -z "$_proto" ]] && return         # this prototype provides no keys
+    ft_resolved_prop "$name" defaultKeys true
+    [[ "$FT_RET" == false ]] && return
+    FT_KEYMAP_LAYERS+=("$_rlkm" "$_proto")
 }
 declare -a FT_KEYMAP_LAYERS=()
 
@@ -8413,9 +8436,32 @@ ft_esc_action() { return 0; }
 #             each input burst. This is what makes holding a page-advance key
 #             feel instant even though each press changes state — the costly
 #             rebuild happens once, for the final state, not per keypress.
+# A SHORTCUT THAT CANNOT FIRE IS INVISIBLE: the control keeps drawing its underlined letter and
+# the key goes on doing something plausible instead. ft_accesskey_conflicts answers the question;
+# this is what asks it, once, at startup — BEFORE the alt screen is entered, because stderr in a
+# TUI is the screen the user is looking at. That places it before ft-run's `setup` callback runs,
+# so a control built inside setup rather than at file scope is not covered; the tree an app
+# declares is.
+# Behind FT_DEBUG_KEYS=1 rather than always on: sharing a letter is a deliberate feature, so this
+# is a thing you go looking for, like FT_DEBUG_NOALT.
+_ft_report_key_conflicts() {
+    [[ -n "${FT_DEBUG_KEYS:-}" ]] || return 0
+    ft_accesskey_conflicts && return 0
+    local line
+    printf 'ft: accessKey conflicts — each of these letters is claimed by more than one\n' >&2
+    printf '    control AND bound to something else, so the shortcut cannot reach them:\n' >&2
+    while IFS= read -r line; do
+        [[ -n "$line" ]] || continue
+        set -- $line
+        printf '      %s advertises %s, but %s wins the key\n' "$1" "$2" "${*:3}" >&2
+    done <<< "$FT_RET"
+    return 1
+}
+
 ft-run() {
     local root=$1 setup=${2:-} resize=${3:-} fallback=${4:-} render=${5:-}
     FT_ROOT=$root
+    _ft_report_key_conflicts
     ft_enter_tty
     ft_install_traps
     ft_start_input

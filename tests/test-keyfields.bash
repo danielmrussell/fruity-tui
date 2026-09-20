@@ -208,4 +208,62 @@ FT_ROOT=app4; ft_layout app4; ft_focus b4
 SAW=""; ft_dispatch_event ENTER
 check "ENTER runs the instance code, not activate" "$SAW" "mine b4"
 
+# ── defaultKeys ─────────────────────────────────────────────────────────────
+# The blunt instrument. `keyCode=bubble` drops one key; this drops everything the PROTOTYPE
+# provides — its own map and the map for the runlevel it is in — and touches nothing the app
+# wrote. It INHERITS, because the thing you want to say is "not in here", not "not on this one,
+# and this one, and this one".
+note "defaultKeys=false silences the prototype's keys, not the app's"
+ft-form name=dkapp width=40 height=10
+    ft-div name=dkbox
+        ft-button name=dk1 "Go" onActivate=dk_activate
+        ft-button name=dk2 "No" onActivate=dk_activate
+    end_ft_div
+end_ft_form
+DK=""; dk_activate() { DK=fired; }
+FT_ROOT=dkapp; ft_layout dkapp; ft_focus dk1
+DK=""; ft_dispatch_event ENTER
+check "by default the prototype's ENTER activates"  "$DK" "fired"
+
+ft-modify dk1 defaultKeys=false
+DK=""; ft_dispatch_event ENTER
+check "…silenced, ENTER does nothing"               "${DK:-nothing}" "nothing"
+ft-modify dk1 key=ENTER keyCode='saw mine $this'
+SAW=""; DK=""; ft_dispatch_event ENTER
+check "…but the app's own key still fires"          "$SAW" "mine dk1"
+check "…and still does not reach the prototype"     "${DK:-nothing}" "nothing"
+
+ft_remove_attribute dk1 defaultKeys
+ft-modify dkbox defaultKeys=false
+ft_focus dk2; DK=""; ft_dispatch_event ENTER
+check "it INHERITS: the container silenced the child" "${DK:-nothing}" "nothing"
+ft-modify dk2 defaultKeys=true
+DK=""; ft_dispatch_event ENTER
+check "…and a child can say true again"               "$DK" "fired"
+
+# ── The conflict report ─────────────────────────────────────────────────────
+# Sharing an accessKey is a FEATURE — the letter activates the first control that is enabled
+# and visible. What is a bug is a plain binding for the same letter, which wins outright
+# because lookup takes the last registration: the controls keep drawing their underlined
+# letter while the key does something else entirely. Found in css-demo, where a `Bold`
+# checkbox with accessKey=B sat on a page whose app-level [Bb] moved back a page.
+note "a shortcut that cannot fire is reported, not left to be discovered"
+ft-form name=ckapp width=40 height=10
+    ft-button name=ck1 "Bold"   accessKey=b
+    ft-button name=ck2 "Bottom" accessKey=b
+end_ft_form
+FT_ROOT=ckapp; ft_layout ckapp
+ok "two controls sharing a letter is not a conflict" ft_accesskey_conflicts
+ft_keymap_set "${FT_KEYMAP[ckapp]}" key='[Bb]' keyCode=ft_quit
+no "…until a plain binding takes the letter"        ft_accesskey_conflicts
+
+FT_DEBUG_KEYS=1
+_ft_report_key_conflicts 2>"$_ERR"; rc=$?
+check "the startup report fails when it finds one"  "$rc" "1"
+check "…and names the control and what beat it" \
+      "$(grep -c 'ck1 advertises B, but ft_quit wins the key' "$_ERR")" "1"
+FT_DEBUG_KEYS=
+_ft_report_key_conflicts 2>"$_ERR"
+check "…and says nothing at all unless asked"       "$(wc -c < "$_ERR")" "0"
+
 summary

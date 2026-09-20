@@ -106,6 +106,7 @@ declare -A _INC_EXEMPT=(
     [draw]="names a paint FUNCTION; what that function paints is the app's"
     [eventListeners]="listener bookkeeping; paints nothing"
     [keymap]="key bindings; paints nothing (the legend follows keys=, which is written)"
+    [defaultKeys]="changes which keys the control HAS, not what it draws — the same ground as keymap= above, including the same open question about whether an auto legend repaints when keys change"
     [keymode]="reserved (emacs|vi) and read by no painter"
     [states]="declares the runlevel ladder at construction"
     [type]="a construction-time discriminator"

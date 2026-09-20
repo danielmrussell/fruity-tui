@@ -110,4 +110,67 @@ check "the button fills the width it claimed" "${#_b}" "${FT_MEASURED_WIDTH[btb]
 _paint ltb; check "and it is the label's own expansion, padded" "$_b" " $FT_RET "
 ft_remove bapp 2>/dev/null
 
+
+# ── The ten common buttons ──────────────────────────────────────────────────
+# A button plus the letter people already reach for. The letter is an accessKey — a SHORTCUT,
+# live anywhere on the screen rather than only while the button has focus.
+note "each kind brings its label and its letter"
+ft-form name=kapp width=70 height=14
+    ft-button-ok name=k_ok           ; ft-button-cancel name=k_cancel
+    ft-button-yes name=k_yes         ; ft-button-no name=k_no
+    ft-button-new name=k_new         ; ft-button-quit name=k_quit
+    ft-button-help name=k_help       ; ft-button-save name=k_save
+    ft-button-back name=k_back       ; ft-button-forward name=k_forward
+end_ft_form
+FT_ROOT=kapp; ft_layout kapp
+_kind() { ft_get "$1" text; local t=$FT_RET; ft_resolved_prop "$1" accessKey; printf '%s/%s' "$t" "$FT_RET"; }
+check "ok"      "$(_kind k_ok)"      "OK/k"
+check "cancel"  "$(_kind k_cancel)"  "Cancel/c"
+check "yes"     "$(_kind k_yes)"     "Yes/y"
+check "no"      "$(_kind k_no)"      "No/n"
+check "new"     "$(_kind k_new)"     "New/n"
+check "quit"    "$(_kind k_quit)"    "Quit/q"
+check "help"    "$(_kind k_help)"    "Help/h"
+check "save"    "$(_kind k_save)"    "Save/s"
+check "back"    "$(_kind k_back)"    "Back/b"
+check "forward" "$(_kind k_forward)" "Forward/f"
+# The letter must be IN the label, or the underline is appended as " (K)" instead of marking
+# a character — which is why ok is k and not o.
+missing=""
+for b in k_ok k_cancel k_yes k_no k_new k_quit k_help k_save k_back k_forward; do
+    ft_get "$b" text; t=$FT_RET; ft_resolved_prop "$b" accessKey
+    [[ "${t^^}" == *"${FT_RET^^}"* ]] || missing+="$b "
+done
+check "every letter appears in its own label" "${missing% }" ""
+
+# THE BUG THIS FAMILY FOUND. The draw underlines the letter through the cascade, but the
+# REGISTRATION read the raw instance property — so a letter that comes from the prototype was
+# painted with its underline and bound to nothing at all. A shortcut you can see and cannot
+# press is worse than no shortcut.
+note "a prototype-provided letter is really registered, not just underlined"
+_ft_accel_target kapp K; check "K reaches the OK button"      "$FT_RET" "k_ok"
+_ft_accel_target kapp C; check "C reaches Cancel"             "$FT_RET" "k_cancel"
+_ft_accel_target kapp F; check "F reaches Forward"            "$FT_RET" "k_forward"
+KB=""; kb_hit() { KB=hit; }
+ft-modify k_ok onActivate=kb_hit
+_ft_accel_dispatch kapp K
+check "…and pressing it activates the button" "$KB" "hit"
+
+# Sharing is the feature: no and new both claim n, and the first VISIBLE one answers.
+note "two kinds may share a letter — the first visible one answers"
+_ft_accel_target kapp N; check "N finds the first claimant"   "$FT_RET" "k_no"
+ft-modify k_no display=none
+_ft_accel_target kapp N; check "…and the next one when it is hidden" "$FT_RET" "k_new"
+ft-modify k_no display=inline-block
+
+note "a kind is still a button: the app's text and handler win"
+ft-form name=kapp2 width=40 height=6
+    ft-button-save name=k_sa "Save As…" onActivate=kb_hit
+end_ft_form
+FT_ROOT=kapp2; ft_layout kapp2
+check "the app's text replaces the default" "$(ft_get k_sa text; printf '%s' "$FT_RET")" "Save As…"
+check "…and the letter is still there"      "$(ft_resolved_prop k_sa accessKey; printf '%s' "$FT_RET")" "s"
+KB=""; ft_activate k_sa
+check "…and its own handler runs"           "$KB" "hit"
+
 summary
