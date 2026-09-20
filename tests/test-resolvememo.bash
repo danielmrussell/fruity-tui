@@ -7,15 +7,15 @@
 #  colour, a wrong width, a control that keeps a property it was just told to drop — silent, and
 #  only visible on screen. So this file drives every route in that enumeration:
 #
-#      ft-modify n width=…            a property the control resolves for itself
-#      ft-modify container color=…    an INHERITING property — the whole subtree reads it
-#      ft_remove_attribute            the same two, on the other route in
+#      ft_set n width=…            a property the control resolves for itself
+#      ft_set container color=…    an INHERITING property — the whole subtree reads it
+#      ft_unset            the same two, on the other route in
 #      ft_remove + rebuild            a recycled name must not read the dead control's answers
 #      ft_clone                       stamps _ftp_* with printf -v, behind _ft_setprop's back
 #      ft_append (reparent)           the moved node inherits through somewhere else now
 #      ft_stylesheet                  a sheet DECLARING a property is store-condition 3 itself
-#      ft-modify n style="…"          _ft_setprop's early exit that writes and returns
-#      ft-modify n onActivate=fn      …and its other one
+#      ft_set n style="…"          _ft_setprop's early exit that writes and returns
+#      ft_set n onActivate=fn      …and its other one
 #      a multitoggle's selectedIndex  the one control that writes a property variable directly
 #
 #  THE COMPARISON is against the real function with its table emptied — not against a hard-coded
@@ -95,30 +95,30 @@ check "…and the next read is served from it"  "$FT_RET" "planted"
 _ft_resolve_forget leaf width       # put the planted lie back in its box
 
 # ── a property the control resolves for itself ───────────────────────────────
-note "a property write (ft-modify) — the pair"
+note "a property write (ft_set) — the pair"
 _warm leaf width
-ft-modify leaf width=17
+ft_set leaf width=17
 _agree "width follows the write"                       leaf width
 _warm leaf width
-ft-modify leaf width=23
+ft_set leaf width=23
 _agree "…and the next one"                             leaf width
 check "the value is the one just written"              "$FT_RET" "23"
 
-note "removing a property (ft_remove_attribute) — the same pair, the other route"
+note "removing a property (ft_unset) — the same pair, the other route"
 _warm leaf width
-ft_remove_attribute leaf width
+ft_unset leaf width
 _agree "width falls back once the property is gone"    leaf width
 
 # ── an INHERITING property: the subtree, not the pair ────────────────────────
 note "an inheriting property on a container — every descendant reads it"
 _warm leaf color
 _warm other color
-ft-modify win color=45
+ft_set win color=45
 _agree "the descendant's colour follows its ancestor's" leaf color
 _agree "…and so does its sibling's"                     other color
 check "the colour is the one just written"              "$FT_RET" "45"
 _warm leaf color
-ft_remove_attribute win color
+ft_unset win color
 _agree "…and follows the ancestor's REMOVAL too"        leaf color
 
 # ── a recycled name ──────────────────────────────────────────────────────────
@@ -146,7 +146,7 @@ check "…which is the source's"                          "$FT_RET" "31"
 
 # ── reparenting ──────────────────────────────────────────────────────────────
 note "a moved node inherits through somewhere else now"
-ft-modify win color=201
+ft_set win color=201
 ft-frame name=win2 width=30 height=8 color=99 parent=app
 ft-label name=mover text="mover" parent=win
 ft_layout app
@@ -173,10 +173,10 @@ check "…and it is the sheet's number"                   "$FT_RET" "41"
 # ── _ft_setprop's two early exits ────────────────────────────────────────────
 note "_ft_setprop's early exits write a property and return before the invalidation"
 _warm leaf style
-ft-modify leaf style="color: 46"
+ft_set leaf style="color: 46"
 _agree "the inline style string"                        leaf style
 _warm leaf eventListeners
-ft-modify leaf onActivate=_memo_probe_handler
+ft_set leaf onActivate=_memo_probe_handler
 _agree "the listener plist"                             leaf eventListeners
 
 # ── the one control that writes a property variable directly ─────────────────
@@ -185,9 +185,9 @@ ft-multitoggle name=mt parent=win2
     ft-option name=mtA value=a text="A" parent=mt
     ft-option name=mtB value=b text="B" parent=mt
 ft_layout app
-ft-modify mt value=a
+ft_set mt value=a
 _warm mt selectedIndex
-ft-modify mt value=b
+ft_set mt value=b
 _agree "selectedIndex follows the value that moved it"  mt selectedIndex
 
 # ── the prototype table ──────────────────────────────────────────────────────

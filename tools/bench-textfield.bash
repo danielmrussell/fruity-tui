@@ -64,9 +64,9 @@ resize()    { _ft_textfield_textw big; RW=$(( RW ? 0 : 1 )); _ft_textfield_layou
 
 for n in "${sizes[@]}"; do
     build_value "$n"
-    ft-modify big value="$BIGVAL"
+    ft_set big value="$BIGVAL"
     ft_layout app
-    ft-modify big runlevel=editing
+    ft_set big runlevel=editing
     FT_TEXTFIELD_CARET[big]=${#BIGVAL}                 # typing at the END, the common case
     printf '\n%d lines / %d chars\n' "$n" "${#BIGVAL}"
     keystroke >/dev/null 2>&1                   # warm up: the FIRST layout of a document is a

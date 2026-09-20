@@ -13,12 +13,12 @@ _plain() { printf '%s' "$1" | sed -E 's/\x1b\[[0-9;?]*[A-Za-z]//g'; }
 
 ft-form name=app width=80 height=40
 ft-tree name=t rows=6 onActivate=t_on_activate
-    ft-tree-node "src"            id=src  depth=0 expanded=true
-    ft-tree-node "ft-core.bash"   id=core depth=1
-    ft-tree-node "controls"       id=ctl  depth=1 expanded=false
-    ft-tree-node "ft-tree.bash"   id=tree depth=2
-    ft-tree-node "ft-select.bash" id=sel  depth=2
-    ft-tree-node "README.md"      id=rd   depth=0
+    ft-tree-node text="src" id=src depth=0 expanded=true
+    ft-tree-node text="ft-core.bash" id=core depth=1
+    ft-tree-node text="controls" id=ctl depth=1 expanded=false
+    ft-tree-node text="ft-tree.bash" id=tree depth=2
+    ft-tree-node text="ft-select.bash" id=sel depth=2
+    ft-tree-node text="README.md" id=rd depth=0
 end_ft_tree
 end_ft_form
 ft_layout app; FT_ROOT=app; FT_FOCUS=t
@@ -68,8 +68,8 @@ ft_tree_key_enter t; check "Enter on a leaf fired on_activate(core)" "$ACT" "cor
 note "Enter works on a FRESHLY built tree — no arrow-move needed first (regression)"
 ft-form name=fr width=40 height=10
   ft-tree name=tfresh rows=6 onActivate=tfresh_on_activate
-    ft-tree-node "one" id=k1 depth=0
-    ft-tree-node "two" id=k2 depth=0
+    ft-tree-node text="one" id=k1 depth=0
+    ft-tree-node text="two" id=k2 depth=0
   end_ft_tree
 end_ft_form
 ft_layout fr
@@ -93,9 +93,9 @@ case "$pl" in *"▾"*) check "expanded branch shows ▾" 1 1 ;; *) check "expand
 case "$pl" in *"▸"*) check "collapsed branch shows ▸" 1 1 ;; *) check "collapsed branch shows ▸" 0 1 ;; esac
 
 note "scrolling: more visible nodes than rows → scrollbar gutter + windowing"
-ft-empty app
+ft_empty app
 ft-tree name=t2 rows=3
-    for _i in 1 2 3 4 5 6 7 8; do ft-tree-node "item $_i" id="k$_i" depth=0; done
+    for _i in 1 2 3 4 5 6 7 8; do ft-tree-node text="item $_i" id="k$_i" depth=0; done
 end_ft_tree
 end_ft_form
 ft_layout app; FT_FOCUS=t2
@@ -106,7 +106,7 @@ case "$pl" in *"item 8"*) check "scrolled view shows item 8" 1 1 ;; *) check "sc
 case "$pl" in *"item 1"[^0-9]*) check "item 1 scrolled out" 0 1 ;; *) check "item 1 scrolled out" 1 1 ;; esac
 
 note "ft_remove tears the tree down cleanly"
-ft-empty app
+ft_empty app
 _ft_tree_gather t   # t destroyed; expect zero nodes
 check "destroyed tree has no nodes" "$FT_TREE_NODE_COUNT" "0"
 

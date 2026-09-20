@@ -51,7 +51,7 @@ emits_tab() {                   # type build-args… → 0 if a raw tab reaches 
     [[ "$FT_OUT" == *$'\t'* ]]
 }
 for spec in "label" "heading" "button"; do
-    if emits_tab "$spec" $'ab\tcd'; then check "$spec emits no raw tab" "a raw tab" "none"
+    if emits_tab "$spec" text=$'ab\tcd'; then check "$spec emits no raw tab" "a raw tab" "none"
     else check "$spec emits no raw tab" 1 1; fi
 done
 if emits_tab textfield size=20 value=$'ab\tcd'; then check "textfield emits no raw tab" "a raw tab" "none"
@@ -105,10 +105,10 @@ _bare() { printf '%s' "$1" | tr -cd '\n' | wc -c; }
 ft_remove nl 2>/dev/null
 TWO="first line"$'\n'"second line"
 ft-form name=nl width=50 height=24 display=flex flexDirection=column gap=1
-    ft-label    name=nlLabel "$TWO"
-    ft-radio    name=nlRadio group=g "$TWO"
-    ft-checkbox name=nlCheck "$TWO"
-    ft-button   name=nlBtn   "$TWO"
+    ft-label name=nlLabel text="$TWO"
+    ft-radio name=nlRadio group=g text="$TWO"
+    ft-checkbox name=nlCheck text="$TWO"
+    ft-button name=nlBtn text="$TWO"
 end_ft_form
 ft_layout nl; FT_ROOT=nl
 for _c in nlLabel nlRadio nlCheck nlBtn; do
@@ -119,7 +119,7 @@ done
 # The second row lands in the control's OWN column, not the terminal's first — which is the
 # whole point, and the thing a newline could never do.
 ft-form name=nl2 width=50 height=10
-    ft-radio name=nlOff group=g2 left=12 top=3 position=absolute "$TWO"
+    ft-radio name=nlOff group=g2 left=12 top=3 position=absolute text="$TWO"
 end_ft_form
 ft_layout nl2; FT_ROOT=nl2
 _ink nlOff

@@ -29,8 +29,8 @@ FT_COLS=50; FT_ROWS=12
 work=$(mktemp -d); trap 'rm -rf "$work"' EXIT
 
 ft-form name=app width="$FT_COLS" height="$FT_ROWS"
-    ft-button name=one "One"
-    ft-button name=two "Two"
+    ft-button name=one text="One"
+    ft-button name=two text="Two"
 end_ft_form
 FT_ROOT=app
 ft_layout app
@@ -79,7 +79,7 @@ fi
 
 note "inside a burst it is a no-op — which is why an app's trailing call paints nothing"
 exec {FT_TTY}>"$work/burst"
-FT_COALESCING=1                    # exactly what ft-run sets while dispatching a handler
+FT_COALESCING=1                    # exactly what ft_run sets while dispatching a handler
 ft_focus one
 ft_redraw_dirty
 FT_COALESCING=0

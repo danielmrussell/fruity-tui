@@ -27,8 +27,8 @@ fits. Don't import DOM verbosity. Lock names before apps depend on them — rena
 | (no DOM equivalent — the resolver's raw half) | `ft_resolve name p` → `FT_RET` | the same walk with no default and no coercion. `ft_resolved_prop` **is** this plus those two steps, and is what controls call; `ft_resolve` is for a test or an engine path that wants the stored string exactly as resolved |
 | (no DOM equivalent — the compositor is not exposed on the web) | `ft_publish_paint_rect name T L B R` | a draw that puts ink OUTSIDE its layout box says where, so `ft_damage_subtree` can give those cells back (was `ft_paint_rect`) |
 | `el.classList.*` generalised (`DOMTokenList`) | `ft_tokenlist_add/remove/toggle/contains name prop token…` | any space-separated list property (`class`, a file dialog's `accept`); `ft_classlist_*` is this specialised to `class` (was `ft_plist_*`, which read as Apple's property-list format) |
-| `el.setAttribute` / `className=` / `style.x=` | `ft-modify name p=v …` | three DOM setters merged; sets many at once |
-| `el.style.setProperty('--x', v)` | `ft-modify name --x=v` | runtime custom properties |
+| `el.setAttribute` / `className=` / `style.x=` | `ft_set name p=v …` | three DOM setters merged; sets many at once |
+| `el.style.setProperty('--x', v)` | `ft_set name --x=v` | runtime custom properties |
 | `new CSSStyleSheet()` / `replaceSync` | `ft_stylesheet name= style=` | whole-sheet register/replace |
 | (no `deleteRule` equivalent) | re-register the sheet | the string-authored model covers it |
 
@@ -36,7 +36,7 @@ fits. Don't import DOM verbosity. Lock names before apps depend on them — rena
 
 | DOM | Fruity | Note |
 |---|---|---|
-| `el.onactivate = fn` (on-property) | `onActivate=fn` at construction or `ft-modify` | SUGAR for add-listener: repeats accumulate (`onActivate=a onActivate=b` = two listeners); `onActivate=""` clears that event's listeners |
+| `el.onactivate = fn` (on-property) | `onActivate=fn` at construction or `ft_set` | SUGAR for add-listener: repeats accumulate (`onActivate=a onActivate=b` = two listeners); `onActivate=""` clears that event's listeners |
 | `addEventListener('activate', fn)` | `ft_add_listener NAME activate fn` (or pair form `activate=fn`, variadic) | "listener" is the DOM noun; add/remove verbs for clarity |
 | `removeEventListener` | `ft_remove_listener NAME activate fn` | |
 | event object (`ev.target`, `ev.type`) | `$this`, `$FT_EVENT_TYPE`, `"$@"` = detail/value | bash-style: dynamic-scoped globals |
@@ -50,7 +50,7 @@ prototype.)
 
 ## Property names
 
-Constructor/`ft-modify` properties use the DOM's **camelCase** spelling (`accessKey`, `maxLength`,
+Constructor/`ft_set` properties use the DOM's **camelCase** spelling (`accessKey`, `maxLength`,
 `readOnly`, `selectedIndex`, `backgroundColor`); inside a stylesheet the same properties use CSS's
 **kebab-case** (`background-color`) — `_ft_css_camel` maps between them, exactly like the DOM.
 
@@ -61,7 +61,7 @@ Constructor/`ft-modify` properties use the DOM's **camelCase** spelling (`access
 | `border-radius` | `borderRadius=N` (cells) | was `borderRounded`; numeric like CSS — 0 square, ≥1 arc corners; radii >1 clamp to the terminal's one arc glyph (a richer glyph set could honour them later) |
 | (n/a — variant look) | `variant=` (slider track/fill/blocks/dots; table grid/lines/minimal; beacon frame/number/callout) | freed `style` for its HTML meaning |
 | `el.cloneNode(deep)` | `ft_clone SRC DST [deep]` → detached | descendants of a deep clone get generated names; listeners copy (deviation, documented) |
-| `el.removeAttribute(p)` | `ft_remove_attribute NAME PROP` | truly unsets (≠ setting ""); falls back to sheet/prototype default |
+| `el.removeAttribute(p)` | `ft_unset NAME PROP` | truly unsets (≠ setting ""); falls back to sheet/prototype default |
 | `overflow: auto\|scroll` on a container | `overflow=auto\|scroll` (vertical) · `overflowX=auto\|scroll` (horizontal) | children keep natural size; a viewport (scrollTop/scrollLeft) slides over them; scrollHeight/Width + clientHeight/Width published; a STABLE gutter (right column / bottom row) holds the proportional bar, drawn only while content overflows (NB: `overflowY` is the per-control own-scrollbar convention, not container scrolling) |
 | `el.scrollTop = n` | `ft_scroll_set NAME N` | clamped; incremental subtree shift, no relayout (the fast wheel path) |
 | `el.scrollTo(x, y)` | `ft_scroll_to NAME X Y` | both axes, same incremental path |
@@ -70,7 +70,7 @@ Constructor/`ft-modify` properties use the DOM's **camelCase** spelling (`access
 
 ## Deliberate keeps (DOM name is worse or absent)
 
-`ft-modify`, `ft_get`, `ft_style`, `ft_stylesheet`, `ft_refresh`, `ft-<type>` — kept because the DOM
+`ft_set`, `ft_get`, `ft_style`, `ft_stylesheet`, `ft_refresh`, `ft-<type>` — kept because the DOM
 equivalent is verbose (`getComputedStyle`, `getElementById`), absent, or the Fruity idiom is already
 closer to the underlying markup model.
 
@@ -154,7 +154,7 @@ That half closed when `for=` learned to read the pair: the draw publishes it now
 The second half was the offsets. They lived in two private tables, `FT_TEXTFIELD_VSCROLL` and
 `FT_TEXTFIELD_SCROLL`, so the public names were inert:
 
-    ft-modify tf scrollTop=5      the view stayed on line 1, while ft_get answered 5
+    ft_set tf scrollTop=5      the view stayed on line 1, while ft_get answered 5
     ft-scrollbar for=tf           steered nothing at all
     ft_state_save                 carried an offset nothing would restore from
 
@@ -162,7 +162,7 @@ They are `scrollTop` and `scrollLeft` now — ordinary properties, read through 
 (`_ft_tf_voff` / `_ft_tf_hoff`) and written through two more that go via `_ft_setprop`, which is
 what bounds them against the published pair on every route in. The tables are gone rather than
 kept beside them. What that buys, all of it measured in `tests/test-scrollbar-for.bash`:
-`ft-modify tf scrollTop=5` moves the view, an out-of-range write clamps to the last page,
+`ft_set tf scrollTop=5` moves the view, an out-of-range write clamps to the last page,
 `ft-scrollbar for=tf` steers the field with no glue code at all, the field's own keys move the
 same number the bar reads, and a state save carries the position like any other property.
 

@@ -33,8 +33,8 @@ note "a value survives whatever it contains"
 NASTY=$'line one\nline two\ttabbed\n"quoted" \\backslash $(echo pwned) `id`'
 WIDE=$'日本語のテキスト 😀\nsecond line'
 _build
-ft-modify one  value="$NASTY"
-ft-modify note value="$WIDE"
+ft_set one  value="$NASTY"
+ft_set note value="$WIDE"
 ok "saving succeeds" ft_state_save "$D/s"
 ft_remove ap; _build
 ft_state_load "$D/s"
@@ -88,9 +88,9 @@ ft_remove ap 2>/dev/null
 _kinds_build() {
     ft-form name=kp width=80 height=20
         ft-textfield name=kfld size=20 value=""
-        ft-checkbox  name=kcb "Tick"
-        ft-radio     name=kr1 "One" group=kg
-        ft-radio     name=kr2 "Two" group=kg
+        ft-checkbox name=kcb text="Tick"
+        ft-radio name=kr1 text="One" group=kg
+        ft-radio name=kr2 text="Two" group=kg
         ft-slider    name=ksl min=0 max=10 value=0 width=12
         ft-select    name=kse size=1
             ft-option value=alpha glyph="Alpha"
@@ -100,11 +100,11 @@ _kinds_build() {
     ft_layout kp; FT_ROOT=kp
 }
 _kinds_build
-ft-modify kfld value="typed text"
+ft_set kfld value="typed text"
 ft_checkbox_toggle kcb
 FT_FOCUS=kr2; ft_activate kr2 >/dev/null 2>&1
-ft-modify ksl value=7
-ft-modify kse selectedIndex=1
+ft_set ksl value=7
+ft_set kse selectedIndex=1
 FT_TEXTFIELD_CARET[kfld]=4
 ft_state_save "$D/k" >/dev/null
 ft_remove kp
@@ -124,8 +124,8 @@ note "…and a group's selection does not outlive its controls"
 # scan could not see it: a rebuilt screen inherited a choice made on a previous one, pointing
 # at a control that no longer existed.
 ft-form name=gp width=60 height=8
-    ft-radio name=gr1 "One" group=gg
-    ft-radio name=gr2 "Two" group=gg
+    ft-radio name=gr1 text="One" group=gg
+    ft-radio name=gr2 text="Two" group=gg
 end_ft_form
 ft_layout gp; FT_ROOT=gp
 FT_FOCUS=gr2; ft_activate gr2 >/dev/null 2>&1
@@ -146,16 +146,16 @@ saw_uncheck() { box_state=off; }
 ft_remove ap 2>/dev/null
 ft-form name=nap width=60 height=10
     ft-textfield name=fld size=20 value="" onChange=saw_change
-    ft-checkbox  name=box "Tick" onActivate=saw_check onDeactivate=saw_uncheck
+    ft-checkbox name=box text="Tick" onActivate=saw_check onDeactivate=saw_uncheck
 end_ft_form
 ft_layout nap; FT_ROOT=nap
-ft-modify fld value="typed by hand"
-ft-modify box checked=true
+ft_set fld value="typed by hand"
+ft_set box checked=true
 ft_state_save "$D/n" >/dev/null
 ft_remove nap
 ft-form name=nap width=60 height=10
     ft-textfield name=fld size=20 value="" onChange=saw_change
-    ft-checkbox  name=box "Tick" onActivate=saw_check onDeactivate=saw_uncheck
+    ft-checkbox name=box text="Tick" onActivate=saw_check onDeactivate=saw_uncheck
 end_ft_form
 ft_layout nap; FT_ROOT=nap
 restored=""; restore_calls=0; box_state=""
@@ -208,8 +208,8 @@ ok "saving into a missing directory creates it" ft_state_save "$D/deep/er/still/
 
 note "reloading is the other half of saving"
 grep -q 'FT_STATE_AUTOLOAD' "$here/ft-forms.bash" \
-  && check "ft-run restores the saved state on start" 1 1 \
-  || check "ft-run restores the saved state on start" 0 1
+  && check "ft_run restores the saved state on start" 1 1 \
+  || check "ft_run restores the saved state on start" 0 1
 check "…and it is on by default" "${FT_STATE_AUTOLOAD:-unset}" "1"
 
 note "a save the user cannot see is indistinguishable from a broken key"
@@ -222,7 +222,7 @@ ft_layout ap2; FT_ROOT=ap2
 ok "an event with no text[…] declared still says something" ft_status_event sb saved
 check "…using the framework's default wording" "${FT_STATUSBAR_QUEUE[sb]##*$'\t'}" "Saved"$'\n'
 FT_STATUSBAR_QUEUE=(); FT_STATUSBAR_HEAD=()
-ft-modify sb "text[saved]"="Stored it,1,4"
+ft_set sb "text[saved]"="Stored it,1,4"
 ft_status_event sb saved
 check "a bar's own wording still wins" "${FT_STATUSBAR_QUEUE[sb]##*$'\t'}" "Stored it"$'\n'
 # …and to the engine's own line when there is NOT one, which is the case that was silent.
@@ -422,7 +422,7 @@ ft-form name=nap width=60 height=12 display=flex flexDirection=column
 end_ft_form
 FT_ROOT=nap; ft_layout nap
 ft_radio_select nr2
-ft-modify ncb checked=true
+ft_set ncb checked=true
 # ANTI-VACUITY: the branch used to test `value`, and the whole point is that a radio's value is
 # not its selection. Show that it is not, or "asks the right property" proves nothing. It used
 # to be EMPTY here; a radio written without value= now carries its own name (ft-radio
@@ -433,7 +433,7 @@ check "a radio's value is NOT its selection" \
 check "…while its checked is"  "$(ft_get nr2 checked; printf %s "$FT_RET")" "true"
 _nf=$(mktemp)
 ft_state_save "$_nf" >/dev/null 2>&1
-ft_radio_select nr1; ft-modify ncb checked=false
+ft_radio_select nr1; ft_set ncb checked=false
 _NFIRED=""
 ft_state_load "$_nf" >/dev/null 2>&1
 check "the radio came back selected"        "$(ft_get nr2 checked; printf %s "$FT_RET")" "true"
@@ -465,7 +465,7 @@ _ordinary=$_MSEEN
 check "the ordinary route passes the new value" "$_ordinary" "activate(high) "
 _msf=$(mktemp)
 ft_state_save "$_msf" >/dev/null 2>&1
-ft-modify mstate selectedIndex=0
+ft_set mstate selectedIndex=0
 _MSEEN=""
 ft_state_load "$_msf" >/dev/null 2>&1
 check "…and the restore route says exactly the same thing" "$_MSEEN" "$_ordinary"

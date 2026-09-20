@@ -35,8 +35,8 @@ build_page() {                  # cols rows
             ft-label name="l2_$RUN_ID" text="Compression: high   Beep: on   Retries: 3"
             ft-label name="l3_$RUN_ID" text="A second paragraph of ordinary body text here."
             ft-div name="row$RUN_ID" display=flex gap=2
-                ft-button name="bOk$RUN_ID"  OK
-                ft-button name="bNo$RUN_ID"  Cancel
+                ft-button name="bOk$RUN_ID" text=OK
+                ft-button name="bNo$RUN_ID" text=Cancel
             end_ft_div
         end_ft_frame
     end_ft_form

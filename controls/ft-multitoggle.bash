@@ -43,8 +43,8 @@ ft_prototype_multitoggle() {
 # THE SELECTION IS THE TRUTH. A multitoggle (and so a checkbox, which is one with two options)
 # renders from `selectedIndex`; `value` and `checked` are the friendly names for the same fact.
 # Writing either of those directly used to leave the three out of step — the constructor
-# translated `checked=` and nothing else did, so `ft-modify cb checked=true` did nothing at all
-# and `ft-modify cb value=true` made the control report checked while still drawing unchecked.
+# translated `checked=` and nothing else did, so `ft_set cb checked=true` did nothing at all
+# and `ft_set cb value=true` made the control report checked while still drawing unchecked.
 # _ft_setprop calls this after storing any of the three, so every route in agrees.
 # Writes go through _ft_stamp_prop, NOT _ft_setprop: the setter is our caller, and going back
 # through it would recurse. (_ft_stamp_prop forgets each pair it stamps — written out by hand,
@@ -93,11 +93,11 @@ _ft_multitoggle_setprop() {     # name prop value
 # derived prototype, and a bare multitoggle's went stale the moment the state moved any other
 # way:
 #
-#     ft-modify mt checked=true   paint [x]  idx 1  value true   checked true
+#     ft_set mt checked=true   paint [x]  idx 1  value true   checked true
 #     ft_multitoggle_cycle mt     paint [ ]  idx 0  value false  checked TRUE   ← stale
-#     ft-modify mt checked=true   paint [ ]  …no change at all                  ← WEDGED
+#     ft_set mt checked=true   paint [ ]  …no change at all                  ← WEDGED
 #
-# Wedged because ft-modify skips a write whose value equals the stored one, so the stale `true`
+# Wedged because ft_set skips a write whose value equals the stored one, so the stale `true`
 # made `checked=true` a no-op: the control could not be re-checked through the name it accepts.
 # Only `false` then `true` recovered it.
 #
@@ -115,7 +115,7 @@ _ft_multitoggle_reflect_checked() {      # name — checked := (value == true), 
 }
 
 ft-multitoggle()     { ft_new multitoggle "$@" && FT_NEST_STACK+=("$FT_RET"); }
-end_ft_multitoggle() { ft-end multitoggle; }
+end_ft_multitoggle() { ft_end multitoggle; }
 
 # "children fully known": adopt the selected option's value as our own.
 multitoggle_on_children_complete() { _ft_multitoggle_sync "$1"; }
@@ -194,11 +194,11 @@ ft_multitoggle_cycle() {                 # name
     ft_resolved_prop "$name" selectedIndex 0; local old=${FT_RET:-0}
     local new=$(( (old + 1) % n ))
     _ft_option_value "${FT_OPTS[$new]}"; local newval=$FT_RET
-    ft-modify "$name" selectedIndex="$new"      # `value` follows the index in _ft_multitoggle_setprop
+    ft_set "$name" selectedIndex="$new"      # `value` follows the index in _ft_multitoggle_setprop
     # on_activate when the new value is truthy; on_deactivate when it toggled to
     # `false` (a checkbox unchecking). $this=name, $1=new value; nonzero cancels.
     local event=on_activate
     [[ "$newval" == false ]] && ft_has_listener "$name" deactivate && event=on_deactivate
-    _ft_hook "$name" "$event" "$newval" || ft-modify "$name" selectedIndex="$old"
+    _ft_hook "$name" "$event" "$newval" || ft_set "$name" selectedIndex="$old"
     return 0
 }

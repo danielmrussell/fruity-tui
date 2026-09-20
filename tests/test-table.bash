@@ -16,9 +16,9 @@ _plain() { local s=$1; s=$(printf '%s' "$s" | sed -E 's/\x1b\[[0-9;?]*[A-Za-z]//
 note "children attach to the table via the nesting DSL"
 ft-form name=app width=100 height=40
 ft-table name=t variant=grid
-    ft-table-header "Key"      width=16
-    ft-table-header "Action"
-    ft-table-header "Note"     align=center
+    ft-table-header text="Key" width=16
+    ft-table-header text="Action"
+    ft-table-header text="Note" align=center
     ft-table-row "Ctrl+A"          "Move to start"        "home"
     ft-table-row "Ctrl+E / End"    "Move to end of line"  "end"
     ft-table-row "Ctrl+W"          "Delete word before"   "word"
@@ -60,9 +60,9 @@ case "$plain" in *"┌"*) check "grid draws a top-left corner ┌" 1 1 ;; *) che
 case "$plain" in *"┼"*) check "grid draws a cross junction ┼" 1 1 ;; *) check "grid draws a cross junction ┼" 0 1 ;; esac
 
 note "render (minimal): no box glyphs, but a header rule and all cells"
-ft-empty app
+ft_empty app
 ft-table name=t2 variant=minimal
-    ft-table-header "A"; ft-table-header "B"
+    ft-table-header text="A"; ft-table-header text="B"
     ft-table-row "one" "two"
     ft-table-row "three" "four"
 end_ft_table
@@ -77,9 +77,9 @@ for want in "one" "two" "three" "four"; do
 done
 
 note "rows=N caps the body and makes the table scroll (header pinned)"
-ft-empty app
+ft_empty app
 ft-table name=ts variant=minimal rows=4
-    ft-table-header "N"; ft-table-header "V"
+    ft-table-header text="N"; ft-table-header text="V"
     for _i in 1 2 3 4 5 6 7 8; do ft-table-row "r$_i" "v$_i"; done
 end_ft_table
 end_ft_form
@@ -126,9 +126,9 @@ case "$plain" in *"│"*) check "gutter glyph │ present" 1 1 ;; *) check "gutt
 
 note "border properties work independently of the style shorthand"
 _render() { ft_layout app; FT_OUT=""; _ft_redraw_walk app; _plain "$FT_OUT"; }
-ft-empty app
+ft_empty app
 ft-table name=tb borderStyle=double
-    ft-table-header "A"; ft-table-header "B"
+    ft-table-header text="A"; ft-table-header text="B"
     ft-table-row one two
     ft-table-row three four
 end_ft_table
@@ -137,9 +137,9 @@ pd=$(_render)
 case "$pd" in *"╔"*) check "borderStyle=double draws ╔" 1 1 ;; *) check "borderStyle=double draws ╔" 0 1 ;; esac
 case "$pd" in *"╬"*) check "double draws a ╬ junction" 1 1 ;; *) check "double draws a ╬ junction" 0 1 ;; esac
 
-ft-empty app
+ft_empty app
 ft-table name=tc borderStyle=solid rowLines=false
-    ft-table-header "A"; ft-table-header "B"
+    ft-table-header text="A"; ft-table-header text="B"
     ft-table-row one two
     ft-table-row three four
 end_ft_table
@@ -155,9 +155,9 @@ _ft_setprop tc rowLines true; _ft_height_table tc; h_on=$FT_RET
 check "rowLines=false is shorter than rowLines=true" "$(( h_off < h_on ))" "1"
 
 note "orientation=column: ft-table-column data is transposed into rows"
-ft-empty app
+ft_empty app
 ft-table name=tco orientation=column variant=grid
-    ft-table-header "Key"; ft-table-header "Action"
+    ft-table-header text="Key"; ft-table-header text="Action"
     ft-table-column "Ctrl+A" "Ctrl+E" "Ctrl+W"       # column 0 = the keys
     ft-table-column "start"  "end"    "delete word"  # column 1 = the actions
 end_ft_table
@@ -173,9 +173,9 @@ for want in "Key" "Action" "Ctrl+W" "delete word"; do
     case "$pd" in *"$want"*) check "column-table render contains '$want'" 1 1 ;; *) check "column-table render contains '$want'" 0 1 ;; esac
 done
 note "the non-matching data element is ignored (row elements in a column table)"
-ft-empty app
+ft_empty app
 ft-table name=tmix orientation=column
-    ft-table-header "A"
+    ft-table-header text="A"
     ft-table-column "x" "y"
     ft-table-row "IGNORED_ROW"          # wrong element for orientation=column
 end_ft_table
@@ -185,8 +185,8 @@ check "column table ignores ft-table-row (2 rows from the column)" "$FT_TABLE_RO
 
 note "ft_remove tears down the row cell arrays"
 r0="${FT_TABLE_ROWS[0]:-none}"
-ft-empty app
-_ft_table_rows t2   # t2 destroyed by ft-empty; expect zero rows now
+ft_empty app
+_ft_table_rows t2   # t2 destroyed by ft_empty; expect zero rows now
 check "destroyed table has no row children" "${#FT_TABLE_ROWS[@]}" "0"
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -214,8 +214,8 @@ _tw_build() {                   # formname tablename widthargs… ‹then cells 
     ft_remove "$fn" 2>/dev/null
     ft-form name="$fn" width=90 height=20
     ft-table name="$tn" variant=grid "$@"
-        ft-table-header "Key" width=10
-        ft-table-header "Action"
+        ft-table-header text="Key" width=10
+        ft-table-header text="Action"
         ft-table-row "$C1" "$C2"
         ft-table-row "BB"  "End"
     end_ft_table
@@ -277,8 +277,8 @@ C1="AAAAAAAAAAAAAAAAAAAA"; C2="Move to the start of the line"
 ft_remove gf 2>/dev/null
 ft-form name=gf width=90 height=20
 ft-table name=gt variant=grid width=30 rows=2
-    ft-table-header "Key" width=10
-    ft-table-header "Action"
+    ft-table-header text="Key" width=10
+    ft-table-header text="Action"
     ft-table-row "$C1" "$C2"
     ft-table-row "BB"  "End"
     ft-table-row "CC"  "More"
@@ -320,7 +320,7 @@ _al_build() {                   # header-props… — one 16-wide column holding
     ft_remove alapp 2>/dev/null
     ft-form name=alapp width=40 height=10
     ft-table name=alt variant=grid
-        ft-table-header "Note" width=16 "$@"
+        ft-table-header text="Note" width=16 "$@"
         ft-table-row "hi"
     end_ft_table
     end_ft_form
@@ -336,7 +336,7 @@ _al_build align=right;     _al_render; check "align=right still works (alias)" "
 ft_remove alapp 2>/dev/null
 ft-form name=alapp width=40 height=10 textAlign=right
 ft-table name=alt variant=grid
-    ft-table-header "Note" width=16
+    ft-table-header text="Note" width=16
     ft-table-row "hi"
 end_ft_table
 end_ft_form
@@ -347,7 +347,7 @@ _al_render; check "a form-level textAlign reaches the columns" "$FT_RET" right
 ft_remove alapp 2>/dev/null
 ft-form name=alapp width=40 height=10 textAlign=right
 ft-table name=alt variant=grid
-    ft-table-header "Note" width=16 align=left
+    ft-table-header text="Note" width=16 align=left
     ft-table-row "hi"
 end_ft_table
 end_ft_form

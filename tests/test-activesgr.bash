@@ -34,9 +34,9 @@ FALLBACK=$'\e[48;5;21;38;5;231m'         # a recognisable fallback SGR
 ft-form name=app width="$FT_COLS" height="$FT_ROWS"
     ft-label name=plain text="a control with a ladder"
     ft-tree name=trec rows=6
-        ft-tree-node "alpha" id=a depth=0
-        ft-tree-node "beta"  id=b depth=0
-        ft-tree-node "gamma" id=g depth=0
+        ft-tree-node text="alpha" id=a depth=0
+        ft-tree-node text="beta" id=b depth=0
+        ft-tree-node text="gamma" id=g depth=0
     end_ft_tree
 end_ft_form
 FT_ROOT=app; ft_layout app
@@ -58,7 +58,7 @@ esac
 
 # NOT ENGAGED — always worked, because the line after the returns overwrote the clobber.
 # Pinned so the fix does not lose the fade.
-ft-modify trec runlevel=unfocused
+ft_set trec runlevel=unfocused
 _ft_runlevel_active_sgr trec "$FALLBACK"
 check "merely focused: the faded colour" "$FT_RET" "$FT_COLOR_FADED"
 
@@ -74,7 +74,7 @@ check "no ladder: the fallback SGR survives" "$FT_RET" "$FALLBACK"
 FT_PROTO_RUNLEVELS[label]=$_saved_class
 
 note "the draw path: a delved-into tree paints colours, not vocabulary"
-ft-modify trec runlevel=browsing
+ft_set trec runlevel=browsing
 ok "…engaged again for the paint" ft_runlevel_engaged trec
 FT_OUT=""; ft_draw_one trec; frame=$FT_OUT; FT_OUT=""
 check "the tree drew something" "$(( ${#frame} > 100 ))" 1

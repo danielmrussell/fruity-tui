@@ -117,7 +117,7 @@ ft-form name=sc width=20 height=24
 end_ft_form
 ft_layout sc
 _scdump() {   # scrollTop → echoes visible text (ANSI-stripped)
-    ft-modify scMsg scrollTop="$1"
+    ft_set scMsg scrollTop="$1"
     local cap; cap=$(mktemp)
     exec 9>"$cap"; local oldtty=$FT_TTY; FT_TTY=9
     FT_OUT=""; ft_draw_one scMsg; ft_flush

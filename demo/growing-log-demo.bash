@@ -27,8 +27,8 @@ add_lines() {                       # how_many
         printf -v log_text '%s%s%04d  a line of output arriving while the app runs' \
                "$log_text" "${log_text:+$'\n'}" "$lines"
     done
-    ft-modify log text="$log_text"
-    ft-modify statusline status="$lines lines"
+    ft_set log text="$log_text"
+    ft_set statusline status="$lines lines"
 }
 add_one()    { add_lines 1; }
 add_ten()    { add_lines 10; }
@@ -53,11 +53,11 @@ ft-form name=app width="$FT_COLS" height="$FT_ROWS" \
     ft-statusbar name=statusline flexShrink=0 status="Press A to add a line."
 end_ft_form
 
-ft-modify app \
+ft_set app \
     key='[Aa]' keyCap="Add a line" keyImp=crucial onKey=add_one \
     key='[Tt]' keyCap="Add ten" keyImp=important onKey=add_ten \
     key='[Xx]' keyCap="Clear" keyImp=normal onKey=clear_log \
     key='[Qq]' keyCap="Quit" keyImp=40 onKey=ft_quit
 
 setup() { add_lines 3; }
-ft-run app setup
+ft_run app setup

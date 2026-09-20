@@ -24,14 +24,14 @@ ft-form name=app width="$FT_COLS" height="$FT_ROWS" key='[Qq]' onKey=ft_quit
              justifyContent=center alignItems=center
         ft-label name=msg text="Hello from retained mode!"
         ft-div name=btnrow display=flex gap=2 justifyContent=center
-            ft-button name=btnOk   OK   accessKey=K onActivate=btnOk_on_activate
-            ft-button name=btnQuit Quit accessKey=Q onActivate=btnQuit_on_activate
+            ft-button name=btnOk text=OK accessKey=K onActivate=btnOk_on_activate
+            ft-button name=btnQuit text=Quit accessKey=Q onActivate=btnQuit_on_activate
         end_ft_div
     end_ft_frame
 end_ft_form
 
-btnOk_on_activate()   { ft-modify msg text="OK clicked!"; }
+btnOk_on_activate()   { ft_set msg text="OK clicked!"; }
 btnQuit_on_activate() { ft_quit; }
 
 _setup() { ft_layout app; }
-ft-run app _setup
+ft_run app _setup

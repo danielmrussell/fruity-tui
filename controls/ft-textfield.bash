@@ -39,7 +39,7 @@ declare -A FT_TEXTFIELD_CARET=() FT_TEXTFIELD_MODE=() FT_TEXTFIELD_ANCHOR=() FT_
 # private tables holding a fact the DOM has public names for — and docs/api-naming.md wrote down
 # what that cost:
 #
-#     ft-modify tf scrollTop=5      the view stayed on line 1, ft_get answered 5
+#     ft_set tf scrollTop=5      the view stayed on line 1, ft_get answered 5
 #     ft-scrollbar for=tf           steered nothing at all
 #     ft_state_save                 carried an offset nothing restored from
 #
@@ -83,7 +83,7 @@ _ft_textfield_paint_state() {   # name → FT_RET
 # mode (`runlevel=editing`), and the full editing keymap (ft_keymap_textfield) is
 # installed as this instance's overlay. ESC (or Tab away) returns to `unfocused`.
 #
-# The runlevel is an ORDINARY PROPERTY, so `:editing` cascades, `ft-modify f
+# The runlevel is an ORDINARY PROPERTY, so `:editing` cascades, `ft_set f
 # runlevel=editing` works from anywhere, and changing it invalidates the style
 # cache by itself — this used to be a private FT_TF_EDIT array that the CSS
 # engine reached into, with two hand-written _ft_css_inval calls to compensate.
@@ -533,7 +533,7 @@ ft_textfield_activate() {              # ENTER (scrolling) / mouse press / auto 
 # ── Runlevel scripts ─────────────────────────────────────────────────────────
 # Entry/exit work lives in one function per runlevel per direction, dispatched by name from
 # _ft_setprop. Anything that sets the runlevel — a keymap action, a parent, a sibling button,
-# `ft-modify f runlevel=editing` — gets this for free, so there is exactly one way in.
+# `ft_set f runlevel=editing` — gets this for free, so there is exactly one way in.
 # Arriving in `scrolling` — say so. Same reasoning as the keycaps: the rung is new, and the
 # user needs to be told both that they are in it and how to go further or come back.
 textfield_runlevel_scrolling_enter() {
@@ -1248,7 +1248,7 @@ _ft_textfield_wrapline() {             # line base hard width
 # between, which logical lines it replaced, and by how many characters the value grew. The
 # layout applies it only when its cached arrays are EXACTLY the "before" of that edit — same
 # field, same width, same wrap flag, same generation — and the store is EXACTLY the "after".
-# Anything else (an ft-modify, an undo, a second field, a width change) fails that test and
+# Anything else (an ft_set, an undo, a second field, a width change) fails that test and
 # gets the full rebuild, which is what it always got. There is no way to patch stale rows.
 _FT_TEXTFIELD_EDIT_FIELD=""; _FT_TEXTFIELD_EDIT_FROM_GENERATION=0; _FT_TEXTFIELD_EDIT_TO_GENERATION=0
 _FT_TEXTFIELD_EDIT_FIRST_LINE=0; _FT_TEXTFIELD_EDIT_LINES_DELETED=0; _FT_TEXTFIELD_EDIT_LINES_INSERTED=0; _FT_TEXTFIELD_EDIT_CHAR_DELTA=0

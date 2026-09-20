@@ -80,7 +80,7 @@ ft_style lbl backgroundColor; check "bg does NOT inherit → empty on label" "$F
 note "inline (level 1) beats every stylesheet"
 _ft_setprop tf color 200
 ft_style tf color;            check "inline wins" "$FT_RET" "200"
-ft_remove_attribute tf color
+ft_unset tf color
 
 note ":focus rule wins by specificity; var() resolves the custom property"
 ft_style tf borderColor;      check "unfocused → textfield rule 250" "$FT_RET" "250"
@@ -91,7 +91,7 @@ FT_FOCUS=""
 note "a class rule + a custom property that itself cascades by inheritance"
 _ft_setprop tf class danger
 ft_style tf color;            check ".danger → var(--danger) inherited from :root = 203" "$FT_RET" "203"
-ft_remove_attribute tf class
+ft_unset tf class
 
 note "#id specificity (10000) beats a .class (100)"
 FT_TYPE[special]=textfield; FT_PARENT[special]=panel
@@ -124,11 +124,11 @@ ft_stylesheet name=widgets style='
     textfield:focus { color: 51; }
 '
 ft-form name=froot width=40 height=12
-  ft-label     name=plainL "plain"
-  ft-label     name=warnL  class=warn "warned"
-  ft-label     name=loud   class=warn "loud"
-  ft-label     name=inlL   class=warn color=45 "inline"
-  ft-button    name=goB    class=go "Go"
+  ft-label name=plainL text="plain"
+  ft-label name=warnL class=warn text="warned"
+  ft-label name=loud class=warn text="loud"
+  ft-label name=inlL class=warn color=45 text="inline"
+  ft-button name=goB class=go text="Go"
   ft-textfield name=fld    value="hi"
 end_ft_form
 ft_layout froot
@@ -174,7 +174,7 @@ _ft_css_color_pe pex scrollbar color 38;        check "::scrollbar color → 201
 _ft_css_color_pe pex selection backgroundColor 48; check "::selection bg → 33" "$FT_RET" $'\e[48;5;33m'
 _ft_setprop pex class hot
 _ft_css_color_pe pex scrollbar color 38;        check ".hot::scrollbar (more specific) → 46" "$FT_RET" $'\e[38;5;46m'
-ft_remove_attribute pex class
+ft_unset pex class
 # isolation: on a unique element whose ONLY color declaration is inside ::scrollbar, an
 # element `color` query must find nothing (pseudo-element rules never answer for the box)
 FT_TYPE[iso]=widget99; FT_PARENT[iso]=broot
@@ -203,7 +203,7 @@ ft_stylesheet name=animtest style='
   @keyframes acbcycle { from, to { color: 196; } 50% { color: 124; } }
   checkbox { color: 196; animation: acbcycle; }
 '
-ft-form name=af width=30 height=4; ft-checkbox name=acb "x"; end_ft_form
+ft-form name=af width=30 height=4; ft-checkbox name=acb text="x"; end_ft_form
 FT_FOCUS=""; FT_COLOR_MODE=256   # isolate from :focus leftovers; deterministic 256-index colours
 ft_style acb animation; check "the cascade carries 'animation'" "$FT_RET" "acbcycle"
 unset "FT_ANIM_PHASE[acb]" "FT_CSS_ANIMATION_ON[acb]" 2>/dev/null
@@ -223,7 +223,7 @@ ft_stylesheet name=memosheet style='#memo { color: 200; }'
 ft_style memo color; check "a stylesheet edit invalidates the cache" "$FT_RET" 200
 _ft_setprop memo color 111    # an inline prop change bumps the epoch
 ft_style memo color; check "an inline prop wins after its change"     "$FT_RET" 111
-ft_remove_attribute memo color
+ft_unset memo color
 ft_stylesheet name=memosheet style='#memo { color: 100; } #memo:focus { color: 55; }'
 FT_FOCUS="";    ft_style memo color; check "unfocused → base 100"           "$FT_RET" 100
 FT_FOCUS=memo;  ft_style memo color; check "focus change invalidates (:focus 55 wins)" "$FT_RET" 55
@@ -516,8 +516,8 @@ qm ':empty'   q_row no                   # has children
 _ft_setprop q_gb disabled true
 qm ':disabled' q_gb yes
 qm ':enabled'  q_b1 yes
-ft-modify q_tf runlevel=editing;  qm ':editing' q_tf yes
-ft-modify q_tf runlevel=unfocused;  qm ':editing' q_tf no
+ft_set q_tf runlevel=editing;  qm ':editing' q_tf yes
+ft_set q_tf runlevel=unfocused;  qm ':editing' q_tf no
 
 note "specificity: [attr] & :is()/:not() count like a class; :where() counts 0"
 _ft_css_specificity 'button';            check "type = 1"                 "$FT_RET" 1
@@ -570,7 +570,7 @@ _cssrun() {                     # body → "returned" | "HUNG" | "CRASHED"
 _mkcss() {                      # css → body that resolves label `l`'s colour
     printf '%s' "ft_stylesheet name=s style='$1'
         ft-form name=f width=60 height=10
-            ft-label name=l 'x'
+            ft-label name=l text='x'
         end_ft_form
         ft_layout f; FT_ROOT=f
         ft_style l color"
@@ -586,7 +586,7 @@ check "a cycle reached through a FALLBACK" \
 # `label`, and a bare type rule here loses to them — which reads exactly like a broken var().
 ft_stylesheet name=vok style=':root { --good: 201; } #vl { color: var(--good); }'
 ft-form name=vf width=60 height=10
-    ft-label name=vl "x"
+    ft-label name=vl text="x"
 end_ft_form
 ft_layout vf; FT_ROOT=vf
 ft_style vl color;  check "a plain var() still resolves"      "$FT_RET" "201"
@@ -795,7 +795,7 @@ check "the SGR the painter gets carries the app's colour" "$FT_RET" $'\e[38;5;10
 note "a stylesheet reaches the LAYOUT, not just the paint"
 ft-form name=lapp width=90 height=30
     ft-frame name=lfr title="L"
-        ft-button name=lbtn "Go"
+        ft-button name=lbtn text="Go"
     end_ft_frame
 end_ft_form
 FT_ROOT=lapp; ft_layout lapp >/dev/null 2>&1

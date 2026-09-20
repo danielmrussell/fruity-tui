@@ -35,7 +35,7 @@ btnGo_on_activate() { LOG+="convention "; }
 rowW_changed()      { LOG+="wired "; }
 
 ft-form name=app width="$FT_COLS" height="$FT_ROWS"
-    ft-button name=btnGo "Go"
+    ft-button name=btnGo text="Go"
     ft-slider name=rowW min=0 max=10 value=1
 end_ft_form
 FT_ROOT=app; ft_layout app
@@ -52,7 +52,7 @@ LOG=""; ft_activate btnGo >/dev/null 2>&1
 check "now it fires" "$LOG" "convention "
 
 note "and a listener wired the documented way needs no special name"
-ft-modify rowW onChange=rowW_changed
+ft_set rowW onChange=rowW_changed
 LOG=""; _ft_hook rowW on_change 5 >/dev/null 2>&1
 check "the wired listener fires"                 "$LOG" "wired "
 check "…and the same-named convention one did not" \

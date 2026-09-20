@@ -18,7 +18,7 @@ FT_COLS=80; FT_ROWS=24
 
 # A small host so beacons have a laid-out target/root to point at.
 ft-form name=root width=80 height=12
-  ft-button name=btn "Target"
+  ft-button name=btn text="Target"
 end_ft_form
 ft_layout root
 FT_ROOT=root
@@ -49,7 +49,7 @@ check "left  = x - outset"        "$FT_BEACON_RECT_LEFT" "9"
 check "top   = y - outset"        "$FT_BEACON_RECT_TOP" "3"
 check "right = x + w-1 + outset"  "$FT_BEACON_RECT_RIGHT" "18"
 check "bottom= y + h-1 + outset"  "$FT_BEACON_RECT_BOTTOM" "5"
-ft-modify bg outset=2
+ft_set bg outset=2
 _ft_beacon_rect bg
 check "outset widens the frame"   "$FT_BEACON_RECT_LEFT" "8"
 ft_remove bg
@@ -75,10 +75,10 @@ note "the effect envelope: pulse always shows; blink halves; bob hops; none is s
 ft-beacon name=be target=btn effect=blink
 _ft_beacon_effect be border 0;   check "blink lap-front is visible" "$FT_BEACON_EFFECT_VISIBLE" "1"
 _ft_beacon_effect be border 6;   check "blink lap-back is hidden"   "$FT_BEACON_EFFECT_VISIBLE" "0"
-ft-modify be effect=bob
+ft_set be effect=bob
 _ft_beacon_effect be number 0;   check "bob lap-front: no hop" "$FT_BEACON_EFFECT_DY" "0"
 _ft_beacon_effect be number 6;   check "bob lap-back: hops up a row" "$FT_BEACON_EFFECT_DY" "1"
-ft-modify be effect=pulse
+ft_set be effect=pulse
 _ft_beacon_effect be border 6;   check "pulse is always visible" "$FT_BEACON_EFFECT_VISIBLE" "1"
 ft_remove be
 
@@ -118,21 +118,21 @@ case "$FT_OUT" in *"Pick a colour"*) check "the callout shows its text" 1 1 ;;
                   *)                 check "the callout shows its text" 0 1 ;; esac
 case "$FT_OUT" in *"▼"*) check "place=above points DOWN (▼) at the target" 1 1 ;;
                   *)      check "place=above points DOWN (▼) at the target" 0 1 ;; esac
-ft-modify bco place=right
+ft_set bco place=right
 FT_OUT=""; _ft_draw_beacon bco
 case "$FT_OUT" in *"◀"*) check "place=right points LEFT (◀) at the target" 1 1 ;;
                   *)      check "place=right points LEFT (◀) at the target" 0 1 ;; esac
-ft-modify bco place=below
+ft_set bco place=below
 FT_OUT=""; _ft_draw_beacon bco
 case "$FT_OUT" in *"▲"*) check "place=below points UP (▲) at the target" 1 1 ;;
                   *)      check "place=below points UP (▲) at the target" 0 1 ;; esac
-( FT_USE_UTF8=0; FT_OUT=""; ft-modify bco place=above; _ft_draw_beacon bco
+( FT_USE_UTF8=0; FT_OUT=""; ft_set bco place=above; _ft_draw_beacon bco
   case "$FT_OUT" in *"v"*) check "non-UTF8 pointer falls back to 'v'" 1 1 ;;
                     *)      check "non-UTF8 pointer falls back to 'v'" 0 1 ;; esac )
 # The ASCII badge "(2)" is THREE cells where ② is one; the badge width was hard-coded to 1, so
 # the ASCII top border ran two cells past the box's right corner. Top and bottom borders must
 # be the same width whatever the badge is drawn with.
-( FT_USE_UTF8=0; FT_OUT=""; ft-modify bco number=2 place=above; _ft_draw_beacon bco
+( FT_USE_UTF8=0; FT_OUT=""; ft_set bco number=2 place=above; _ft_draw_beacon bco
   top=""; bottom=""
   # `[-x>]*` because the top border also carries the ASCII close box (x) and, when a `next`
   # listener is registered, the next glyph (>) — chrome the bottom border does not have. The
@@ -232,7 +232,7 @@ ft_layout gapp >/dev/null 2>&1
 ft-beacon name=gb target=gtgt variant=callout text="a callout being dragged about" number=2
 ft_layout gapp >/dev/null 2>&1
 FT_OUT=""; _ft_beacon_paint_callout gb beacon >/dev/null 2>&1     # cache a placement
-_FT_BEACON_GRAB="gb 0 0"; ft-modify gb dragging=true; FT_BEACON_DRAG[gb]="8 20"
+_FT_BEACON_GRAB="gb 0 0"; ft_set gb dragging=true; FT_BEACON_DRAG[gb]="8 20"
 FT_OUT=""; _ft_beacon_paint_callout gb beacon
 _gfast=$FT_OUT; _gfast_ext=${FT_BEACON_EXTENT[gb]}; _gfast_box=${FT_BEACON_BOX[gb]}
 unset 'FT_BEACON_PC[gb]' 'FT_BEACON_PKEY[gb]'                      # …now force the fall-through
@@ -263,7 +263,7 @@ ft_stylesheet name=impsheet style='
 '
 ft-form name=improot width=80 height=8
   ft-textfield name=imptf value="hi" size=10
-  ft-button    name=impbtn "Go"
+  ft-button name=impbtn text="Go"
 end_ft_form
 ft_layout improot
 _ft_control_importance impbtn
@@ -435,7 +435,7 @@ ft_remove tapp
 # ── The z tier follows the variant, WHENEVER the variant is set ──────────────
 # "A callout is the most on-top of all" is a contract about a property, and `variant` is a
 # runtime property: FT_PROTO_REPROP lists it precisely so it can be changed. Derived in the
-# constructor alone, the cached tier went stale in both directions — `ft-modify b
+# constructor alone, the cached tier went stale in both directions — `ft_set b
 # variant=callout` gave a callout at z=0 that every frame beacon was free to paint over, and a
 # demoted callout kept z=10 and went on suppressing its neighbours. Asserted on the tier AND on
 # what the tier decides: the order the two-pass composite paints in, and the cells a lower
@@ -451,9 +451,9 @@ ft-beacon name=zcall target=ztgt variant=callout effect=none text="a callout on 
 check "a constructed callout is the top tier" "${FT_OVERLAY_Z_ORDER[zcall]}" "10"
 check "a constructed frame is the base tier"  "${FT_OVERLAY_Z_ORDER[zflip]}" "0"
 
-ft-modify zflip variant=callout
+ft_set zflip variant=callout
 check "promoted to callout at runtime → top tier" "${FT_OVERLAY_Z_ORDER[zflip]}" "10"
-ft-modify zcall variant=frame
+ft_set zcall variant=frame
 check "demoted to frame at runtime → base tier"   "${FT_OVERLAY_Z_ORDER[zcall]}" "0"
 
 # The composite paints tier 0 first and tier 10 last; the order is the whole point of the tier.
@@ -523,7 +523,7 @@ check "…using the substitute that was handed to it" \
 # reached one way.
 note "ft_beacon_place answers before any frame exists"
 ft-form name=papp width=90 height=30
-    ft-button name=ptgt "Target"
+    ft-button name=ptgt text="Target"
 end_ft_form
 FT_ROOT=papp; ft_layout papp >/dev/null 2>&1
 ft-beacon name=pc parent=papp variant=callout target=ptgt calloutWidth=30 effect=none \
@@ -548,7 +548,7 @@ check "the paint reused the forced placement" "${FT_BEACON_PKEY[pc]:-}" "$_t_key
 check "…and did not move it"                  "$(ft_beacon_side pc; printf %s "$FT_RET")" "$_t_side"
 # …and the control: change an INPUT and the key must change, or the check above passes on a
 # cache that never re-keys for anything.
-ft-modify pc text="A completely different sentence, of a different length entirely, to re-key it."
+ft_set pc text="A completely different sentence, of a different length entirely, to re-key it."
 FT_OUT=""; ft_clip_reset; _ft_beacon_rect pc; _ft_beacon_paint_callout pc 0
 check "…while a changed input DOES re-key it (the check has teeth)" \
       "$(case "${FT_BEACON_PKEY[pc]:-}" in "$_t_key") echo stuck ;; *) echo rekeyed ;; esac)" "rekeyed"

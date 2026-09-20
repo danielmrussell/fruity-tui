@@ -17,15 +17,15 @@ rm -f /tmp/fth.$$
 
 ft-form name=app width=80 height=24
   ft-textfield name=tf size=20 value="x"
-  ft-button    name=bt OK
-  ft-label     name=lbl "just text"
-  ft-checkbox  name=cbx "Remember"
+  ft-button name=bt text=OK
+  ft-label name=lbl text="just text"
+  ft-checkbox name=cbx text="Remember"
   ft-select    name=sel size=1
-    ft-option value=a "Alpha"
-    ft-option value=b "Beta"
+    ft-option value=a text="Alpha"
+    ft-option value=b text="Beta"
   end_ft_select
   ft-tree name=trv rows=4
-    ft-tree-node "Root" id=root depth=0
+    ft-tree-node text="Root" id=root depth=0
   end_ft_tree
 end_ft_form
 ft_layout app; FT_ROOT=app
@@ -50,20 +50,20 @@ check "one entry"    "${#FT_HELP_TITLE[@]}" "1"
 check "basics title" "${FT_HELP_TITLE[0]}"  "Basics"
 
 note "instance helpText2 adds a tab; helpLabel/helpAccel name it; body kept whole"
-ft-modify tf helpText2="Hostname
+ft_set tf helpText2="Hostname
 enter a fully-qualified name"
 _ft_help_texts tf
 check "helpText2 added a 3rd entry"     "${#FT_HELP_TITLE[@]}" "3"
 check "no label → first line is title"  "${FT_HELP_TITLE[2]}"  "Hostname"
 check "no label → body is the rest"     "${FT_HELP[2]}"        "enter a fully-qualified name"
-ft-modify tf helpLabel2="Host" helpAccel2="H"
+ft_set tf helpLabel2="Host" helpAccel2="H"
 _ft_help_texts tf
 check "helpLabel2 names the tab"        "${FT_HELP_TITLE[2]}"  "Host"
 check "helpAccel2 sets the accessKey"       "${FT_HELP_ACCEL[2]}"  "H"
 check "with a label, body is the WHOLE text" "${FT_HELP[2]}" $'Hostname\nenter a fully-qualified name'
 
 note "sparse: a missing helpText index builds no tab (indices stay aligned)"
-ft-modify tf helpText4="Extra
+ft_set tf helpText4="Extra
 sparse is fine"
 _ft_help_texts tf
 check "helpText3 missing → skipped (4 entries, not 5)" "${#FT_HELP_TITLE[@]}" "4"
@@ -83,14 +83,14 @@ root_before_modals=$FT_ROOT
 # Build the dialogs FIRST: declaring a form ends by choosing a focus for it, which would
 # otherwise clobber the caller's focus between the snapshot and the push.
 ft-form name=__modal width=30 height=5
-    ft-button name=__m_x "X"
-    ft-button name=__m_y "Y"
-    ft-button name=__m_z "Z"
+    ft-button name=__m_x text="X"
+    ft-button name=__m_y text="Y"
+    ft-button name=__m_z text="Z"
 end_ft_form
 ft_layout __modal
 ft-form name=__modal2 width=30 height=5
-    ft-button name=__m_p "P"
-    ft-button name=__m_q "Q"
+    ft-button name=__m_p text="P"
+    ft-button name=__m_q text="Q"
 end_ft_form
 ft_layout __modal2
 

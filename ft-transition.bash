@@ -925,8 +925,8 @@ _ft_transition_arm() {          # name
 # ── The public surface ───────────────────────────────────────────────────────
 # AN APPLICATION SHOULD NEVER NEED ANY OF THIS. Changing `display` is the whole API:
 #
-#     ft-modify notice display=block      # transitions in, if the cascade says `transition:`
-#     ft-modify notice display=none       # goes away, and the ground repairs itself
+#     ft_set notice display=block      # transitions in, if the cascade says `transition:`
+#     ft_set notice display=none       # goes away, and the ground repairs itself
 #
 # — which is how CSS behaves, and it is what demo/transition-demo.bash now contains. What
 # follows exists for the two cases that legitimately need more: an app that wants to force a
@@ -971,7 +971,7 @@ ft_transition_rect() { FT_RET=${_FT_TRANSITION_RECT[$1]:-}; }
 # the cells were already showing something, so the starting style is not a declaration, it is
 # THE GROUND. That is why there is no @starting-style here and no need for one.
 #
-# The change is NOTICED in ft-modify and ARMED here, because between those two moments the
+# The change is NOTICED in ft_set and ARMED here, because between those two moments the
 # layout has to settle: arming needs the control's final box, and inside an input burst the
 # reflow is deferred to ft_reflow_flush. ft_redraw_dirty calls this after that, before it
 # paints anything — so the control is already hidden from the paint path when the paint runs.

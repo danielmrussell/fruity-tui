@@ -141,13 +141,13 @@ _build() {
         ft-div name=mid flexGrow=1 flexShrink=1 minHeight=0 display=flex justifyContent=center alignItems=center
             ft-frame name=box width="$STAGE_W" height=13 title="Settings" \
                      display=flex flexDirection=column gap=1 padding=1
-                ft-heading name=head "Connection"
+                ft-heading name=head text="Connection"
                 ft-label name=hint text="Type in the field while it flies."
                 ft-textfield name=field size=18 value="hello"
-                ft-checkbox name=cbOne "Remember me"
+                ft-checkbox name=cbOne text="Remember me"
                 ft-div name=row display=flex gap=2
-                    ft-button name=btnOk "OK"
-                    ft-button name=btnGo "Connect"
+                    ft-button name=btnOk text="OK"
+                    ft-button name=btnGo text="Connect"
                 end_ft_div
             end_ft_frame
         end_ft_div
@@ -184,7 +184,7 @@ _arm_arrow() {
 }
 
 _legend() {
-    ft-modify app \
+    ft_set app \
         key='<' keyCap="Prev step" keyImp=important onKey=_prev_step \
         key='>' keyCap="Next step" keyImp=important onKey=_next_step \
         key='[Bb]' keyCap="Back ← page" keyImp=normal onKey=_prev_page \
@@ -200,7 +200,7 @@ _show() {
     local n; _steps_on_page; n=$FT_RET
     local _hint="< > step · N B page · R replay · Q quit"
     (( PAGE == 6 )) && _hint="R replays it — the arrow LEAVES on this page   ·   $_hint"
-    ft-modify navbar status="Page $PAGE/$LAST — $ttl   ·   step $STEP/$n   ·   $_hint"
+    ft_set navbar status="Page $PAGE/$LAST — $ttl   ·   step $STEP/$n   ·   $_hint"
     ft_refresh
     ft_focus field || ft_focus_first
     return 0
@@ -213,7 +213,7 @@ _prev_page() { (( PAGE > 1 ))    && (( PAGE-- )) || PAGE=$LAST; STEP=1; _show; }
 # Replay is a re-arm and a repaint — the old arrow's cells are the ones the refresh clears.
 _replay()    { _arm_arrow; ft_refresh; ft_focus field || ft_focus_first; }
 
-_resize() { ft-modify app width="$FT_COLS" height="$FT_ROWS"; _show; }
+_resize() { ft_set app width="$FT_COLS" height="$FT_ROWS"; _show; }
 
 # ── App scaffold ─────────────────────────────────────────────────────────────
 ft-form name=app width="$FT_COLS" height="$FT_ROWS" \
@@ -226,4 +226,4 @@ ft-form name=app width="$FT_COLS" height="$FT_ROWS" \
     ft-statusbar name=navbar     flexShrink=0 status="Loading…"
 end_ft_form
 
-ft-run app _show _resize '' _show
+ft_run app _show _resize '' _show

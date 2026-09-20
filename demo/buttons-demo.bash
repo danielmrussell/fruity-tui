@@ -53,7 +53,7 @@ _emit_buttons() {               # spec...
         else
             local trimmed="${label#"${label%%[![:space:]]*}"}"
             trimmed="${trimmed%"${trimmed##*[![:space:]]}"}"
-            eval "${name}_on_activate() { ft-modify msg text=\"${trimmed} clicked!\"; }"
+            eval "${name}_on_activate() { ft_set msg text=\"${trimmed} clicked!\"; }"
         fi
     done
 }
@@ -79,4 +79,4 @@ ft-form name=app width="$FT_COLS" height="$FT_ROWS" key='[Qq]' onKey=ft_quit
 end_ft_form
 
 _setup() { ft_layout app; }
-ft-run app _setup
+ft_run app _setup

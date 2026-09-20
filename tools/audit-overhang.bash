@@ -32,14 +32,14 @@ if [[ "${1:-}" == --one ]]; then
     demo=$1; page=${2:-}; teeth=${3:-}
 
     # Find the launch line, and remember its NUMBER. Deleting every line matching
-    # /^ft-run / — which is what the other headless harnesses do — is wrong:
-    # tutorial-demo has `ft-run app' ;;` at column 0 inside a single-quoted string,
+    # /^ft_run / — which is what the other headless harnesses do — is wrong:
+    # tutorial-demo has `ft_run app' ;;` at column 0 inside a single-quoted string,
     # the tail of a code sample it displays, and cutting that unbalances the quote
     # so the rest of the file becomes one string and not a single control is built.
     # It audited clean for exactly that reason until the "nothing was laid out"
     # guard below said so out loud.
-    runline=$(grep -n -m1 "^ft-run [a-zA-Z_][a-zA-Z_0-9]* [a-zA-Z_]" "demo/$demo") \
-        || { printf '  %-22s —    not an ft-run app (a headless render harness)\n' "${demo%.bash}"; exit 0; }
+    runline=$(grep -n -m1 "^ft_run [a-zA-Z_][a-zA-Z_0-9]* [a-zA-Z_]" "demo/$demo") \
+        || { printf '  %-22s —    not an ft_run app (a headless render harness)\n' "${demo%.bash}"; exit 0; }
     runno=${runline%%:*}
     read -r _ root initfn _rest <<<"${runline#*:}"
 

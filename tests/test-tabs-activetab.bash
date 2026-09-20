@@ -2,7 +2,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 #  `activeTab` IS THE STATE, SO WRITING IT MUST SWITCH THE TAB.
 #
-#  `ft-modify tabs activeTab=1` moved the number and nothing else: tab 1 stayed visible and tab
+#  `ft_set tabs activeTab=1` moved the number and nothing else: tab 1 stayed visible and tab
 #  2 stayed hidden, so programmatic tab switching silently did nothing. `ft_tabs_select` — the
 #  same work reached another way — always worked, which is how it went unnoticed.
 #
@@ -45,10 +45,10 @@ check "three tab bodies"          "$(_bodies | wc -w)" "3"
 check "the first one is showing"  "$(_shown)"          "$(_ft_tabs_tabs tb; printf '%s' "${FT_TABS[0]}")"
 
 note "writing activeTab switches the tab, not just the number"
-ft-modify tb activeTab=1
+ft_set tb activeTab=1
 check "the property moved"        "$(ft_get tb activeTab; printf %s "$FT_RET")" "1"
 check "…and so did the body"      "$(_shown)" "$(_ft_tabs_tabs tb; printf '%s' "${FT_TABS[1]}")"
-ft-modify tb activeTab=2
+ft_set tb activeTab=2
 check "…and again, to the third"  "$(_shown)" "$(_ft_tabs_tabs tb; printf '%s' "${FT_TABS[2]}")"
 
 note "exactly one body is visible at a time"
@@ -58,9 +58,9 @@ for _b in $(_bodies); do [[ "$(_disp "$_b")" != none ]] && _visible=$(( _visible
 check "one visible body, not two" "$_visible" "1"
 
 note "an out-of-range index is clamped, as _ft_tabs_apply already promised"
-ft-modify tb activeTab=99
+ft_set tb activeTab=99
 check "clamped to the last tab"   "$(ft_get tb activeTab; printf %s "$FT_RET")" "2"
-ft-modify tb activeTab=-5
+ft_set tb activeTab=-5
 check "…and to the first"         "$(ft_get tb activeTab; printf %s "$FT_RET")" "0"
 check "…with the first body showing" "$(_shown)" "$(_ft_tabs_tabs tb; printf '%s' "${FT_TABS[0]}")"
 

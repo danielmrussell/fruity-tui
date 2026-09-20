@@ -106,17 +106,17 @@ ft_layout app; FT_FOCUS=tfk
 FT_TEXTFIELD_CARET[tfk]=6                        # start of "bravo"
 ft_textfield_kill_to_end tfk
 ft_get tfk value; check "Ctrl+K takes only that line" "$FT_RET" $'alpha\n\ncharlie'
-ft-modify tfk value=$'alpha\nbravo\ncharlie'; _ft_textfield_undo_forget tfk
+ft_set tfk value=$'alpha\nbravo\ncharlie'; _ft_textfield_undo_forget tfk
 FT_TEXTFIELD_CARET[tfk]=11                       # end of "bravo"
 ft_textfield_kill_to_start tfk
 ft_get tfk value; check "Ctrl+U takes only that line" "$FT_RET" $'alpha\n\ncharlie'
 # With nothing left on that side the kill takes the LINE ENDING, joining the lines (emacs), so
 # the key is never simply inert.
-ft-modify tfk value=$'alpha\nbravo'; _ft_textfield_undo_forget tfk
+ft_set tfk value=$'alpha\nbravo'; _ft_textfield_undo_forget tfk
 FT_TEXTFIELD_CARET[tfk]=5                        # end of "alpha", nothing left on the line
 ft_textfield_kill_to_end tfk
 ft_get tfk value; check "Ctrl+K at a line end joins the next line" "$FT_RET" "alphabravo"
-ft-modify tfk value=$'alpha\nbravo'; _ft_textfield_undo_forget tfk
+ft_set tfk value=$'alpha\nbravo'; _ft_textfield_undo_forget tfk
 FT_TEXTFIELD_CARET[tfk]=6                        # start of "bravo", nothing left before it
 ft_textfield_kill_to_start tfk
 ft_get tfk value; check "Ctrl+U at a line start joins the previous" "$FT_RET" "alphabravo"
@@ -154,10 +154,10 @@ _wb 6;  check "back again → start of 'alpha' (0)"              "$FT_RET" "0"
 _wf 0;  check "forward → end of 'alpha' (5), not the document" "$FT_RET" "5"
 _wf 5;  check "forward across a newline → end of 'bravo' (11)" "$FT_RET" "11"
 # A TAB is a word boundary for the same reason (soft tabs put real ones in the value).
-ft-modify tfnl value=$'one\ttwo\tthree'
+ft_set tfnl value=$'one\ttwo\tthree'
 _wb 13; check "a tab bounds a word too → start of 'three' (8)" "$FT_RET" "8"
 # …and the word KILLS use the same rule, so Ctrl+W at a line start must not eat the line above.
-ft-modify tfnl value=$'alpha\nbravo'
+ft_set tfnl value=$'alpha\nbravo'
 FT_TEXTFIELD_CARET[tfnl]=11; ft_textfield_kill_word tfnl
 ft_get tfnl value; check "Ctrl+W kills one word, not through the newline" "$FT_RET" $'alpha\n'
 
@@ -254,7 +254,7 @@ _ft_textfield_layout tw 8
 check "wrap=false: 2 visual lines = 2 logical lines" "${#FT_TEXTFIELD_LINES_TEXT[@]}" "2"
 check "first visual line is the WHOLE long line" "${FT_TEXTFIELD_LINES_TEXT[0]}" "a very long single logical line here"
 # same field with wrap=true would soft-wrap the long line into many rows
-ft-modify tw wrap=true; _ft_textfield_layout tw 8
+ft_set tw wrap=true; _ft_textfield_layout tw 8
 check "wrap=true: the long line folds to many rows" "$(( ${#FT_TEXTFIELD_LINES_TEXT[@]} > 2 ))" "1"
 
 note "the field is focusable and reads back like any value control"
@@ -262,7 +262,7 @@ _ft_focus_skippable tf && s=yes || s=no
 check "an enabled field is focusable" "$s" "no"
 SUBMIT=""
 btn_on_activate() { ft_get tf value; SUBMIT="$FT_RET"; }
-ft-button name=btn Submit onActivate=btn_on_activate; ft_activate btn
+ft-button name=btn text=Submit onActivate=btn_on_activate; ft_activate btn
 check "a button's handler reads the field value" "$SUBMIT" "Jello!"
 
 note "selection: Shift+motion extends, plain motion collapses, edits replace it"
@@ -344,50 +344,50 @@ ft_textfield_esc ti
 check "Esc leaves edit mode" "$(ft_get ti runlevel; printf %s "$FT_RET")" "poised"
 # TAB BELONGS TO FOCUS IN A ONE-LINE FIELD. A single line has nothing to indent, so
 # taking Tab there only strands the user in the box — it moves focus even mid-edit.
-FT_FOCUS=ti; ft_textfield_activate ti; ft-modify ti value="abcd"; FT_TEXTFIELD_CARET[ti]=2
+FT_FOCUS=ti; ft_textfield_activate ti; ft_set ti value="abcd"; FT_TEXTFIELD_CARET[ti]=2
 ft_textfield_tab ti
 ft_get ti value; check "Tab in a ONE-LINE field types nothing" "$FT_RET" "abcd"
 check "…it moves focus, mid-edit and all" "$([[ $FT_FOCUS != ti ]] && echo moved)" "moved"
 # (from the SECOND field, so this tests the move itself and not focus-wrap behaviour)
-FT_FOCUS=tj; ft_textfield_activate tj; ft-modify tj value="abcd"; FT_TEXTFIELD_CARET[tj]=2
+FT_FOCUS=tj; ft_textfield_activate tj; ft_set tj value="abcd"; FT_TEXTFIELD_CARET[tj]=2
 ft_textfield_btab tj
 ft_get tj value; check "Shift+Tab in a one-line field types nothing" "$FT_RET" "abcd"
 check "…and moves focus back"           "$FT_FOCUS" "ti"
 # …but a one-liner CAN opt in, for a path/code field where indentation is real.
-ft-modify ti acceptsTab=true
-FT_FOCUS=ti; ft_textfield_activate ti; ft-modify ti value="abcd"; FT_TEXTFIELD_CARET[ti]=2
+ft_set ti acceptsTab=true
+FT_FOCUS=ti; ft_textfield_activate ti; ft_set ti value="abcd"; FT_TEXTFIELD_CARET[ti]=2
 ft_textfield_tab ti; ft_get ti value; check "acceptsTab=true makes Tab type again" "$FT_RET" "ab  cd"
 check "…and focus stays put"            "$FT_FOCUS" "ti"
-ft-modify ti acceptsTab=auto
+ft_set ti acceptsTab=auto
 # A multi-line text BOX is the opposite case: it is a small editor, Esc is the way out,
 # and Tab types a SOFT tab — spaces to the next 4-col stop, never a literal \t (which
 # would smear the fixed-cell render).
 ft-textfield name=tbox size=12 rows=4 value=""; ft_layout tabapp
-FT_FOCUS=tbox; ft_textfield_activate tbox; ft-modify tbox value="abcd"; FT_TEXTFIELD_CARET[tbox]=2
+FT_FOCUS=tbox; ft_textfield_activate tbox; ft_set tbox value="abcd"; FT_TEXTFIELD_CARET[tbox]=2
 ft_textfield_tab tbox; ft_get tbox value; check "Tab in a TEXT BOX inserts spaces to the next 4-stop" "$FT_RET" "ab  cd"
 [[ "$FT_RET" == *$'\t'* ]] && check "no literal tab byte" 1 0 || check "no literal tab byte" 1 1
 _ft_textfield_caret tbox; check "caret advances past the inserted spaces (not left behind)" "$FT_RET" "4"
 check "…and focus stayed in the box" "$FT_FOCUS" "tbox"
 # …and a text box can opt OUT, when Tab-to-next-field matters more than indentation.
-ft-modify tbox acceptsTab=false
-FT_FOCUS=tbox; ft_textfield_activate tbox; ft-modify tbox value="abcd"; FT_TEXTFIELD_CARET[tbox]=2
+ft_set tbox acceptsTab=false
+FT_FOCUS=tbox; ft_textfield_activate tbox; ft_set tbox value="abcd"; FT_TEXTFIELD_CARET[tbox]=2
 ft_textfield_tab tbox; ft_get tbox value; check "acceptsTab=false gives Tab back to focus" "$FT_RET" "abcd"
 check "…and it moved" "$([[ $FT_FOCUS != tbox ]] && echo moved)" "moved"
-ft-modify tbox acceptsTab=auto
+ft_set tbox acceptsTab=auto
 FT_FOCUS=ti
 # soft-tab-aware Backspace: one press deletes the whole soft tab (caret jumps a tab)
-ft-modify ti value="    x"; FT_TEXTFIELD_CARET[ti]=4; ft_textfield_backspace ti
+ft_set ti value="    x"; FT_TEXTFIELD_CARET[ti]=4; ft_textfield_backspace ti
 ft_get ti value; check "Backspace removes a whole soft tab of spaces" "$FT_RET" "x"
 _ft_textfield_caret ti; check "caret jumped back a full tab width" "$FT_RET" "0"
 # but a non-space run deletes ONE char
-ft-modify ti value="abcd"; FT_TEXTFIELD_CARET[ti]=4; ft_textfield_backspace ti
+ft_set ti value="abcd"; FT_TEXTFIELD_CARET[ti]=4; ft_textfield_backspace ti
 ft_get ti value; check "Backspace on text still deletes one char" "$FT_RET" "abc"
 # select-all (Alt+A), then the selection can be copied or deleted to clear the field
-ft-modify ti value="clear me"; FT_TEXTFIELD_CARET[ti]=0; ft_textfield_select_all ti
+ft_set ti value="clear me"; FT_TEXTFIELD_CARET[ti]=0; ft_textfield_select_all ti
 _ft_textfield_selrange ti && check "Alt+A selects the whole field" "[$FT_SELECTION_START,$FT_SELECTION_END)" "[0,8)" || check "Alt+A selects the whole field" none "[0,8)"
 ft_textfield_backspace ti; ft_get ti value; check "deleting the select-all clears the field" "$FT_RET" ""
 # In a tab-accepting field Shift+Tab UNINDENTS the current line (not focus movement)
-FT_FOCUS=tbox; ft_textfield_activate tbox; ft-modify tbox value="    xy"; FT_TEXTFIELD_CARET[tbox]=6
+FT_FOCUS=tbox; ft_textfield_activate tbox; ft_set tbox value="    xy"; FT_TEXTFIELD_CARET[tbox]=6
 ft_textfield_btab tbox; ft_get tbox value; check "Shift+Tab unindents (removes a leading soft tab)" "$FT_RET" "xy"
 _ft_textfield_caret tbox; check "caret shifts left by the unindent" "$FT_RET" "2"
 check "Shift+Tab kept focus in the box" "$FT_FOCUS" "tbox"
@@ -405,7 +405,7 @@ ft_get aie value; check "value unchanged by Tab" "$FT_RET" "ab"
 # silently unmade with a stray arrow, threw away everything you were working on. Now:
 # editing with a selection → the selection; editing with none → a hint and nothing else;
 # merely focused → the whole value, because you have not told it about any smaller part.
-FT_FOCUS=tj; ft_textfield_activate tj; ft-modify tj value="copyme"
+FT_FOCUS=tj; ft_textfield_activate tj; ft_set tj value="copyme"
 FT_TEXTFIELD_CARET[tj]=6; ft_textfield_select_home tj; FT_KILL_RING=(); ft_textfield_ctrl_c tj
 check "Ctrl+C copied the selection to the ring" "${FT_KILL_RING[0]:-}" "copyme"
 _ft_textfield_sel_clear tj; FT_KILL_RING=(); FT_KEY_BUBBLE=0
@@ -755,11 +755,11 @@ s=$(keys); { [[ "$s" == *"ALT+w:Copy"* ]] && [[ "$s" == *"CTRL+w:Cut"* ]]; } \
 note "the border animation is a CSS structure: textfield::border { animation: … } drives it"
 ft-form name=baf width=24 height=6; ft-textfield name=baf_tf value="hi" width=14; end_ft_form
 _ft_border_anim_name baf_tf; check "default (no rule, no property) → the calm sheen" "$FT_RET" sheen
-ft-modify baf_tf activateBorderAnimation=beacon
+ft_set baf_tf activateBorderAnimation=beacon
 _ft_border_anim_name baf_tf; check "activateBorderAnimation=beacon overrides the default" "$FT_RET" beacon
-ft-modify baf_tf activateBorderAnimation=none
+ft_set baf_tf activateBorderAnimation=none
 _ft_border_anim_name baf_tf; check "activateBorderAnimation=none → off" "$FT_RET" ""
-ft-modify baf_tf activateBorderAnimation=""
+ft_set baf_tf activateBorderAnimation=""
 ft_stylesheet name=batest style='textfield::border { animation: none; }'
 _ft_border_anim_name baf_tf; check "::border { animation: none } → off"   "$FT_RET" ""
 ft_stylesheet name=batest style='textfield::border { animation: beacon; }'
@@ -779,7 +779,7 @@ FT_OUT=""; _ft_border_anim_overlay sgtf 0 0 4 20 "$FT_COLOR_BORDER"
 [[ -z "${FT_SHEEN_FROZEN[sgtf]+x}" ]] && check "CSS-loop phase does NOT trigger the sheen" 1 1 \
                                      || check "CSS-loop phase does NOT trigger the sheen" 0 1
 # now a real border animation is bound (and the field opts into sheen) → the sheen paints
-ft-modify sgtf activateBorderAnimation=sheen
+ft_set sgtf activateBorderAnimation=sheen
 FT_ANIM_FRAME[sgtf]=_ft_banim_sheen_frame
 FT_OUT=""; _ft_border_anim_overlay sgtf 0 0 4 20 "$FT_COLOR_BORDER"
 [[ -n "${FT_SHEEN_FROZEN[sgtf]+x}" ]] && check "a bound sheen frame DOES paint the sheen" 1 1 \

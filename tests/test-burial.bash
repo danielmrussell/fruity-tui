@@ -32,7 +32,7 @@ trap 'rm -rf "$work" "$noloop" "$bare"' EXIT
 
 # The same demo twice: once with the run loop stripped so it can be driven in-process, and once
 # with _place_callout neutered so the pty render shows the page and nothing of the overlay.
-sed '/^ft-run app/d' demo/callout-demo.bash > "$noloop"
+sed '/^ft_run app/d' demo/callout-demo.bash > "$noloop"
 sed 's/^_place_callout() {/_place_callout() { return 0;/' demo/callout-demo.bash > "$bare"
 
 export FT_NO_WTFIX=1
@@ -46,10 +46,10 @@ for (( p=1; p<=LAST; p++ )); do
     FT_TEST_COLS=$COLS FT_TEST_ROWS=$ROWS DEMO_PAGE=$p DEMO_STEP=1 \
         python3 tests/render-screen.py "$bare" "" > "$work/bare-$p.txt" 2>/dev/null
     PAGE=$p; STEP=1; _resize >/dev/null 2>&1; _page_annotations
-    settle >/dev/null 2>&1   # ft-run settles the burst; a gate must too
+    settle >/dev/null 2>&1   # ft_run settles the burst; a gate must too
     for (( s=1; s<=${#PA_TARGET[@]}; s++ )); do
         STEP=$s; _goto_step >/dev/null 2>&1
-        settle >/dev/null 2>&1   # ft-run settles the burst; a gate must too
+        settle >/dev/null 2>&1   # ft_run settles the burst; a gate must too
         _ft_beacon_placement stepcallout || continue
         bT=$FT_PLACED_T; bL=$FT_PLACED_L; bB=$FT_PLACED_B; bR=$FT_PLACED_R
         printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$p" "$s" "$bT" "$bL" "$bB" "$bR" \

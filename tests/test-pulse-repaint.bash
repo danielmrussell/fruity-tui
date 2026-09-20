@@ -22,7 +22,7 @@ here=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 source "$here/tests/_harness.bash"
 export FT_NO_WTFIX=1 FT_RECORD=""
 noloop="$here/demo/.pulse-repaint-noloop.bash"
-sed '/^ft-run app/d' "$here/demo/css-demo.bash" > "$noloop"
+sed '/^ft_run app/d' "$here/demo/css-demo.bash" > "$noloop"
 tmp=$(mktemp -d); trap 'rm -rf "$tmp" "$noloop"' EXIT
 source "$noloop"
 FT_COLOR_MODE=256; FT_USE_UTF8=1; FT_ROWS=34; FT_COLS=120

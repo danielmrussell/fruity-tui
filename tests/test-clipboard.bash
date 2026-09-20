@@ -77,8 +77,8 @@ note "a selection copies exactly the characters selected, wide glyphs included"
 ft-form name=cf width=60 height=14
     ft-textfield name=one  size=20 value="$CJK"
     ft-textfield name=area size=20 rows=3 value=$'第一行の設定\n第二行の設定'
-    ft-label     name=lab  "ラベルのテキスト" width=20
-    ft-label     name=empt "" width=20
+    ft-label name=lab text="ラベルのテキスト" width=20
+    ft-label name=empt text="" width=20
     ft-statusbar name=sb
 end_ft_form
 ft_layout cf; FT_ROOT=cf; ft_focus one; ft_textfield_activate one
@@ -130,24 +130,24 @@ note "itemCopied is EMITTED — a list control copies the item you are looking a
 ft_remove itf 2>/dev/null
 ft-form name=itf width=60 height=20
     ft-tree name=itree rows=6
-        ft-tree-node name=itn1 "設定"     id=a depth=0 expanded=true
-        ft-tree-node name=itn2 "子ノード" id=b depth=1
-        ft-tree-node name=itn3 "README"   id=c depth=0
+        ft-tree-node name=itn1 text="設定" id=a depth=0 expanded=true
+        ft-tree-node name=itn2 text="子ノード" id=b depth=1
+        ft-tree-node name=itn3 text="README" id=c depth=0
     end_ft_tree
     ft-select name=isel size=1
-        ft-option value=r "Red"
-        ft-option value=g "緑 Green"
-        ft-option value=b "Blue"
+        ft-option value=r text="Red"
+        ft-option value=g text="緑 Green"
+        ft-option value=b text="Blue"
     end_ft_select
     ft-select name=imul size=4 multiple=true
-        ft-option value=1 "One"   selected=true
-        ft-option value=2 "Two"
-        ft-option value=3 "Three" selected=true
+        ft-option value=1 text="One" selected=true
+        ft-option value=2 text="Two"
+        ft-option value=3 text="Three" selected=true
     end_ft_select
     # A label is only a Tab stop WHEN IT SCROLLS (_ft_label_focus_skip), so a copy key on a
     # plain one can never be pressed. Three lines in a one-row box makes this one focusable —
     # and makes the point that a label's copy is reachable only in that state.
-    ft-label name=ilab $'ラベル\nline two\nline three' width=20 height=1
+    ft-label name=ilab text=$'ラベル\nline two\nline three' width=20 height=1
     ft-statusbar name=isb
 end_ft_form
 ft_layout itf; FT_ROOT=itf
@@ -166,22 +166,22 @@ _clipboard; check "…the same wherever the cursor happens to be" \
                   "$FT_RET" $'▾ 設定\n    子ノード\n  README'
 # A collapsed branch keeps its ▸ and its children stay hidden — that IS the tree as it
 # stands, and the glyph would otherwise contradict the lines under it.
-_arm; ft-modify itn1 expanded=false
+_arm; ft_set itn1 expanded=false
 ft_tree_copy itree
 _clipboard; check "a collapsed branch copies collapsed" "$FT_RET" $'▸ 設定\n  README'
-ft-modify itn1 expanded=true
+ft_set itn1 expanded=true
 
 _arm; _STATUS=""
-ft-modify isel selectedIndex=1
+ft_set isel selectedIndex=1
 ft_select_copy isel
 _clipboard; check "a closed select copies the CHOSEN option" "$FT_RET" "緑 Green"
 check "…as an item"                                          "$_STATUS" "itemCopied"
 
 _arm; _STATUS=""
-ft-modify isel open=true cursor=2
+ft_set isel open=true cursor=2
 ft_select_copy isel
 _clipboard; check "an OPEN select copies the option under the cursor" "$FT_RET" "Blue"
-ft-modify isel open=false
+ft_set isel open=false
 
 _arm; _STATUS=""
 ft_select_copy imul
@@ -209,7 +209,7 @@ _dispatches() {                 # control token expected-clipboard
 ft_tree_key_home itree
 _dispatches itree "CTRL+c" $'▾ 設定\n    子ノード\n  README'
 _dispatches itree "ALT+w"  $'▾ 設定\n    子ノード\n  README'
-ft-modify isel selectedIndex=0 open=false
+ft_set isel selectedIndex=0 open=false
 _dispatches isel "CTRL+c" "Red"
 _dispatches isel "ALT+w"  "Red"
 ok "a scrolling label IS focusable, so its copy key is reachable" ft_focus ilab
@@ -229,7 +229,7 @@ note "CTRL+C NEVER QUITS — that is the whole point of taking it"
 ft_remove qf 2>/dev/null
 ft-form name=qf width=50 height=10
     ft-textfield name=qtf size=20 value="hello"
-    ft-button    name=qbtn "Nothing"
+    ft-button name=qbtn text="Nothing"
     ft-statusbar name=qsb
 end_ft_form
 ft_layout qf; FT_ROOT=qf
@@ -290,7 +290,7 @@ note "a table copies by runlevel: the whole thing outside, the current row insid
 ft_remove ctf 2>/dev/null
 ft-form name=ctf width=70 height=14
     ft-table name=ctb variant=grid
-        ft-table-header "Key"; ft-table-header "Action"
+        ft-table-header text="Key"; ft-table-header text="Action"
         ft-table-row "Ctrl+A" "start"
         ft-table-row "Ctrl+E" "end"
     end_ft_table

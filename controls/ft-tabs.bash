@@ -64,31 +64,37 @@ ft_prototype_tabs() {
     ft_prop_kind_set activeTab layout    # switching reflows the subtree
     # `activeTab` IS the state, so writing it must switch the tab. Reflowing the subtree is not
     # enough: which body is shown is decided by `display` on each body, and only
-    # _ft_tabs_show_only writes those — so `ft-modify tabs activeTab=1` moved the number and
+    # _ft_tabs_show_only writes those — so `ft_set tabs activeTab=1` moved the number and
     # left tab 1 visible and tab 2 hidden. Programmatic tab switching did nothing at all, while
     # ft_tabs_select (the same work, reached another way) worked fine.
     # In the DOM an index property that names the state is settable and acts — select.selectedIndex
     # moves the selection — so this is the CLASS acting on a change.
     #
     # THROUGH setProp=, NOT FT_PROTO_REPROP, and the difference is a route. REPROP is told by
-    # ft-modify and by nothing else; `activeTab` can also move through the construction DSL and
+    # ft_set and by nothing else; `activeTab` can also move through the construction DSL and
     # through a STATE RESTORE. The restore was the live one: a reloaded app came back with
     # activeTab=1 restored and tab one still on screen, because the number arrived through
     # _ft_setprop and nothing switched the bodies. CONTRIBUTING §1 gives the rule — prefer
-    # setProp= whenever a route other than ft-modify can produce the bad state — and this was
+    # setProp= whenever a route other than ft_set can produce the bad state — and this was
     # that case all along. Found by tests/test-roundtrip.bash, which drives every control with
     # its own keys and demands a save and a reload reproduce the screen.
 }
 ft-tabs()     { ft_new tabs "$@" && FT_NEST_STACK+=("$FT_RET"); }
-end_ft_tabs() { ft-end tabs; }
+end_ft_tabs() { ft_end tabs; }
 
 # ft-tab — a titled panel. The enclosing ft-tabs shows one at a time.
 ft_prototype_tab() {
     ft_prototype extends=ft_control defaults="display=flex flexDirection=column"
-    # NO `ft_prop_kind_set title paint` HERE ANY MORE. A tab's title is drawn INTO its header, so
-    # a longer one wants a wider tab — it was never paint-only even for a tab. And it is the same
-    # global name ft-frame calls layout, so whichever of the two an app built first decided it for
-    # the other. Left unregistered, it takes the table's conservative default, which is layout.
+    # LAYOUT, and REGISTERED — the same kind ft-frame gives the same global name. A tab's title
+    # is drawn INTO its header, so a longer one wants a wider tab; it was never paint-only.
+    #
+    # It used to be left unregistered on the grounds that unknown properties already default to
+    # layout at invalidation time, which is true and was not the whole story: registration is
+    # also what tells the argument parser that `title="two words"` is an ASSIGNMENT rather than
+    # loose content. An app with tabs and no frames therefore set a spaced tab title by falling
+    # through to content — which happened to land in `title` anyway, because that is a tab's
+    # content property. It worked by coincidence, and stopped the day content by position did.
+    ft_prop_kind_set title layout
 }
 _FT_TAB_SEQ=0
 ft-tab() {                      # [title=] ...  (name auto-generated from the tabs)
@@ -102,7 +108,7 @@ ft-tab() {                      # [title=] ...  (name auto-generated from the ta
         ft_new tab name="${owner}_tab$(( ++_FT_TAB_SEQ ))" "$@" && FT_NEST_STACK+=("$FT_RET")
     fi
 }
-end_ft_tab() { ft-end tab; }
+end_ft_tab() { ft_end tab; }
 
 FT_TABS=()
 _ft_tabs_tabs() { local k; FT_TABS=(); for k in ${FT_KIDS[$1]:-}; do [[ "${FT_TYPE[$k]:-}" == tab ]] && FT_TABS+=("$k"); done; }
@@ -112,7 +118,7 @@ tabs_on_children_complete() { _ft_tabs_apply "$1"; }
 #
 # Both routes (the initial apply and every switch) ran their own identical flip loop, and
 # neither asked the question the engine asks whenever anything else hides a control: is the
-# focused control still one focus is allowed to sit on? ft-modify's display route sets
+# focused control still one focus is allowed to sit on? ft_set's display route sets
 # touched_focus and then runs `_ft_focus_skippable FT_FOCUS && ft_focus_move 1` precisely so
 # that hiding never strands focus — but a tab switch writes `display` with a raw _ft_setprop
 # and skipped it, and the route is live: _ft_accel_target deliberately lets a tab's accessKey
@@ -121,8 +127,8 @@ tabs_on_children_complete() { _ft_tabs_apply "$1"; }
 # keymap cascade, the derived legend and Enter with it, so Enter ACTIVATED AN INVISIBLE BUTTON.
 #
 # The predicate is not copied: _ft_focus_skippable is the engine's one answer to "may focus be
-# here", the same call ft-modify, ft_focus_move and ft_focus_first each ask. What is fixed here
-# is that this route did not ask it. (Routing the flips through ft-modify itself would drag in
+# here", the same call ft_set, ft_focus_move and ft_focus_first each ask. What is fixed here
+# is that this route did not ask it. (Routing the flips through ft_set itself would drag in
 # a full ft_reflow of the body per switch — exactly what _ft_tabs_relayout exists to avoid,
 # since the tabs' own box never changes size — plus damage and transition arming: a much larger
 # behaviour change than the stranding this is about.)
@@ -135,7 +141,7 @@ _ft_tabs_show_only() {          # idx — show FT_TABS[idx], hide the rest (call
     [[ -n "${FT_FOCUS:-}" ]] && _ft_focus_skippable "$FT_FOCUS" && ft_focus_move 1
     return 0                    # the guard above must never decide this function's status
 }
-# setProp= hook, reached on EVERY route a property is written by — ft-modify, the construction
+# setProp= hook, reached on EVERY route a property is written by — ft_set, the construction
 # DSL, and a state restore. Only `activeTab` needs the prototype to do anything; everything
 # else is an ordinary repaint the engine has already scheduled. (At construction the bodies do not
 # exist yet, so _ft_tabs_apply finds no tabs and returns; end_ft_tabs applies it once they do.)

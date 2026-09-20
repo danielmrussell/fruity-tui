@@ -30,15 +30,15 @@ FT_OUT=""; _ft_draw_statusbar bar
 vis=$(printf '%s' "$FT_OUT" | _vis)
 [[ "$vis" == *"Ready.  3 items."* ]] && check "status painted" 1 1 || check "status painted" 0 1
 
-note "ft-modify updates the synopsis live (paint-only, no reflow)"
-ft-modify bar status="Deleting report.txt…"
+note "ft_set updates the synopsis live (paint-only, no reflow)"
+ft_set bar status="Deleting report.txt…"
 _ft_get_raw bar status; check "status updated" "$FT_RET" "Deleting report.txt…"
 FT_OUT=""; _ft_draw_statusbar bar
 vis=$(printf '%s' "$FT_OUT" | _vis)
 [[ "$vis" == *"Deleting report.txt…"* ]] && check "new status painted" 1 1 || check "new status painted" 0 1
 
 note "a MODE (FT_MODE_HINT) makes the synopsis become the exit hint, in caution amber"
-ft-modify bar status="Ready."
+ft_set bar status="Ready."
 FT_MODE_HINT="Press ESC to exit edit mode and return to navigation."
 FT_OUT=""; _ft_draw_statusbar bar
 vis=$(printf '%s' "$FT_OUT" | _vis | tr -s ' ')

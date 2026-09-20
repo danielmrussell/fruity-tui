@@ -96,8 +96,8 @@ going through the two print primitives:
 | # | site | what was done |
 |---:|---|---|
 | 12 | ft-help ×6, ft-settings ×3, ft-filedialog ×3 | `ft_repaint_all` |
-| 2 | `ft_refresh`, `ft-run`'s deferred-refresh settle | `ft_repaint_all` |
-| 1 | `ft-run`'s resize path | `ft_repaint_all` |
+| 2 | `ft_refresh`, `ft_run`'s deferred-refresh settle | `ft_repaint_all` |
+| 1 | `ft_run`'s resize path | `ft_repaint_all` |
 | 1 | `tests/_harness.bash`'s `settle` | `ft_repaint_all` |
 | 1 | `_ft_damage_fill`'s inlined print | **left alone, and it is correct that it is**: the refill lays GROUND, which belongs to no control's block. The controls then put their ink back on top of it, now as an append |
 | 1 | `ft-textfield`'s frozen-sheen blit | **routed through `_ft_print_bytes`**, which records as well as prints. This was the one bypass that could have shipped a wrong pixel: the ring would have gone on the screen and not into the block, so a later re-emit would have painted the field with no border |
@@ -281,7 +281,7 @@ elide it after the first frame, which is a lucky side effect and not an argument
 >
 > Run the demo's own `_resize` first, as a WINCH does, and page 8 measures **95 ms** and calls
 > `ft_display_truncate` **zero** times. `tools/audit-overhang.bash` extends that to the whole
-> shipping surface — all ten css-demo pages and every other `ft-run` demo, comparing each
+> shipping surface — all ten css-demo pages and every other `ft_run` demo, comparing each
 > control's border box against the rect `_ft_clip_for` hands its own painting — and finds **not
 > one overhanging control anywhere**. Its `--teeth` mode makes the harness's mistake on purpose
 > and reproduces the four mis-sized controls exactly, so the clean result is a measurement and
@@ -523,13 +523,13 @@ is the hazard set:
 
 | mutation | changed | drawn | hazard |
 |---|---:|---:|---|
-| a label's text via `ft-modify` | 1 | 1 | none |
+| a label's text via `ft_set` | 1 | 1 | none |
 | focus moves to another control | 3 | 3 | none — and the three are `css`, `btnOk` **and `navlegend`**, the legend that derives its content from *another* control |
 | a button's own colour | 1 | 1 | none |
 | a select's value / a checkbox toggled | 0 | 1 | none |
 | a stylesheet registered at runtime | 2 | 6 | none |
 | a control removed | 0 | 33 | none |
-| resize through `ft-run`'s own route | 22 | 31 | none |
+| resize through `ft_run`'s own route | 22 | 31 | none |
 | **resize by calling `ft_layout` alone** | 4 | 0 | `app cssTitle navlegend navbar` |
 | **SABOTAGE: change a label, then clear `FT_DIRTY`** | 1 | 0 | `concept` |
 
@@ -538,7 +538,7 @@ sabotage — poking `_ftp_bashTitle_text` directly — produced *no* hazard, bec
 memo absorbed it. That is worth recording: a probe at the wrong layer reports a clean bill of
 health for a mechanism it never reached. CONTRIBUTING §5, earned again.)
 
-Two hazards, and both are informative. The resize-by-`ft_layout` row is not a bug: `ft-run` resizes
+Two hazards, and both are informative. The resize-by-`ft_layout` row is not a bug: `ft_run` resizes
 by clearing the screen and calling `ft_redraw_all`, and the faithful route shows no hazard. It is
 a demonstration that *changing global paint inputs without a repaint is exactly what breaks
 retention*, which is the point of the token. The sabotage is the shape of every real failure this
@@ -583,7 +583,7 @@ passes every check inside it). Without this gate the design should not be starte
 
 | route | what happens | already exists? |
 |---|---|---|
-| a property write (`ft_set`, `ft-modify`, `ft_remove_attribute`) | `ft_dirty` → re-derive | yes |
+| a property write (`ft_set`, `ft_set`, `ft_unset`) | `ft_dirty` → re-derive | yes |
 | a prototype default / stylesheet change | `_ft_css_inval` bumps `_FT_CSS_VERSION` per subtree; `_ft_css_bump` bumps the epoch | yes |
 | focus / state change | in the token (`FT_FOCUS`) | yes (`_FT_SGR_CACHE`) |
 | layout, reflow, scroll | `FT_LAYOUT_EPOCH`, `_FT_CLIP_GEN`, the control's own absolute box | yes |

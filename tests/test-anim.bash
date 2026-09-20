@@ -119,7 +119,7 @@ ok "the first paint announces itself" test "$(_phase bar)" -ge 0
 ft_anim_stop bar
 FT_OUT=""; _ft_draw_statusbar bar
 check "an unchanged synopsis does not re-sweep (or it would never stop)" "$(_phase bar)" "-1"
-ft-modify bar status="Saving report.txt…"
+ft_set bar status="Saving report.txt…"
 FT_OUT=""; _ft_draw_statusbar bar
 ok "a new synopsis sweeps again" test "$(_phase bar)" -ge 0
 
@@ -139,13 +139,13 @@ FT_OUT=""; _ft_draw_statusbar bar
 
 note "the sweep width is a PROPERTY, not a hardcoded constant"
 _sb_reset
-ft-modify bar status="ab        cd"
+ft_set bar status="ab        cd"
 FT_OUT=""; _ft_draw_statusbar bar
 check "sweep sized to full row + the DEFAULT crest width" \
       "${FT_ANIM_LENGTH[bar]}" "$(( FT_MEASURED_WIDTH[bar] + _FT_STATUSBAR_SWEEP_WIDTH_DEFAULT ))"
 ok "the default crest survives its per-frame step" test "$_FT_STATUSBAR_SWEEP_WIDTH_DEFAULT" -ge "$FT_ANIM_SPEED"
 _sb_reset
-ft-modify bar sweepWidth=20 status="changed again"
+ft_set bar sweepWidth=20 status="changed again"
 FT_OUT=""; _ft_draw_statusbar bar
 check "sweepWidth= overrides it per instance" "${FT_ANIM_LENGTH[bar]}" "$(( FT_MEASURED_WIDTH[bar] + 20 ))"
 
@@ -173,7 +173,7 @@ ft_textfield_deactivate off
 
 note "activate binds the routine + structure + typing debounce to the engine"
 _anim_reset
-ft-modify def activateAnimationTypingDelay=2
+ft_set def activateAnimationTypingDelay=2
 ft_focus def; ft_textfield_activate def
 check "the frame routine is bound"           "${FT_ANIM_FRAME[def]}"   "_ft_banim_sheen_frame"
 check "...with the STRUCTURE it operates on"  "${FT_ANIM_STRUCT[def]}"  "border"
@@ -558,33 +558,33 @@ check "the fixture really is nested (else the subtree checks are vacuous)" \
 _anim_reset
 ft_anim_start hbox 999
 check "…armed (else the next check passes on an empty registry)" "$FT_ANIM_ACTIVE" "1"
-ft-modify hbox display=none
+ft_set hbox display=none
 check "display:none stops it"                                    "$FT_ANIM_ACTIVE" "0"
 
 # THE SUBTREE, not just the node: hiding a container hides everything under it, and a
 # descendant's animation is just as invisible and just as expensive.
-ft-modify hbox display=block
+ft_set hbox display=block
 _anim_reset
 ft_anim_start hkid 999
 check "…a DESCENDANT armed"                                      "$FT_ANIM_ACTIVE" "1"
-ft-modify hbox display=none
+ft_set hbox display=none
 check "hiding the ancestor stops the descendant's animation too"  "$FT_ANIM_ACTIVE" "0"
 
 # …and it must not be a blanket stop: an animation OUTSIDE the hidden subtree keeps running,
 # or "hiding disarms" would just be "hiding disarms everything".
-ft-modify hbox display=block
+ft_set hbox display=block
 _anim_reset
 ft_anim_start hkid 999
 ft_anim_start hroot 999
 check "…two armed, one inside the subtree and one outside"       "$FT_ANIM_ACTIVE" "2"
-ft-modify hbox display=none
+ft_set hbox display=none
 check "hiding a subtree leaves animations outside it alone"      "$FT_ANIM_ACTIVE" "1"
 check "…and it is the one outside that survived"                 "${FT_ANIM_PHASE[hroot]:-gone}" "0"
 _anim_reset
 
 # THE SIBLING ROUTE, which is why the rule lives at the property write rather than in
-# ft-modify's `display` branch: switching tabs hides a body with a raw _ft_setprop and
-# deliberately does not go through ft-modify (see controls/ft-tabs.bash — routing it through
+# ft_set's `display` branch: switching tabs hides a body with a raw _ft_setprop and
+# deliberately does not go through ft_set (see controls/ft-tabs.bash — routing it through
 # would drag a full reflow into every switch). A rule that covered only the route someone
 # happened to test is the exact bug this removes.
 ft-form name=tabroot width=60 height=16
@@ -623,7 +623,7 @@ _sheen_sig_moves() {            # name newvalue → 0 when the cache invalidated
     local n=$1 nv=$2 s1 s2
     ft_focus "$n"; ft_textfield_activate "$n"
     FT_OUT=""; ft_draw_one "$n"; s1=${FT_SHEEN_FROZEN_SIGNATURE[$n]:-NONE}
-    ft-modify "$n" value="$nv"; FT_TEXTFIELD_CARET[$n]=${#nv}
+    ft_set "$n" value="$nv"; FT_TEXTFIELD_CARET[$n]=${#nv}
     ft_layout apps
     FT_OUT=""; ft_draw_one "$n"; s2=${FT_SHEEN_FROZEN_SIGNATURE[$n]:-NONE}
     [[ "$s1" != "$s2" ]]

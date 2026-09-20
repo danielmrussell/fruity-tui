@@ -3,7 +3,7 @@
 #  `checked` IS THE STATE — ON A CHECKBOX AND ON A RADIO.
 #
 #  CHECKBOX: _ft_multitoggle_setprop keeps `value` and `selectedIndex` in step and left `checked`
-#  wherever the app last wrote it. After `ft-modify cb value=false` the box DREW unchecked while
+#  wherever the app last wrote it. After `ft_set cb value=false` the box DREW unchecked while
 #  `ft_get cb checked` still answered true — the same "reported CHECKED and drew UNCHECKED at the
 #  same time" that reconciler was written to prevent, surviving in the one name it did not write.
 #
@@ -53,19 +53,19 @@ check "a filled one"      "$(_glyph r2 Two)"  "●"
 note "a checkbox: all three names agree, whichever one you write"
 check "as built"                      "$(_three cb)"  "false,false,0"
 check "checked= at construction"      "$(_three cb2)" "true,true,1"
-ft-modify cb checked=true
+ft_set cb checked=true
 check "after checked=true"            "$(_three cb)"  "true,true,1"
 check "…and it draws checked"         "$(_glyph cb Ready)"  "[x]"
-ft-modify cb value=false
+ft_set cb value=false
 check "after value=false"             "$(_three cb)"  "false,false,0"
 check "…and it draws unchecked"       "$(_glyph cb Ready)"  "[ ]"
-ft-modify cb selectedIndex=1
+ft_set cb selectedIndex=1
 check "after selectedIndex=1"         "$(_three cb)"  "true,true,1"
 check "…and it draws checked"         "$(_glyph cb Ready)"  "[x]"
 ft_checkbox_toggle cb
 check "after the toggle verb"         "$(_three cb)"  "false,false,0"
 check "…and it draws unchecked"       "$(_glyph cb Ready)"  "[ ]"
-ft-modify cb checked=nonsense
+ft_set cb checked=nonsense
 check "a non-boolean reads as false"  "$(_three cb)"  "false,false,0"
 
 note "a radio: checked= selects it, at construction and at runtime"
@@ -76,7 +76,7 @@ check "…even when checked came BEFORE group" "$(_p r3 checked)" "true"
 check "…and that one indexes under its group" "$(ft_radio_value h; printf %s "$FT_RET")" "r3"
 
 note "selecting one deselects the group — through either route, with both glyphs following"
-ft-modify r1 checked=true
+ft_set r1 checked=true
 check "the new one is on"   "$(_p r1 checked),$(_glyph r1 One)" "true,●"
 check "…and the old one off" "$(_p r2 checked),$(_glyph r2 Two)" "false,○"
 ft_radio_select r2
@@ -84,7 +84,7 @@ check "the verb agrees: r2 on" "$(_p r2 checked),$(_glyph r2 Two)" "true,●"
 check "…and r1 off"            "$(_p r1 checked),$(_glyph r1 One)" "false,○"
 
 note "checked=false leaves the group with NOTHING on — it does not pick a replacement"
-ft-modify r2 checked=false
+ft_set r2 checked=false
 check "r2 is off"                 "$(_p r2 checked),$(_glyph r2 Two)" "false,○"
 check "…and r1 was not promoted"  "$(_p r1 checked)" "false"
 check "…so the group has no value" "$(ft_radio_value g; printf '[%s]' "$FT_RET")" "[]"
@@ -92,16 +92,16 @@ ft_radio_select r1
 check "and selecting again fills it" "$(ft_radio_value g; printf %s "$FT_RET")" "r1"
 
 note "a radio that changes group takes its selection with it, releasing the old index"
-ft-modify r1 group=moved
+ft_set r1 group=moved
 check "the old group is empty"   "$(ft_radio_value g; printf '[%s]' "$FT_RET")" "[]"
 check "…and the new one has it"  "$(ft_radio_value moved; printf %s "$FT_RET")" "r1"
 check "…and it still draws on"   "$(_p r1 checked),$(_glyph r1 One)" "true,●"
-ft-modify r1 group=g checked=false
+ft_set r1 group=g checked=false
 
 note "checked is a real property, so the generic state save carries it"
 # It used to need a per-control-kind record in ft-state.bash for exactly this reason.
 ft_radio_select r2
-ft-modify cb checked=true
+ft_set cb checked=true
 case " ${FT_PROPS[r2]} " in *" checked "*) check "a radio registers checked" 1 1 ;;
                            *) check "a radio registers checked" 0 1 ;; esac
 case " ${FT_PROPS[cb]} " in *" checked "*) check "a checkbox registers checked" 1 1 ;;
@@ -115,7 +115,7 @@ grep -q "^prop r2 checked " "$_state_file" && check "the selection is saved as a
 
 note "…and a restore puts it back through the ordinary property route"
 ft_radio_select r1                       # move it somewhere else first
-ft-modify cb checked=false
+ft_set cb checked=false
 ft_state_load "$_state_file"
 check "the radio came back"   "$(_p r2 checked),$(_glyph r2 Two)" "true,●"
 check "…and its rival is off" "$(_p r1 checked),$(_glyph r1 One)" "false,○"
@@ -164,11 +164,11 @@ done
 check "…and a falsy spelling does not"          "$(_glyph tNo No)" "[ ]"
 # The runtime half, on a fresh unchecked box each time — same spellings, same answers.
 for _sp in yes on 1 true; do
-    ft-modify tNo checked=false
-    ft-modify tNo checked="$_sp"
-    check "ft-modify checked=$_sp checks it too"  "$(_glyph tNo No)" "[x]"
+    ft_set tNo checked=false
+    ft_set tNo checked="$_sp"
+    check "ft_set checked=$_sp checks it too"  "$(_glyph tNo No)" "[x]"
 done
-ft-modify tNo checked=off
+ft_set tNo checked=off
 check "…and off unchecks it"                     "$(_glyph tNo No)" "[ ]"
 
 note "an out-of-range index is clamped at the WRITE — the paint must never see one"
@@ -178,17 +178,17 @@ note "an out-of-range index is clamped at the WRITE — the paint must never see
 # app. stderr is asserted here because that is where the worst of it landed.
 _cberr=$(mktemp)
 for _v in 2 5 99; do
-    ft-modify bPlain selectedIndex=$_v
+    ft_set bPlain selectedIndex=$_v
     check "index $_v clamps to the last option"  "$(_three bPlain)" "true,true,1"
     check "…and paints it"                       "$(_glyph bPlain Pln)" "[x]"
 done
 for _v in -1 -3 -9; do
-    ft-modify bPlain selectedIndex=$_v
+    ft_set bPlain selectedIndex=$_v
     check "index $_v clamps to the first"        "$(_three bPlain)" "false,false,0"
     check "…and paints it"                       "$(_glyph bPlain Pln)" "[ ]"
 done
 # …and none of that may write a byte to stderr, on the write OR on the paint.
-( ft-modify bPlain selectedIndex=-9
+( ft_set bPlain selectedIndex=-9
   FT_OUT=""; ft_dirty bPlain; ft_draw_one bPlain >/dev/null ) 2>"$_cberr"
 check "nothing reached stderr" "$(grep -c . "$_cberr")" "0"
 rm -f "$_cberr"
@@ -198,12 +198,12 @@ rm -f "$_cberr"
 #
 #  The reconciler ACCEPTS `checked=` — it maps it to a selection — so it has claimed the name.
 #  It wrote the name back only on the checkbox derived prototype, so a plain multitoggle's went
-#  stale the moment the state moved any other way, and ft-modify's "skip a write equal to the stored
+#  stale the moment the state moved any other way, and ft_set's "skip a write equal to the stored
 #  value" then made `checked=true` a no-op:
 #
-#      ft-modify mt checked=true   paint [x]  value true   checked true
+#      ft_set mt checked=true   paint [x]  value true   checked true
 #      ft_multitoggle_cycle mt     paint [ ]  value false  checked TRUE   ← stale
-#      ft-modify mt checked=true   paint [ ]  …nothing at all             ← WEDGED
+#      ft_set mt checked=true   paint [ ]  …nothing at all             ← WEDGED
 #
 #  Only `false` then `true` recovered it. Maintained now, but only for a control that HAS the
 #  property: a three-state multitoggle nobody spells `checked` at must not grow a two-state one.
@@ -223,14 +223,14 @@ end_ft_form
 ft_layout app7
 check "a multitoggle nobody spelled checked at has none" \
       "$(ft_get mt checked; printf '%s' "${FT_RET:-<unset>}")" "<unset>"
-ft-modify mt checked=true
+ft_set mt checked=true
 check "writing it checks the box"        "$(_glyph mt Beep),$(ft_get mt checked; printf %s "$FT_RET")" "[x],true"
 ft_multitoggle_cycle mt
 check "…and the CYCLE keeps it current"  "$(_glyph mt Beep),$(ft_get mt checked; printf %s "$FT_RET")" "[ ],false"
-ft-modify mt checked=true
+ft_set mt checked=true
 check "…so it can be re-checked, not wedged" \
       "$(_glyph mt Beep),$(ft_get mt checked; printf %s "$FT_RET")" "[x],true"
-ft-modify mt selectedIndex=0
+ft_set mt selectedIndex=0
 check "…and an index write keeps it too"  "$(_glyph mt Beep),$(ft_get mt checked; printf %s "$FT_RET")" "[ ],false"
 
 note "…while a three-state multitoggle never grows a two-state property"

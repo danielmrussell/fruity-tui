@@ -80,11 +80,11 @@ _sweep() {                      # description buildfn
 }
 
 note "leaf controls stay inside their boxes"
-_b_label()      { ft-label      name=victim "$1" width=14; }
-_b_heading()    { ft-heading    name=victim "$1" width=14; }
-_b_button()     { ft-button     name=victim "$1" width=14; }
-_b_checkbox()   { ft-checkbox   name=victim "$1" width=14; }
-_b_radio()      { ft-radio      name=victim "$1" width=14 group=g; }
+_b_label()      { ft-label name=victim text="$1" width=14; }
+_b_heading()    { ft-heading name=victim text="$1" width=14; }
+_b_button()     { ft-button name=victim text="$1" width=14; }
+_b_checkbox()   { ft-checkbox name=victim text="$1" width=14; }
+_b_radio()      { ft-radio name=victim text="$1" width=14 group=g; }
 _b_boxheader()  { ft-boxheader  name=victim text="$1" width=14; }
 _b_slider()     { ft-slider     name=victim min=0 max=10 value=5 width=14 text="$1"; }
 _sweep "label"      _b_label
@@ -96,14 +96,14 @@ _sweep "boxheader"  _b_boxheader
 _sweep "slider"     _b_slider
 
 note "controls with an accessKey underlined in wide text"
-_b_akey() { ft-button name=victim "$1" width=14 accessKey=O; }
+_b_akey() { ft-button name=victim text="$1" width=14 accessKey=O; }
 _sweep "button+accessKey" _b_akey
 
 note "controls that hold a list"
 _b_select() {
     ft-select name=victim size=1 width=14
-        ft-option value=a "$1"
-        ft-option value=b "Second"
+        ft-option value=a text="$1"
+        ft-option value=b text="Second"
     end_ft_select
 }
 _b_multi() {
@@ -114,8 +114,8 @@ _b_multi() {
 }
 _b_tree() {
     ft-tree name=victim rows=3 width=14
-        ft-tree-node "$1"   id=a depth=0 expanded=true
-        ft-tree-node "Leaf" id=b depth=1
+        ft-tree-node text="$1" id=a depth=0 expanded=true
+        ft-tree-node text="Leaf" id=b depth=1
     end_ft_tree
 }
 _b_tabs() {
@@ -156,8 +156,8 @@ for align in left center right; do
         ft_remove sweepform 2>/dev/null
         ft-form name=sweepform width=60 height=14
             ft-table name=victim variant=grid
-                ft-table-header "Key" width=10 align=$align
-                ft-table-header "Col" width=12 align=$align
+                ft-table-header text="Key" width=10 align=$align
+                ft-table-header text="Col" width=12 align=$align
                 ft-table-row "${TEXTS[$i]}" "Second"
                 ft-table-row "abc"          "${TEXTS[$i]}"
             end_ft_table
@@ -278,7 +278,7 @@ note "NOTHING wrote to stderr through any of it"
 err=$( { for t in "${TEXTS[@]}"; do
              ft_remove sweepform 2>/dev/null
              ft-form name=sweepform width=30 height=14
-                 ft-label name=victim "$t" width=14
+                 ft-label name=victim text="$t" width=14
              end_ft_form
              ft_layout sweepform; FT_ROOT=sweepform; FT_OUT=""; ft_draw_one victim
          done; } 2>&1 >/dev/null )

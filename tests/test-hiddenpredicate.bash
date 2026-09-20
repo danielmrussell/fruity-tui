@@ -5,7 +5,7 @@
 #  There were two. `ft_state_is_hidden` — what `:hidden` and the painter use — resolves
 #  `visibility` through the cascade, so a child that explicitly re-shows itself under a hidden
 #  container is visible: visibility inherits, and the child's own value wins, which is CSS's
-#  rule and the codebase's own re-show idiom (`ft-modify X visibility=visible`).
+#  rule and the codebase's own re-show idiom (`ft_set X visibility=visible`).
 #  `_ft_hidden_anywhere` — what focus and accelerators use — walked ancestors reading the RAW
 #  property and called the control hidden if ANY ancestor said so.
 #
@@ -25,10 +25,10 @@ FT_COLS=60; FT_ROWS=16
 
 ft-form name=app width="$FT_COLS" height="$FT_ROWS"
     ft-div name=grp visibility=hidden
-        ft-button name=btnIn "Sneak" accessKey=Y visibility=visible
-        ft-button name=btnHid "Stay"
+        ft-button name=btnIn text="Sneak" accessKey=Y visibility=visible
+        ft-button name=btnHid text="Stay"
     end_ft_div
-    ft-button name=btnOut "Outside"
+    ft-button name=btnOut text="Outside"
 end_ft_form
 FT_ROOT=app; ft_layout app
 
@@ -55,7 +55,7 @@ check "…and focus skips it" \
 note "display:none still hides a subtree outright — it does not inherit, it is walked"
 ft-form name=app2 width="$FT_COLS" height="$FT_ROWS"
     ft-div name=gone display=none
-        ft-button name=deep "Deep" visibility=visible
+        ft-button name=deep text="Deep" visibility=visible
     end_ft_div
 end_ft_form
 FT_ROOT=app2; ft_layout app2

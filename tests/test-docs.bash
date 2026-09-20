@@ -28,14 +28,14 @@ exec {FT_TTY}>/dev/null
 # Instantiating one of each control runs every prototype constructor, so anything bound by
 # convention rather than defined outright exists by the time the checks run.
 ft-form name=docf width=40 height=20
-    ft-label name=dl "x";  ft-button name=db "x";  ft-checkbox name=dc "x"
-    ft-radio name=dr "x" group=g; ft-heading name=dh "x"; ft-boxheader name=dbh text=x
+    ft-label name=dl text="x";  ft-button name=db text="x";  ft-checkbox name=dc text="x"
+    ft-radio name=dr text="x" group=g; ft-heading name=dh text="x"; ft-boxheader name=dbh text=x
     ft-slider name=ds min=0 max=5 value=1
     ft-textfield name=dt size=6
-    ft-select name=dsel size=1; ft-option value=a A; end_ft_select
+    ft-select name=dsel size=1; ft-option value=a text=A; end_ft_select
     ft-multitoggle name=dm text=x; ft-option value=a glyph=A; end_ft_multitoggle
-    ft-tree name=dtr rows=2; ft-tree-node "n" id=k depth=0; end_ft_tree
-    ft-table name=dtb; ft-table-header "H"; ft-table-row "c"; end_ft_table
+    ft-tree name=dtr rows=2; ft-tree-node text="n" id=k depth=0; end_ft_tree
+    ft-table name=dtb; ft-table-header text="H"; ft-table-row "c"; end_ft_table
 end_ft_form
 
 # The leading comment block: everything from line 2 up to the first line that is not a
@@ -77,9 +77,9 @@ check "…and no longer offers style= as the table's look" \
 _ft_table_style dtb
 check "the code reads variant (not style) for the look" \
       "$(ft_resolved_prop dtb variant ''; echo "${FT_RET:-unset}")" "unset"
-ft-modify dtb variant=minimal; _ft_table_style dtb
+ft_set dtb variant=minimal; _ft_table_style dtb
 check "variant=minimal takes effect"  "$TBL_BOX/$TBL_VERT" "0/0"
-ft-modify dtb variant=grid;    _ft_table_style dtb
+ft_set dtb variant=grid;    _ft_table_style dtb
 check "variant=grid takes effect"     "$TBL_BOX/$TBL_VERT" "1/1"
 
 note "the worked example in the table's header actually runs"
@@ -92,8 +92,8 @@ errf="$XDG_STATE_HOME/doc-example.err"; mkdir -p "$XDG_STATE_HOME"
 {
     ft-form name=exf width=60 height=10
         ft-table name=keys variant=grid striped=true
-            ft-table-header "Key"    width=16
-            ft-table-header "Action" align=left
+            ft-table-header text="Key" width=16
+            ft-table-header text="Action" align=left
             ft-table-row "Ctrl+A / Home"  "Move to start of line"
             ft-table-row "Ctrl+E / End"   "Move to end of line"
             ft-table-row "Ctrl+W"         "Delete the word before the cursor"

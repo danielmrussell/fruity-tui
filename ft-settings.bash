@@ -33,11 +33,11 @@ _ft_settings_cc_note() {        # → FT_RET — derived from the SAME global th
         FT_RET="  Off — Ctrl+C always quits (Alt+W copies)"
     fi
 }
-__setcc_on_activate()   { ft_ctrl_c_copy_set 1; _ft_settings_cc_note; ft-modify __setccnote text="$FT_RET"; ft_dirty __setccnote; }
-__setcc_on_deactivate() { ft_ctrl_c_copy_set 0; _ft_settings_cc_note; ft-modify __setccnote text="$FT_RET"; ft_dirty __setccnote; }
+__setcc_on_activate()   { ft_ctrl_c_copy_set 1; _ft_settings_cc_note; ft_set __setccnote text="$FT_RET"; ft_dirty __setccnote; }
+__setcc_on_deactivate() { ft_ctrl_c_copy_set 0; _ft_settings_cc_note; ft_set __setccnote text="$FT_RET"; ft_dirty __setccnote; }
 __setclose_on_activate() { _FT_SETTINGS_CLOSE=1; }
-__setwt_on_activate()   { ft_wt_autofix_enter; _ft_settings_wt_note; ft-modify __setwtnote text="$FT_RET"; ft_dirty __setwtnote; }
-__setwt_on_deactivate() { ft_wt_autofix_exit;  _ft_settings_wt_note; ft-modify __setwtnote text="$FT_RET"; ft_dirty __setwtnote; }
+__setwt_on_activate()   { ft_wt_autofix_enter; _ft_settings_wt_note; ft_set __setwtnote text="$FT_RET"; ft_dirty __setwtnote; }
+__setwt_on_deactivate() { ft_wt_autofix_exit;  _ft_settings_wt_note; ft_set __setwtnote text="$FT_RET"; ft_dirty __setwtnote; }
 
 # _ft_settings_build — construct the __settings form (split out for testing).
 _ft_settings_build() {
@@ -59,38 +59,38 @@ _ft_settings_build() {
         ft-frame name=__setwin title=" Settings — Esc to close " borderStyle=double \
                  display=flex flexDirection=column gap=0 padding=1 width="$ww" height="$wh"
 
-            ft-label name=__sethk1 color=accent "Keyboard"
-            ft-label name=__setkbd color=muted "  $kbdsummary"
-            ft-label name=__setsp1 " "
+            ft-label name=__sethk1 color=accent text="Keyboard"
+            ft-label name=__setkbd color=muted text="  $kbdsummary"
+            ft-label name=__setsp1 text=" "
 
-            ft-label name=__sethk2 color=accent "Windows Terminal"
+            ft-label name=__sethk2 color=accent text="Windows Terminal"
             if (( wt )); then
                 ft-checkbox name=__setwt accessKey=F checked="$wtchecked" onActivate=__setwt_on_activate onDeactivate=__setwt_on_deactivate \
-                            "Take Ctrl+Shift+Home/End/Up/Down from scrollback"
+                            text="Take Ctrl+Shift+Home/End/Up/Down from scrollback"
             else
                 ft-checkbox name=__setwt disabled=true onActivate=__setwt_on_activate onDeactivate=__setwt_on_deactivate \
-                            "Take Ctrl+Shift nav keys from scrollback (Windows Terminal only)"
+                            text="Take Ctrl+Shift nav keys from scrollback (Windows Terminal only)"
             fi
-            ft-label name=__setwtnote color=muted "$wtnote"
-            ft-label name=__setsp2 " "
+            ft-label name=__setwtnote color=muted text="$wtnote"
+            ft-label name=__setsp2 text=" "
 
-            ft-label name=__sethk4 color=accent "Editing"
+            ft-label name=__sethk4 color=accent text="Editing"
             ft-checkbox name=__setcc accessKey=K checked="$ccchecked" \
                         onActivate=__setcc_on_activate onDeactivate=__setcc_on_deactivate \
-                        "Ctrl+C copies a selection instead of quitting"
-            ft-label name=__setccnote color=muted "$ccnote"
-            ft-label name=__setsp4 " "
+                        text="Ctrl+C copies a selection instead of quitting"
+            ft-label name=__setccnote color=muted text="$ccnote"
+            ft-label name=__setsp4 text=" "
 
-            ft-label name=__sethk3 color=accent "macOS"
+            ft-label name=__sethk3 color=accent text="macOS"
             if (( ismac )); then
-                ft-checkbox name=__setmeta "Option key sends Meta/Alt (enable in your terminal)"
+                ft-checkbox name=__setmeta text="Option key sends Meta/Alt (enable in your terminal)"
             else
-                ft-checkbox name=__setmeta disabled=true "Option-as-Meta — macOS only"
+                ft-checkbox name=__setmeta disabled=true text="Option-as-Meta — macOS only"
             fi
-            ft-label name=__setsp3 " "
+            ft-label name=__setsp3 text=" "
 
             ft-div name=__setbtns display=flex justifyContent=center width=$(( ww - 4 ))
-                ft-button name=__setclose accessKey=C Close onActivate=__setclose_on_activate
+                ft-button name=__setclose accessKey=C text=Close onActivate=__setclose_on_activate
             end_ft_div
         end_ft_frame
     end_ft_form

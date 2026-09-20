@@ -18,8 +18,8 @@ ease-in | ease-out | ease-in-out | cubic-bezier(x1,y1,x2,y2)`, plus `ease-out-ba
 **And that is the whole of the application's side of it.** There is no call to make:
 
 ```bash
-ft-modify notice display=block      # it transitions in
-ft-modify notice display=none       # it goes away, and the ground repairs itself
+ft_set notice display=block      # it transitions in
+ft_set notice display=none       # it goes away, and the ground repairs itself
 ```
 
 A stylesheet says a control transitions; changing `display` makes it happen. `transition` is a
@@ -69,7 +69,7 @@ that reaches into `_FT_TRANSITION_*` is a test that teaches the wrong thing. Not
 > private name, in the demo. That is not a rough edge: an imperative arm call is a deviation
 > from "copy CSS/CSSOM verbatim" that nobody chose, it just fell out of building the machinery
 > bottom-up. The failure mode was silent, too — forget the `||` and the control never appears.
-> The fix was to make the engine notice the `display` change (`ft-modify`) and arm after layout
+> The fix was to make the engine notice the `display` change (`ft_set`) and arm after layout
 > settles (`ft_redraw_dirty`), and to make hiding damage its own cells, which is something
 > `rendering-damage.md` always said `display: none` owed and is a bug with or without
 > transitions.
@@ -514,7 +514,7 @@ rule written out independently of the framework's copy of it.
 **One layout per notice, in the demo.** Showing three notices with an `ft_layout app` between each
 was **880 ms of the 1500 ms** a replay took — reflowing a fifteen-control page three times to learn
 the same three boxes. The framework's own rule is one layout per burst; the demo was breaking it.
-(Both `ft_layout` calls are now gone anyway: `ft-modify display=` requests a reflow and the run
+(Both `ft_layout` calls are now gone anyway: `ft_set display=` requests a reflow and the run
 loop's own `ft_reflow_flush` settles it once for the burst, which is what should have happened
 from the start.)
 
@@ -522,7 +522,7 @@ from the start.)
 `FT_PAINT_RECT` bookkeeping, an explicit `ft_damage`, an `|| ft_dirty` fallback and a read of
 `_FT_TRANSITION_ACTIVE` — was the honest output of writing the machinery first and the surface
 last. Every one of those lines was the application doing the engine's job. The whole thing is now
-`ft-modify n display=block`. The lesson is not "write the demo earlier", it is that **a demo that
+`ft_set n display=block`. The lesson is not "write the demo earlier", it is that **a demo that
 needs a private name is a bug report about the API**, and it was sitting there being read as
 documentation.
 

@@ -260,7 +260,7 @@ ft_next_event() {
     # page is correct without the callout, so the settle hands the frame over (see
     # FT_BEACON_PENDING) and the bill comes due here, with the new page already on the screen.
     #
-    # HERE RATHER THAN IN ft-run's LOOP, because ft-run's is one of FOUR: Help, Settings and the
+    # HERE RATHER THAN IN ft_run's LOOP, because ft_run's is one of FOUR: Help, Settings and the
     # file dialog each run their own, and a callout raised inside one of those would have owed a
     # search nobody ever paid. Every loop in the framework goes through this function. (Same
     # `declare -F` shape as the ft_anim_step call below — the input layer knows nothing about

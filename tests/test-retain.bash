@@ -24,7 +24,7 @@
 #    · a mutation matrix that changes nothing would pass every check inside it, so the matrix
 #      must be shown to have changed something;
 #    · a probe that can never report a hazard would also pass, so an invalidation is defeated
-#      on purpose — the entry is put back after a real ft-modify dropped it — and the hazard
+#      on purpose — the entry is put back after a real ft_set dropped it — and the hazard
 #      must appear, by name;
 #    · "the page is served" must be a real measurement: the derive count is taken at the
 #      engine's own painter lookup, so an engine that never serves anything fails here rather
@@ -143,17 +143,17 @@ row() {                         # description  command…
 # would change nothing, and a sweep that changes nothing passes every check inside it.
 PASS=0
 _retain_resize() { FT_COLS=$(( 100 - PASS )); _ft_setprop app width "$FT_COLS"; ft_layout app; }
-_retain_remove_attr() { ft-modify head color=blue; _paint; _paint; ft_remove_attribute head color; }
+_retain_remove_attr() { ft_set head color=blue; _paint; _paint; ft_unset head color; }
 # A callout is placed against a control it does not own, so moving its TARGET changes what it
 # paints while touching none of its own properties, geometry or prototype state. This is the row
 # that earns the overlay exclusion in ft_draw_one: with overlays served from their blocks it
 # reports `tip` as a hazard, and it is the only row here that does.
-_retain_move_target() { ft-modify head width=$(( 40 - PASS * 6 )); ft_reflow_flush; }
+_retain_move_target() { ft_set head width=$(( 40 - PASS * 6 )); ft_reflow_flush; }
 _matrix() {
     PASS=$(( PASS + 1 ))
     MATRIX_CHANGED=0
-    row "a label's text"           ft-modify body text="Rewritten body text, pass $PASS, longer than before."
-    row "a label's colour"         ft-modify head color="$( (( PASS % 2 )) && echo red || echo lime )"
+    row "a label's text"           ft_set body text="Rewritten body text, pass $PASS, longer than before."
+    row "a label's colour"         ft_set head color="$( (( PASS % 2 )) && echo red || echo lime )"
     row "a property removed"       _retain_remove_attr
     row "focus moves"              ft_focus go
     row "focus moves again"        ft_focus fld
@@ -165,9 +165,9 @@ _matrix() {
     row "a scroll"                 _ft_scroll_apply win "$(( PASS % 2 ))" ""
     row "a stylesheet registers"   ft_stylesheet name="__retainsheet$PASS" style='label { text-decoration: underline }'
     row "a runtime theme swap"     _ft_css_bump
-    row "a control is hidden"      ft-modify go display=none
-    row "…and shown again"         ft-modify go display=inline
-    row "the callout's text"       ft-modify tip text="a different callout string, pass $PASS"
+    row "a control is hidden"      ft_set go display=none
+    row "…and shown again"         ft_set go display=inline
+    row "the callout's text"       ft_set tip text="a different callout string, pass $PASS"
     row "the callout's target moves" _retain_move_target
     row "a resize"                 _retain_resize
     check "…and the pass was not a sweep over an empty list" "$(( MATRIX_CHANGED > 0 ))" "1"
@@ -287,7 +287,7 @@ note "the teeth: a token that forgot its inputs must show up as a hazard"
 # mechanisms — ft_dirty drops the entry, and the token carries what a write cannot be seen
 # through — so break both and require the survey to notice. `_ft_retain_token` reduced to the
 # control's own name is a token that forgot every input it has; ft_dirty without its drop is
-# the invalidation that did not fire. Then make a REAL change through ft-modify.
+# the invalidation that did not fire. Then make a REAL change through ft_set.
 #
 # Restoring both and repainting must clear it again, or the teeth are only proving that the
 # scene is unstable.
@@ -306,7 +306,7 @@ _ft_retain_token() { FT_RET="$1"; }
 _teeth_reflow=$(declare -f ft_reflow)
 ft_reflow() { :; }
 _paint
-ft-modify body text="the text the retained block has never heard of"
+ft_set body text="the text the retained block has never heard of"
 _survey
 check "a token that forgot its inputs is reported, by name" "$HAZARDS" " body"
 eval "$_teeth_dirty"; eval "$_teeth_token"; eval "$_teeth_reflow"
@@ -332,7 +332,7 @@ ft-form name=big width=100 height=30
 end_ft_form
 _docval=""
 for _i in $(seq 1 2000); do _docval+="line $_i of a document that is much taller than the screen"$'\n'; done
-ft-modify doc value="$_docval"
+ft_set doc value="$_docval"
 FT_ROOT=big; ft_layout big
 FT_OUT=""; _ft_redraw_walk big; FT_OUT=""
 check "the document is genuinely large"      "$(( ${#_docval} > 90000 ))" "1"

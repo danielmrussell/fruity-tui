@@ -300,11 +300,11 @@ finish
 
 note "an application changes display, and that is the whole API"
 # THE POINT OF THE FEATURE. No ft_transition_in, no ft_dirty, no ft_damage, no private name:
-# a stylesheet says the control transitions, and `ft-modify display=block` makes it happen.
+# a stylesheet says the control transitions, and `ft_set display=block` makes it happen.
 build contrast
-ft-modify "$POP" display=none          # start from hidden, the demo's own initial state
+ft_set "$POP" display=none          # start from hidden, the demo's own initial state
 FT_DIRTY=(); FT_DAMAGE=()
-ft-modify "$POP" display=block
+ft_set "$POP" display=block
 check "showing it does not arm before layout has settled" \
       "$(ft_transition_active "$POP" && echo armed || echo pending)" pending
 ft_reflow_flush
@@ -386,10 +386,10 @@ stream_vs_fresh() {             # label — the captured screen against a from-s
 }
 
 # ── the cut, on the real screen ──────────────────────────────────────────────
-ft-modify "$POP" display=none; ft_reflow_flush; ft_redraw_dirty     # settle hidden, uncaptured
+ft_set "$POP" display=none; ft_reflow_flush; ft_redraw_dirty     # settle hidden, uncaptured
 stream_begin
 FT_OUT=""; _ft_redraw_walk "$APP"; _ft_composite_overlays; ft_flush          # opening frame
-ft-modify "$POP" display=block
+ft_set "$POP" display=block
 ft_reflow_flush
 ft_redraw_dirty                                                     # arms; paints everything else
 ok "showing it armed a transition, with no app-side call" ft_transition_active "$POP"
@@ -423,14 +423,14 @@ while ft_transition_active "$POP" && (( spin < 60 )); do ft_anim_step; (( spin++
 no "the transition retired on its own" ft_transition_active "$POP"
 stream_vs_fresh "when it finishes, the streamed screen equals a fresh render"
 
-ft-modify "$POP" display=none; ft_reflow_flush; ft_redraw_dirty     # settle hidden, uncaptured
+ft_set "$POP" display=none; ft_reflow_flush; ft_redraw_dirty     # settle hidden, uncaptured
 stream_begin
 FT_OUT=""; _ft_redraw_walk "$APP"; _ft_composite_overlays; ft_flush
-ft-modify "$POP" display=block; ft_reflow_flush; ft_redraw_dirty
+ft_set "$POP" display=block; ft_reflow_flush; ft_redraw_dirty
 ok "it is up again" ft_transition_active "$POP"
 ft_anim_step; ft_anim_step; ft_anim_step        # a few blended frames really land on screen
 FT_DAMAGE=()
-ft-modify "$POP" display=none                   # …pulled away MID-FLIGHT
+ft_set "$POP" display=none                   # …pulled away MID-FLIGHT
 check "hiding cancels the transition, unasked" \
       "$(ft_transition_active "$POP" && echo still-running || echo stopped)" stopped
 check "…and damages the cells it owned" "$(( ${#FT_DAMAGE[@]} > 0 ))" 1

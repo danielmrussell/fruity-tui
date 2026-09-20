@@ -41,14 +41,14 @@ ft-form name=app width=80 height=30
     ft-label  name=header text="A header strip across the top of the screen" width=76
     ft-div    name=body display=flex gap=2
         ft-div name=sidebar display=flex flexDirection=column gap=1 width=18
-            ft-button name=sideA "Side A"
-            ft-button name=sideB "Side B"
-            ft-button name=sideC "Side C"
+            ft-button name=sideA text="Side A"
+            ft-button name=sideB text="Side B"
+            ft-button name=sideC text="Side C"
         end_ft_div
         ft-div name=middle display=flex flexDirection=column gap=3 width=40
-            ft-button name=tgtTop    "Target top"
-            ft-button name=tgtMiddle "Target middle"
-            ft-button name=tgtLow    "Target low"
+            ft-button name=tgtTop text="Target top"
+            ft-button name=tgtMiddle text="Target middle"
+            ft-button name=tgtLow text="Target low"
         end_ft_div
     end_ft_div
     ft-label name=footer text="A wide footer strip along the bottom edge" width=76

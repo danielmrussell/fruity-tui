@@ -22,7 +22,7 @@ ft-form name=app width=40 height=16
     ft-textfield name=ta size=$W rows=10 wrap=true showLineNumbers=true newlineIndicator=true
 end_ft_form
 ft_layout app
-FT_ROOT=app; FT_FOCUS=ta; ft-modify ta runlevel=editing
+FT_ROOT=app; FT_FOCUS=ta; ft_set ta runlevel=editing
 
 # The layout as one comparable string: every array the draw and the caret map read.
 snapshot() {                            # → SNAP
@@ -67,7 +67,7 @@ countok() {                             # desc
     _ft_textfield_len ta
     check "$1 — nchars == \${#value}" "$FT_RET" "$want"
 }
-seed() { ft-modify ta value="$1"; FT_TEXTFIELD_CARET[ta]=${2:-0}; _ft_textfield_textw ta; _ft_textfield_layout ta "$FT_RET"; }
+seed() { ft_set ta value="$1"; FT_TEXTFIELD_CARET[ta]=${2:-0}; _ft_textfield_textw ta; _ft_textfield_layout ta "$FT_RET"; }
 
 SEED=$'the quick brown fox jumps over the lazy dog\nsecond line\n\nfourth line is also quite long indeed\nlast'
 
@@ -130,11 +130,11 @@ storeok "after undo/redo"; countok "after undo/redo"
 
 note "maxLength clipping (the caller's edit no longer describes what landed)"
 seed "short" 5
-ft-modify ta maxLength=6
+ft_set ta maxLength=6
 ft_textfield_insert_char ta 1; agrees "the character that fits"
 ft_textfield_insert_char ta 2; agrees "the character maxLength threw away"
 storeok "after clipping"; countok "after clipping"
-ft-modify ta maxLength=0
+ft_set ta maxLength=0
 
 note "an empty field, and a value that is nothing but newlines"
 seed "" 0
@@ -146,11 +146,11 @@ ft_textfield_delete ta; agrees "deleting one of them"
 storeok "after newline-only edits"; countok "after newline-only edits"
 
 note "wrap=false (each logical line is one visual row, however long)"
-ft-modify ta wrap=false
+ft_set ta wrap=false
 seed "$SEED" 4
 ft_textfield_insert_char ta X; agrees "typing with wrapping off"
 ft_textfield_insert_char ta $'\n'; agrees "a newline with wrapping off"
-ft-modify ta wrap=true
+ft_set ta wrap=true
 
 note "a width change forces the rebuild rather than a patch"
 seed "$SEED" 6
@@ -178,11 +178,11 @@ check "the value is deferred while typing" "${_FT_TEXT_STALE[ta]:-none}" "value"
 ft_insert_data ta 0 "abc"               # CharacterData works on `text` — a DIFFERENT property
 ft_get ta value; check "the typed value survived the repoint" "$FT_RET" "hello!"
 ft_get ta text;  check "…and text got what was inserted"      "$FT_RET" "abc"
-ft_remove_attribute ta text
+ft_unset ta text
 
 seed "hello" 5
 ft_textfield_insert_char ta '?'
-ft-modify ta value="replaced"           # a direct write must beat the owed join
+ft_set ta value="replaced"           # a direct write must beat the owed join
 ft_get ta value; check "a direct write supersedes the deferred join" "$FT_RET" "replaced"
 agrees "and the layout follows the direct write"
 
@@ -203,7 +203,7 @@ ok "most edits re-wrapped only their own lines" test "$PATCHES" -ge 18
 # wrong rather than merely slower:
 #   • undo/redo restore a value without describing an edit
 #   • a maxLength clip means what landed is not what the caller said it was
-#   • ft-modify (maxLength=, wrap=) moves the generation on its own
+#   • ft_set (maxLength=, wrap=) moves the generation on its own
 #   • a width change invalidates the wrap outright
 #   • a second field owns the single cached layout
 #   • SEVERAL edits between two layouts: only the last one is published, so the earlier ones

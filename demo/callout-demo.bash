@@ -464,7 +464,7 @@ _p3_reconcile() {
     if [[ "$achieved" == "$requested" ]]; then wanted=${PA_TEXT[$i]}
     else _p3_overrule "$requested" "$achieved"; wanted=$FT_RET; fi
     ft_resolved_prop stepcallout text ""; current=$FT_RET
-    [[ "$current" == "$wanted" ]] || ft-modify stepcallout text="$wanted"
+    [[ "$current" == "$wanted" ]] || ft_set stepcallout text="$wanted"
     return 0
 }
 # ── Page 6's SPECIMENS — the marks the page is about, raised one lesson at a time ────────────
@@ -559,7 +559,7 @@ _place_arrow() {
 # ── Titled read-only code panes (Enter-to-edit: focus to scroll, never traps keys) ──
 _code_panel() {                 # name title text
     ft-div name="${1}Pane" display=flex flexDirection=column gap=0 alignItems=start
-        ft-label     name="${1}Title" color=accent "$2"
+        ft-label name="${1}Title" color=accent text="$2"
         ft-textfield name="$1" value="$3" readOnly=true wrap=false size="$PANE_W" rows="$PANE_ROWS"
     end_ft_div
 }
@@ -576,8 +576,8 @@ _page_content() {
         NOTE='# the stage is ordinary controls — not one
 # of them knows a callout exists:
 ft-textfield name=share     size=20
-ft-button    name=btnMount  "Mount"
-ft-checkbox  name=chkRO     "Read-only"
+ft-button name=btnMount text="Mount"
+ft-checkbox name=chkRO text="Read-only"
 # …the callout is declared afterwards.' ;;
     2)  title="2 · anchor — the nine points of a control"
         # ONE line, not four. On this page a row of prose is a row the band above the target does
@@ -695,9 +695,9 @@ _refresh_code_panes() {
     # `call` is a scrollable textfield in three of the four pane modes and a plain label in the
     # fourth, and the two carry their content under different property names. Ask the control
     # what it is rather than keeping a parallel flag that a future mode could forget to set.
-    if [[ "${FT_TYPE[call]}" == label ]]; then ft-modify call text="$CALL_ONELINE"
-    else                                       ft-modify call value="$CALL"; fi
-    [[ -n "${FT_TYPE[note]:-}" ]] && ft-modify note value="$NOTE"
+    if [[ "${FT_TYPE[call]}" == label ]]; then ft_set call text="$CALL_ONELINE"
+    else                                       ft_set call value="$CALL"; fi
+    [[ -n "${FT_TYPE[note]:-}" ]] && ft_set note value="$NOTE"
     return 0
 }
 # Chrome the demo owns, registered ONCE: the dashed ghost reads as a hint, not a border, so it
@@ -714,9 +714,9 @@ _goto_step() {
     # are all outside its own layout box. The app used to capture FT_BEACON_EXTENT here and
     # hand it to ft_damage; it no longer knows or needs to.
     ft_remove stepcallout 2>/dev/null
-    ft-modify stepcount text=" Step $STEP of $nsteps "
-    (( STEP == 1 ))      && ft-modify btnStepPrev disabled=true || ft-modify btnStepPrev disabled=false
-    (( STEP == nsteps )) && ft-modify btnStepNext disabled=true || ft-modify btnStepNext disabled=false
+    ft_set stepcount text=" Step $STEP of $nsteps "
+    (( STEP == 1 ))      && ft_set btnStepPrev disabled=true || ft_set btnStepPrev disabled=false
+    (( STEP == nsteps )) && ft_set btnStepNext disabled=true || ft_set btnStepNext disabled=false
     _refresh_code_panes
     # …and the SPECIMEN marks on page 6 change with the step exactly as the callout does, so they
     # are torn down and rebuilt here too. Leaving this out of the cheap step path was the reason
@@ -734,8 +734,8 @@ _goto_step() {
 }
 
 # ═══ Stage control hooks — small, real, and only where a page needs one ═══════
-selProto_on_change()   { ft-modify lblStat text="protocol: $1"; return 0; }
-sldWorkers_on_change() { ft-modify lblStat text="$1 workers"; return 0; }
+selProto_on_change()   { ft_set lblStat text="protocol: $1"; return 0; }
+sldWorkers_on_change() { ft_set lblStat text="$1 workers"; return 0; }
 
 # ═══ The demonstration stage ══════════════════════════════════════════════════
 # Emitted INSIDE the `lower` frame by whichever of the two layouts is in force, so the controls
@@ -744,10 +744,10 @@ _stage_controls() {
             case "$PAGE" in
             1)  ft-div name=row1 display=flex gap=4 alignItems=center
                     ft-textfield name=share value="\\\\mago\\public" size=20 rows=1
-                    ft-button    name=btnMount "Mount" accessKey=M
-                    ft-checkbox  name=chkRO    "Read-only" accessKey=O
+                    ft-button name=btnMount text="Mount" accessKey=M
+                    ft-checkbox name=chkRO text="Read-only" accessKey=O
                 end_ft_div
-                ft-label name=note1 color=muted "…and none of them knows a callout exists" ;;
+                ft-label name=note1 color=muted text="…and none of them knows a callout exists" ;;
             # ONE control on the stage, and nothing else: this page is about where the ARROW
             # lands, so every free row above and below the target belongs to the chip. (A live
             # "anchor = …" readout used to sit under it and was cut — the callout's own sentence
@@ -782,48 +782,48 @@ _stage_controls() {
             # then be demonstrating the opposite of what it says. Clear air on all four sides is
             # what makes the lesson true at every size.
             3)  ft-div name=hubrow display=flex gap=3 alignItems=center
-                    ft-label  name=hubL color=muted "before"
-                    ft-button name=hub  "Apply" accessKey=A
-                    ft-label  name=hubR color=muted "after"
+                    ft-label name=hubL color=muted text="before"
+                    ft-button name=hub text="Apply" accessKey=A
+                    ft-label name=hubR color=muted text="after"
                 end_ft_div
                 # No accessKey on these four: they are here to CROWD, not to be pressed, and a
                 # digit accelerator cannot be underlined, so the control appends "(1)" to its own
                 # label — four pieces of noise in the row the page is about.
                 ft-div name=crowd display=flex gap=1 alignItems=center alignSelf=start
-                    ft-checkbox name=crowdA "one"
-                    ft-checkbox name=crowdB "two"
-                    ft-checkbox name=crowdC "three"
-                    ft-checkbox name=crowdD "four"
+                    ft-checkbox name=crowdA text="one"
+                    ft-checkbox name=crowdB text="two"
+                    ft-checkbox name=crowdC text="three"
+                    ft-checkbox name=crowdD text="four"
                 end_ft_div ;;
             4)  ft-div name=gridA display=flex gap=3 alignItems=center
                     ft-textfield name=tfHost value="mago.local" size=12 rows=1
-                    ft-button    name=btnScan "Scan" accessKey=S
-                    ft-checkbox  name=chkDeep "Deep" accessKey=D
+                    ft-button name=btnScan text="Scan" accessKey=S
+                    ft-checkbox name=chkDeep text="Deep" accessKey=D
                 end_ft_div
                 ft-div name=gridB display=flex gap=3 alignItems=center
                     ft-select name=selProto size=1 onChange=selProto_on_change
-                        ft-option value=smb3 "SMB3"
-                        ft-option value=smb2 "SMB2"
-                        ft-option value=nfs  "NFS"
+                        ft-option value=smb3 text="SMB3"
+                        ft-option value=smb2 text="SMB2"
+                        ft-option value=nfs text="NFS"
                     end_ft_select
                     ft-slider name=sldWorkers min=1 max=8 value=4 step=1 width=12 \
                               variant=fill showValue=true onChange=sldWorkers_on_change
-                    ft-label  name=lblStat color=notice "4 workers"
+                    ft-label name=lblStat color=notice text="4 workers"
                 end_ft_div
                 ft-table name=tblShares variant=lines striped=true
-                    ft-table-header "Share"  width=10
-                    ft-table-header "Path"   width=14
+                    ft-table-header text="Share" width=10
+                    ft-table-header text="Path" width=14
                     ft-table-row    "public" "/srv/public"
                     ft-table-row    "backup" "/srv/backup"
                 end_ft_table ;;
             5)  ft-div name=chromeRow display=flex gap=3 alignItems=center
-                    ft-button name=badgeT "Badge"   accessKey=G
-                    ft-button name=wrapT  "Width"   accessKey=I
-                    ft-button name=padT   "Padding" accessKey=P
+                    ft-button name=badgeT text="Badge" accessKey=G
+                    ft-button name=wrapT text="Width" accessKey=I
+                    ft-button name=padT text="Padding" accessKey=P
                 end_ft_div
                 ft-div name=chromeRow2 display=flex gap=3 alignItems=center
-                    ft-button name=nextT   "Next ▶" accessKey=X
-                    ft-button name=outsetT "Outset" accessKey=U
+                    ft-button name=nextT text="Next ▶" accessKey=X
+                    ft-button name=outsetT text="Outset" accessKey=U
                 end_ft_div ;;
             # TWO IDENTICAL BOXES, SIDE BY SIDE, AND NOTHING ELSE. Five buttons in two rows used
             # to sit here, each wearing (or not wearing) one of three permanent marks, and the
@@ -835,8 +835,8 @@ _stage_controls() {
             # The gap is wide because a beacon rules ONE CELL OUTSIDE its target and the two
             # rules must not touch — adjacent halos read as one box with a line down the middle.
             6)  ft-div name=varRow display=flex gap=8 alignItems=center
-                    ft-button name=specA "Box A"
-                    ft-button name=specB "Box B"
+                    ft-button name=specA text="Box A"
+                    ft-button name=specB text="Box B"
                 end_ft_div ;;
             # ONE control, small, and centred — page 2's shape and page 2's reason. The
             # arrow is thirty columns long, so what this page has to leave is a thirty-column
@@ -853,19 +853,19 @@ _stage_controls() {
             # columns in one lane, and the page shows the medium and large rungs instead of a
             # blank stage. Above 72 columns the centred specimen already leaves enough for the
             # biggest rung and is the better-looking arrangement, so it is left alone.
-            8)  if (( FT_COLS >= 72 )); then ft-button name=arrowBox "Look at this"
-                else                         ft-button name=arrowBox alignSelf=end "Look at this"
+            8)  if (( FT_COLS >= 72 )); then ft-button name=arrowBox text="Look at this"
+                else                         ft-button name=arrowBox alignSelf=end text="Look at this"
                 fi ;;
             7)  ft-div name=denseRow display=flex gap=2 alignItems=center
-                    ft-button name=regionsBtn "Free space" accessKey=F
-                    ft-button name=targetBtn  "The target" accessKey=T
-                    ft-button name=crossBtn   "The line"   accessKey=L
+                    ft-button name=regionsBtn text="Free space" accessKey=F
+                    ft-button name=targetBtn text="The target" accessKey=T
+                    ft-button name=crossBtn text="The line" accessKey=L
                 end_ft_div
                 ft-textfield name=chromeBox size=32 rows=1 readOnly=true \
                              value="…and it keeps off the chrome"
                 ft-div name=denseRow2 display=flex gap=2 alignItems=center
-                    ft-checkbox name=dragChk  "Drag me aside" accessKey=G
-                    ft-checkbox name=boundChk "boundBox"      accessKey=U
+                    ft-checkbox name=dragChk text="Drag me aside" accessKey=G
+                    ft-checkbox name=boundChk text="boundBox" accessKey=U
                 end_ft_div ;;
             esac
 }
@@ -910,7 +910,7 @@ _pane_pair() {                  # the code pane(s) for the current PANE_MODE
     one)  ft-div name=panes display=flex gap=3 alignItems=start justifyContent=center
               _code_panel call "The call" "$CALL"
           end_ft_div ;;
-    line) ft-label name=call color=accent width="$CONCEPT_W" "$CALL_ONELINE" ;;
+    line) ft-label name=call color=accent width="$CONCEPT_W" text="$CALL_ONELINE" ;;
     *)    ft-div name=panes display=flex gap=3 alignItems=start justifyContent=center
               _code_panel call "The call"      "$CALL"
               _code_panel note "What it means" "$NOTE"
@@ -929,14 +929,14 @@ _show_page() {
     local title CONCEPT CALL NOTE CALL_ONELINE
     _page_content
 
-    ft-empty stage
+    ft_empty stage
         # No explicit height: `stage` STRETCHES its child, so `win` is exactly as tall as the
         # screen minus the docked chrome, and the demonstration frame inside it (flexGrow=1)
         # soaks up every row the prose, the panes and the nav did not use.
         ft-frame name=win title="Fruity callouts — $title  ($PAGE/$LAST)" \
                  display=flex flexDirection=column gap="$WIN_GAP" padding=1 alignItems=center \
                  borderStyle=double
-            ft-label name=concept width="$CONCEPT_W" color=subtext "$CONCEPT"
+            ft-label name=concept width="$CONCEPT_W" color=subtext text="$CONCEPT"
 
             if [[ "$PANE_MODE" == side ]]; then
                 # WIDE: stage on the left with the whole column height, panes down the right.
@@ -953,15 +953,15 @@ _show_page() {
 
             # ── STEP through THIS page's lesson (◀ ▶); the bottom buttons move PAGES ──
             ft-div name=stepnav display=flex gap=2 alignItems=center justifyContent=center
-                ft-button name=btnStepPrev "◀" onActivate=btnStepPrev_on_activate
-                ft-label  name=stepcount color=accent " Step $STEP of $nsteps "
-                ft-button name=btnStepNext "▶" onActivate=btnStepNext_on_activate
+                ft-button name=btnStepPrev text="◀" onActivate=btnStepPrev_on_activate
+                ft-label name=stepcount color=accent text=" Step $STEP of $nsteps "
+                ft-button name=btnStepNext text="▶" onActivate=btnStepNext_on_activate
             end_ft_div
 
             ft-div name=btnrow display=flex gap=2 justifyContent=center
-                ft-button name=btnBack "Back" accessKey=B onActivate=btnBack_on_activate
-                ft-button name=btnOk   "$oktext" accessKey=K onActivate=btnOk_on_activate
-                ft-button name=btnQuit "Quit" accessKey=Q onActivate=btnQuit_on_activate
+                ft-button name=btnBack text="Back" accessKey=B onActivate=btnBack_on_activate
+                ft-button name=btnOk text="$oktext" accessKey=K onActivate=btnOk_on_activate
+                ft-button name=btnQuit text="Quit" accessKey=Q onActivate=btnQuit_on_activate
             end_ft_div
 
             _place_variants   # page 6's halo / ghost / badge specimens
@@ -970,15 +970,15 @@ _show_page() {
         end_ft_frame
     end_ft_div
 
-    (( PAGE == 1 ))      && ft-modify btnBack     disabled=true
-    (( STEP == 1 ))      && ft-modify btnStepPrev disabled=true
-    (( STEP == nsteps )) && ft-modify btnStepNext disabled=true
-    ft-modify navbar status="Page $PAGE of $LAST — $title    ·    ◀ ▶ step · Okay / Back = page · Q quit"
+    (( PAGE == 1 ))      && ft_set btnBack     disabled=true
+    (( STEP == 1 ))      && ft_set btnStepPrev disabled=true
+    (( STEP == nsteps )) && ft_set btnStepNext disabled=true
+    ft_set navbar status="Page $PAGE of $LAST — $title    ·    ◀ ▶ step · Okay / Back = page · Q quit"
     # App-level legend caps, registered LAST so the buttons' accessKey= rebinds cannot clobber
     # our LABELLED versions (same keymap → last registration wins). Backward before forward: the
     # legend sorts stably by importance, so declaring Next first would print it to the LEFT of
     # Prev and read backwards against the very buttons it describes.
-    ft-modify app \
+    ft_set app \
         key='<' keyCap="Prev step" keyImp=important onKey=btnStepPrev_on_activate \
         key='>' keyCap="Next step" keyImp=important onKey=btnStepNext_on_activate \
         key='[Bb]' keyCap="Back ← page" keyImp=normal onKey=btnBack_on_activate \
@@ -1010,7 +1010,7 @@ _cycle_effect() {
         blink) CALLOUT_EFFECT=bob ;;
         *)     CALLOUT_EFFECT=none ;;
     esac
-    ft-modify stepcallout effect="$CALLOUT_EFFECT"   # re-arms the effect; the prototype is told
+    ft_set stepcallout effect="$CALLOUT_EFFECT"   # re-arms the effect; the prototype is told
     _refresh_code_panes
     return 0
 }
@@ -1021,7 +1021,7 @@ _reset_drag() {
     return 0
 }
 
-_resize() { ft-modify app width="$FT_COLS" height="$FT_ROWS"; _show_page; }
+_resize() { ft_set app width="$FT_COLS" height="$FT_ROWS"; _show_page; }
 
 # ── App scaffold ──────────────────────────────────────────────────────────────
 ft-form name=app width="$FT_COLS" height="$FT_ROWS" \
@@ -1036,4 +1036,4 @@ ft-form name=app width="$FT_COLS" height="$FT_ROWS" \
     ft-statusbar name=navbar     flexShrink=0 status="Loading…"
 end_ft_form
 
-ft-run app _show_page _resize '' _show_page
+ft_run app _show_page _resize '' _show_page

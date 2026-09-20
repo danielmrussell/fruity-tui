@@ -85,7 +85,7 @@ note "a dragged park's leader routes with the halo in its list"
 # FT_BEACON_DRAG[c]="12 30" directly, and when that array was replaced by parkedTop/parkedLeft the
 # write went nowhere: the chip was never parked, so no dragged leader was routed, and the gate's
 # own anti-vacuity guard below caught it — which is the guard doing exactly its job.
-ft-modify c parkedTop=12 parkedLeft=30
+ft_set c parkedTop=12 parkedLeft=30
 LEADER_SAW=""; FT_OUT=""; _ft_draw_beacon c >/dev/null 2>&1
 check "the dragged leader saw the halo"     "${LEADER_SAW//1/}" ""
 check "…and it did route one"                "$([[ -n "$LEADER_SAW" ]] && echo yes || echo no)" yes

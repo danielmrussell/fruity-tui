@@ -43,14 +43,14 @@ cost 23 ms — **and were wrong**, because the bare `textfield` rule styles the 
 too, and the hand list left them painted in the stale colour. Engine-side matching costs
 63 ms and repaints everything the sheet actually reaches; the full repaint it replaces was
 294 ms. A one-rule `:root` sheet queues a ~280 ms root repaint, which is why a hot path
-should set a custom property on an element (`ft-modify n --x=v`) rather than re-registering
+should set a custom property on an element (`ft_set n --x=v`) rather than re-registering
 a `:root` sheet.
 
 ## 2. The cascade
 
 Highest precedence first:
 
-1. **inline** — a property set at the call site (`color=azure`) or via `ft-modify`.
+1. **inline** — a property set at the call site (`color=azure`) or via `ft_set`.
 2. **app stylesheets** — by CSS **specificity**, then source order.
 3. **inheritance** — inherited properties (`color`, `visibility`, `cursor`, `text-align`,
    `font-weight`, `font-style`, and all `--custom` properties) take the parent's value —
@@ -259,7 +259,7 @@ CSS's model has to be bent. Every bend is here with its reason.
    edge cell draws a **one-eighth** hairline rather than a whole cell, because it can.
 4. **`border-width: 0`, `border-style: none` and `border-color: transparent` all work, from
    anywhere.** This entry used to record the opposite — that the first two were reachable only
-   from a constructor argument or `ft-modify`, because `ft_control` prototype-defaults
+   from a constructor argument or `ft_set`, because `ft_control` prototype-defaults
    `borderWidth=thin` and `borderStyle=solid` and a prototype default outranked every stylesheet.
    That was true, it was measured (`#id { border-width: 0 }` registered, `ft_style id
    borderWidth` still `thin`), and it was a symptom of the inverted ladder in §2 rather than

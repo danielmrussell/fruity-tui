@@ -9,8 +9,8 @@
 #  showing where the content used to be. The state was right and the screen was a lie. Measured,
 #  with writing the BAR's own offset as the control proving the probe could see dirtiness at all:
 #
-#      ft-modify bar scrollTop=3     dirty=[doc bar]     ← the coupling, wired
-#      ft-modify doc scrollTop=8     dirty=[doc]         ← the same coupling, not wired
+#      ft_set bar scrollTop=3     dirty=[doc bar]     ← the coupling, wired
+#      ft_set doc scrollTop=8     dirty=[doc]         ← the same coupling, not wired
 #      ft_label_scroll_set doc 5     dirty=[doc]
 #      the target's content shrinks  dirty=[doc]
 #
@@ -88,18 +88,18 @@ _pd_settle() { FT_OUT=""; _ft_redraw_walk pdapp >/dev/null 2>&1; FT_OUT=""
                FT_OUT=""; _ft_redraw_walk pdapp >/dev/null 2>&1; FT_OUT=""; FT_DIRTY=(); }
 # The control first: writing the BAR's own offset must dirty the bar, or nothing below means
 # anything — a probe that cannot see dirtiness reports every route as broken.
-_pd_settle; ft-modify pdBar scrollTop=3
+_pd_settle; ft_set pdBar scrollTop=3
 check "writing the bar's own offset dirties it"  "$(_pd_has pdBar)" "yes"
-_pd_settle; ft-modify pdDoc scrollTop=8
+_pd_settle; ft_set pdDoc scrollTop=8
 check "the app writes the target's offset"       "$(_pd_has pdBar)" "yes"
 _pd_settle; ft_label_scroll_set pdDoc 5
 check "the target scrolls by its own verb"       "$(_pd_has pdBar)" "yes"
-_pd_settle; ft-modify pdDoc text="one line only"
+_pd_settle; ft_set pdDoc text="one line only"
 check "the target's content changes under it"    "$(_pd_has pdBar)" "yes"
 # …and the registration follows `for=`, on every route, exactly as the registry does.
-ft-modify pdBar for=""
+ft_set pdBar for=""
 _pd_settle                       # …AFTER the retarget, which legitimately dirties the bar itself
-ft-modify pdDoc scrollTop=2
+ft_set pdDoc scrollTop=2
 check "a released bar stops being repainted"     "$(_pd_has pdBar)" "no"
 
 note "there is exactly ONE place that marks a control dirty"

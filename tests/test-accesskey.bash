@@ -21,8 +21,8 @@ FT_COLS=80; FT_ROWS=24
 
 note "an accelerator nothing overrides is fine"
 ft-form name=f1 width=60 height=8
-    ft-button name=b1 "Save" accessKey=S
-    ft-button name=b2 "Load" accessKey=L
+    ft-button name=b1 text="Save" accessKey=S
+    ft-button name=b2 text="Load" accessKey=L
 end_ft_form
 ft_layout f1; FT_ROOT=f1
 ok "two distinct letters, both reachable" ft_accesskey_conflicts
@@ -31,8 +31,8 @@ note "SHARING a letter is a feature, not a conflict"
 # "Hide" and "Unhide" may both own H — the key activates whichever is enabled and visible.
 ft_remove f1
 ft-form name=f2 width=60 height=8
-    ft-button name=hide   "Hide"   accessKey=H
-    ft-button name=unhide "Unhide" accessKey=H
+    ft-button name=hide text="Hide" accessKey=H
+    ft-button name=unhide text="Unhide" accessKey=H
 end_ft_form
 ft_layout f2; FT_ROOT=f2
 ok "two controls sharing H is not reported" ft_accesskey_conflicts
@@ -50,7 +50,7 @@ note "an app relabelling its OWN button's key is not a conflict"
 # labelled cap that does the same thing. Flagging that would make the check noise.
 ft_remove f2
 ft-form name=f3 width=60 height=8
-    ft-button name=quit "Quit" accessKey=Q onActivate=ft_quit
+    ft-button name=quit text="Quit" accessKey=Q onActivate=ft_quit
 end_ft_form
 ft_layout f3; FT_ROOT=f3
 ft_keymap_set "${FT_KEYMAP[f3]}" \
@@ -62,13 +62,13 @@ note "the real app it was found in stays clean"
 ft_remove f3
 export FT_NO_WTFIX=1
 noloop="$here/demo/.akey-css-demo.bash"
-sed '/^ft-run app/d' "$here/demo/css-demo.bash" > "$noloop"
+sed '/^ft_run app/d' "$here/demo/css-demo.bash" > "$noloop"
 trap 'rm -f "$noloop"' EXIT
 source "$noloop" >/dev/null 2>&1
 FT_COLS=118; FT_ROWS=40
 for page in 1 2 3 4; do
     PAGE=$page; _show_page >/dev/null 2>&1
-    settle >/dev/null 2>&1   # ft-run settles the burst; a gate must too
+    settle >/dev/null 2>&1   # ft_run settles the burst; a gate must too
     if ft_accesskey_conflicts; then
         check "css-demo page $page: every underlined letter works" 1 1
     else

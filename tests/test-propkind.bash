@@ -181,29 +181,29 @@ note "the consequence, which is the only thing that really matters"
 # NOT moving before the four names were reclassified.
 ft-form name=pkapp width=90 height=24 display=flex flexDirection=column alignItems=start
     ft-textfield name=pkTf size=10
-    ft-button    name=pkBt "Save"
+    ft-button name=pkBt text="Save"
     ft-select    name=pkSe size=2
-        ft-option value=a "A"
-        ft-option value=b "B"
-        ft-option value=c "C"
-        ft-option value=d "D"
+        ft-option value=a text="A"
+        ft-option value=b text="B"
+        ft-option value=c text="C"
+        ft-option value=d text="D"
     end_ft_select
     ft-label     name=pkLb text="short"
 end_ft_form
 ft_layout pkapp; FT_ROOT=pkapp
 
-_w=${FT_MEASURED_WIDTH[pkTf]};  ft-modify pkTf size=40;     ft_reflow_flush
+_w=${FT_MEASURED_WIDTH[pkTf]};  ft_set pkTf size=40;     ft_reflow_flush
 check "a textfield re-measures when its size changes"   "$(( ${FT_MEASURED_WIDTH[pkTf]} > _w ))" "1"
-_h=${FT_MEASURED_HEIGHT[pkSe]}; ft-modify pkSe size=4;      ft_reflow_flush
+_h=${FT_MEASURED_HEIGHT[pkSe]}; ft_set pkSe size=4;      ft_reflow_flush
 check "a select re-measures when its size changes"      "$(( ${FT_MEASURED_HEIGHT[pkSe]} > _h ))" "1"
-_w=${FT_MEASURED_WIDTH[pkBt]};  ft-modify pkBt accessKey=Z; ft_reflow_flush
+_w=${FT_MEASURED_WIDTH[pkBt]};  ft_set pkBt accessKey=Z; ft_reflow_flush
 check "a button widens to hold its own accelerator"     "$(( ${FT_MEASURED_WIDTH[pkBt]} > _w ))" "1"
-_w=${FT_MEASURED_WIDTH[pkLb]};  ft-modify pkLb text="a considerably longer string than before"
+_w=${FT_MEASURED_WIDTH[pkLb]};  ft_set pkLb text="a considerably longer string than before"
 ft_reflow_flush
 check "a label still grows with its text"               "$(( ${FT_MEASURED_WIDTH[pkLb]} > _w ))" "1"
 # …and it still does after a beacon exists, which is the whole reason this file was written.
 ft-beacon name=pkBc target=pkLb parent=pkapp 2>/dev/null
-_w=${FT_MEASURED_WIDTH[pkLb]};  ft-modify pkLb text="longer again, now that a callout has been built"
+_w=${FT_MEASURED_WIDTH[pkLb]};  ft_set pkLb text="longer again, now that a callout has been built"
 ft_reflow_flush
 check "…including after a callout has been built"       "$(( ${FT_MEASURED_WIDTH[pkLb]} > _w ))" "1"
 

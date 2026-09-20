@@ -12,9 +12,9 @@ FT_COLOR_MODE=256; FT_COLS=40; FT_ROWS=24
 note "column-flex scroller: natural child heights, scrollHeight/clientHeight published"
 ft-form name=app width=40 height=24 display=flex flexDirection=column
   ft-div name=pane overflow=auto height=5 width=20 display=flex flexDirection=column gap=0
-    for i in 1 2 3 4 5 6 7 8 9 10; do ft-label name="L$i" "row $i"; done
+    for i in 1 2 3 4 5 6 7 8 9 10; do ft-label name="L$i" text="row $i"; done
   end_ft_div
-  ft-button name=below "Below"
+  ft-button name=below text="Below"
 end_ft_form
 ft_layout app; FT_ROOT=app
 ft_get pane scrollHeight; check "scrollHeight = 10 rows of content" "$FT_RET" "10"
@@ -62,7 +62,7 @@ ft_get pane scrollTop; check "revealing L2 scrolls back up to 1" "$FT_RET" "1"
 note "focus auto-reveals: focusing an off-view control scrolls it into view"
 ft-form name=app2 width=40 height=24 display=flex flexDirection=column
   ft-div name=pane2 overflow=scroll height=4 width=24 display=flex flexDirection=column gap=0
-    for i in 1 2 3 4 5 6 7 8; do ft-button name="B$i" "btn $i"; done
+    for i in 1 2 3 4 5 6 7 8; do ft-button name="B$i" text="btn $i"; done
   end_ft_div
 end_ft_form
 ft_layout app2; FT_ROOT=app2
@@ -74,7 +74,7 @@ ft_get pane2 scrollTop; check "focusing B1 scrolls back to 0" "$FT_RET" "0"
 note "block (non-flex) containers scroll too"
 ft-form name=app3 width=40 height=24
   ft-div name=bpane overflow=auto height=3 width=20
-    for i in 1 2 3 4 5 6; do ft-label name="K$i" display=block "blk $i"; done
+    for i in 1 2 3 4 5 6; do ft-label name="K$i" display=block text="blk $i"; done
   end_ft_div
 end_ft_form
 ft_layout app3; FT_ROOT=app3
@@ -112,9 +112,9 @@ case "$FT_OUT" in *"$FT_GLYPH_VERTICAL"*) check "track drawn with the box glyph"
 note "horizontal: overflowX=auto row — natural widths, scrollWidth, ft_scroll_to, reveal"
 ft-form name=happ width=20 height=8 display=flex flexDirection=column
   ft-div name=hpane overflowX=auto width=14 display=flex gap=1
-    ft-label name=H1 display=inline-block "aaaaaa"
-    ft-label name=H2 display=inline-block "bbbbbb"
-    ft-label name=H3 display=inline-block "cccccc"
+    ft-label name=H1 display=inline-block text="aaaaaa"
+    ft-label name=H2 display=inline-block text="bbbbbb"
+    ft-label name=H3 display=inline-block text="cccccc"
   end_ft_div
 end_ft_form
 ft_layout happ; FT_ROOT=happ

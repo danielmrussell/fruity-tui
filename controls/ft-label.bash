@@ -102,7 +102,7 @@ _ft_mouse_label() {             # name action relx rely
     (( total > client && client > 0 )) || return 0
     ft_scrollbar_pos_from_point "$n" "${FT_ABSOLUTE_Y[$n]:-0}" "$client" "$total" "$client" \
                                 $(( ${FT_ABSOLUTE_Y[$n]:-0} + $4 ))
-    ft-modify "$n" scrollTop="$FT_RET"
+    ft_set "$n" scrollTop="$FT_RET"
     return 0
 }
 
@@ -239,7 +239,7 @@ ft_label_scroll_set() {        # name offset
     _ft_label_metrics "$name"
     (( v < 0 )) && v=0
     (( v > LBL_MAXSCROLL )) && v=$LBL_MAXSCROLL
-    ft-modify "$name" scrollTop="$v"
+    ft_set "$name" scrollTop="$v"
 }
 _ft_label_scroll_by() {
     ft_resolved_prop "$1" scrollTop 0

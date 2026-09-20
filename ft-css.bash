@@ -70,7 +70,7 @@ _FT_CSS_STRUCTURAL=0
 _ft_css_inval() {               # name
     # THE CLIP MEMO GOES TOO. _ft_inset4 and the overflow test that build a clip rect both
     # consult the sheet through _ft_gated_style, so a rule reaching an ancestor — `.wide {
-    # padding: 4 }` arriving via `ft-modify win class=wide`, a theme swap, a :focus rule — moves
+    # padding: 4 }` arriving via `ft_set win class=wide`, a theme swap, a :focus rule — moves
     # a descendant's rect. Bumping here rather than listing the properties that could do it
     # covers the whole cascade in one line, at the primitive every such change already calls.
     _FT_CLIP_GEN=$(( ${_FT_CLIP_GEN:-0} + 1 ))
@@ -87,10 +87,10 @@ _ft_css_inval() {               # name
 # DECLARES or MATCHES ON the property — which is the right question for the typing path (a
 # textfield's `value`, restamped per keystroke, must not dirty a cascade) and the wrong one for
 # `ft_style`, whose FIRST cascade level is the inline property itself. So a property no sheet
-# has ever mentioned could be written with ft-modify and `ft_style` would go on serving the
+# has ever mentioned could be written with ft_set and `ft_style` would go on serving the
 # value from before the write, forever.
 #
-# Measured on the arrow's own `size`: `ft-modify a size=medium` then `size=x-small`
+# Measured on the arrow's own `size`: `ft_set a size=medium` then `size=x-small`
 # and ft_style still answered `medium`. It was never specific to that property — every property
 # `_ft_bigarrow_styled` reads (the three animation longhands, the border ones) has the same
 # hole, and so does any app property a control resolves through the cascade.
@@ -962,11 +962,11 @@ ft_query() {                    # querySelector(selector [, root]) → FT_RET = 
     ft_query_all "$@"; FT_RET=${FT_RET%% *}; [[ -n "$FT_RET" ]]
 }
 # classList — add/remove/toggle/contains one class, leaving the others alone. Routed through
-# ft-modify so a class change reflows/repaints exactly like `ft-modify el class=…`.
+# ft_set so a class change reflows/repaints exactly like `ft_set el class=…`.
 # ── Token-list properties (the DOM's DOMTokenList) ────────────────────────────
 # A property whose value is a SPACE-separated token list — `class`, or a widget's own (a file
 # dialog's `accept`, etc.). ft_tokenlist_* add/remove/toggle/contains those tokens generically; the
-# change routes through ft-modify, so it reflows/repaints and invalidates the cascade exactly like
+# change routes through ft_set, so it reflows/repaints and invalidates the cascade exactly like
 # any property set. The DOM exposes this only per-attribute (el.classList / el.relList); one generic
 # call taking the property name covers the lists it otherwise handles ad-hoc. A list property must be
 # REGISTERED (ft_prop_kind_set) so a multi-token value with spaces parses — `class` is; a widget
@@ -982,7 +982,7 @@ ft_tokenlist_add() {                # NAME PROP token... — add each token (if 
         seen=0; for x in "${all[@]}"; do [[ "$x" == "$c" ]] && { seen=1; break; }; done
         (( seen )) || all+=("$c")
     done
-    ft-modify "$n" "$p"="${all[*]}"
+    ft_set "$n" "$p"="${all[*]}"
 }
 ft_tokenlist_remove() {             # NAME PROP token... — remove each token
     local n=$1 p=$2; shift 2
@@ -992,7 +992,7 @@ ft_tokenlist_remove() {             # NAME PROP token... — remove each token
         keep=1; for c in "$@"; do [[ "$x" == "$c" ]] && { keep=0; break; }; done
         (( keep )) && out+=("$x")
     done
-    ft-modify "$n" "$p"="${out[*]}"
+    ft_set "$n" "$p"="${out[*]}"
 }
 ft_tokenlist_toggle() {             # NAME PROP token → 0 iff the token is now PRESENT
     if ft_tokenlist_contains "$1" "$2" "$3"; then ft_tokenlist_remove "$1" "$2" "$3"; return 1
@@ -1184,7 +1184,7 @@ _ft_style_compute() {           # control prop → FT_RET
     local control=$1 prop=$2
     # 1. inline (a property set at the call site or later). _ft_get_raw → _ft_propkey maps a custom
     #    property (--x) to its bash-safe storage key — the SAME key the write path (_ft_setprop) uses,
-    #    so `el { --x: v }`, `ft-modify el --x=v`, and an inline `--x=v` all resolve to one place.
+    #    so `el { --x: v }`, `ft_set el --x=v`, and an inline `--x=v` all resolve to one place.
     _ft_get_raw "$control" "$prop"
     if [[ -n "$FT_RET" ]]; then _ft_css_resolve_value "$control" "$FT_RET"; return; fi
     # 2. targeted app stylesheets

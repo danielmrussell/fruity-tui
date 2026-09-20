@@ -2,14 +2,14 @@
 # ─────────────────────────────────────────────────────────────────────────────
 #  REMOVING A PROPERTY IS SETTING IT — the same repaint is owed.
 #
-#  ft-modify learned this: it acts on the property's KIND. A layout property reflows, a paint
+#  ft_set learned this: it acts on the property's KIND. A layout property reflows, a paint
 #  property dirties, an INHERITED one dirties the subtree that inherits it, and hiding a
-#  control repairs the cells it had and re-checks focus. ft_remove_attribute — its sibling
+#  control repairs the cells it had and re-checks focus. ft_unset — its sibling
 #  route, and the DOM's removeAttribute — did none of it: it unset the variable, invalidated
 #  the cascade, and marked the control itself dirty. Nothing else.
 #
-#  So `ft_remove_attribute lab width` left the old geometry until something else forced a
-#  reflow, and `ft_remove_attribute panel color` repainted the panel but not the labels that
+#  So `ft_unset lab width` left the old geometry until something else forced a
+#  reflow, and `ft_unset panel color` repainted the panel but not the labels that
 #  inherit from it.
 #
 #  "Same predicate, every route" — the fix landed on one and not its twin.
@@ -31,10 +31,10 @@ ft-form name=app width="$FT_COLS" height="$FT_ROWS"
     end_ft_div
 end_ft_form
 FT_ROOT=app; ft_layout app
-ft-modify lab width=30
+ft_set lab width=30
 ft_reflow_flush
 check "the explicit width took" "${FT_MEASURED_WIDTH[lab]}" 30
-ft_remove_attribute lab width
+ft_unset lab width
 ft_reflow_flush
 note "  measured width after removing it: ${FT_MEASURED_WIDTH[lab]}"
 check "removing the width re-measured the control" "$(( FT_MEASURED_WIDTH[lab] != 30 ))" 1
@@ -49,36 +49,36 @@ FT_ROOT=app2; ft_layout app2
 ft_style inner color
 check "the child inherits the panel's colour" "$FT_RET" 201
 FT_DIRTY=()
-ft_remove_attribute panel color
+ft_unset panel color
 check "the panel itself is dirty"          "${FT_DIRTY[panel]:-0}" 1
 check "…and so is the child that inherits" "${FT_DIRTY[inner]:-0}" 1
 ft_style inner color
 check "and the inherited value really did change" "$FT_RET" ""
 
 note "a paint property that does NOT inherit dirties only its own control"
-ft-modify panel backgroundColor=52
+ft_set panel backgroundColor=52
 FT_DIRTY=()
-ft_remove_attribute panel backgroundColor
+ft_unset panel backgroundColor
 check "the control is dirty"         "${FT_DIRTY[panel]:-0}" 1
 check "…and the child is left alone" "${FT_DIRTY[inner]:-0}" 0
 
 note "removing display=none restores the control, and focus can reach it again"
 ft-form name=app3 width="$FT_COLS" height="$FT_ROWS"
-    ft-button name=b1 "One"
-    ft-button name=b2 "Two"
+    ft-button name=b1 text="One"
+    ft-button name=b2 text="Two"
 end_ft_form
 FT_ROOT=app3; ft_layout app3
 ft_focus b2
-ft-modify b2 display=none
+ft_set b2 display=none
 check "setting display=none moved focus off it" \
       "$([[ "$FT_FOCUS" != b2 ]] && echo moved || echo stranded)" moved
-ft_remove_attribute b2 display
+ft_unset b2 display
 ft_reflow_flush
 # _ft_disp, not ft_style: the engine's own "is this drawn?" question. Its answer is the
 # PROTOTYPE's display, which for a button is `inline-block` — not the generic `block` this asserted
 # while prototype defaults were stamped onto instances. Removing an author's property restores what
 # the control IS, and a button is an inline-block; `block` was the old mechanism showing through,
-# because ft_remove_attribute deleted the stamped default along with the author's value and left
+# because ft_unset deleted the stamped default along with the author's value and left
 # _ft_disp on its own hardcoded fallback. Same assertion, correct expectation.
 _ft_disp b2
 check "removing the property restored it to visible" "$FT_RET" inline-block
@@ -99,10 +99,10 @@ note "a removal bumps the text generation, because a removal IS a write"
 #
 # WATCHED FAILING: before the fix, a write moved the counter 8 → 9 and a removal left it 9 → 9.
 _gen_of() { local v="_fti_${1}__textgen"; printf '%s' "${!v:-0}"; }
-ft-modify b2 padding=1
-_g0=$(_gen_of b2); ft-modify b2 padding=2;        _g1=$(_gen_of b2)
+ft_set b2 padding=1
+_g0=$(_gen_of b2); ft_set b2 padding=2;        _g1=$(_gen_of b2)
 check "a property WRITE bumps the text generation"   "$(( _g1 > _g0 ))" 1
-_g2=$(_gen_of b2); ft_remove_attribute b2 padding;  _g3=$(_gen_of b2)
+_g2=$(_gen_of b2); ft_unset b2 padding;  _g3=$(_gen_of b2)
 check "…and a property REMOVAL bumps it too"         "$(( _g3 > _g2 ))" 1
 # ANTI-VACUITY: if the counter never existed, both comparisons above would read 0 > 0 and fail
 # — but a future refactor that removes the counter entirely would make them pass by never
@@ -116,7 +116,7 @@ check "…and the generation is a real counter, not a constant" "$(( _g3 > 0 && 
 #  state does the work on every route in, and its whole selling point over FT_PROTO_REPROP is
 #  that _ft_setprop is EVERY route. It was not: this one never called it.
 #
-#  Measured before the fix, on a checked checkbox — `ft_remove_attribute cb selectedIndex`
+#  Measured before the fix, on a checked checkbox — `ft_unset cb selectedIndex`
 #  repainted it UNCHECKED while `ft_get cb checked` and `ft_get cb value` both still answered
 #  true. That is verbatim the failure the reconciler exists to prevent, reached through the one
 #  door the fix left open. A radio was worse: removing `checked` left FT_RADIO_SELECTED naming
@@ -139,10 +139,10 @@ _three() { printf '%s,%s,%s' "$(ft_get "$1" checked; printf %s "$FT_RET")" \
                              "$(ft_get "$1" value; printf %s "$FT_RET")" \
                              "$(ft_get "$1" selectedIndex; printf %s "$FT_RET")"; }
 
-ft-modify rcb checked=true
+ft_set rcb checked=true
 check "the box is checked, and all three names agree" "$(_three rcb)" "true,true,1"
 check "…and it paints that way"                       "$(_glyph rcb Ready)" "[x]"
-ft_remove_attribute rcb selectedIndex
+ft_unset rcb selectedIndex
 check "removing the index unchecks it in the PAINT"   "$(_glyph rcb Ready)" "[ ]"
 check "…and the other two names followed"             "$(_three rcb)" "false,false,0"
 
@@ -150,7 +150,7 @@ note "…and a radio's group index is not left naming a radio the paint denies"
 ft_radio_select rr1
 check "rr1 is on"            "$(_glyph rr1 One)" "●"
 check "…and the group says so" "$(ft_radio_value rg; printf %s "$FT_RET")" "rr1"
-ft_remove_attribute rr1 checked
+ft_unset rr1 checked
 check "removing checked turns it off in the paint" "$(_glyph rr1 One)" "○"
 check "…and the group index agrees"                "$(ft_radio_value rg; printf '[%s]' "$FT_RET")" "[]"
 
@@ -161,7 +161,7 @@ note "a truthy spelling is canonicalised even when the selection does not move"
 # which is exactly what kept it hidden.
 ft_radio_select rr2
 check "rr2 is on"                    "$(_glyph rr2 Two)" "●"
-ft-modify rr2 checked=1
+ft_set rr2 checked=1
 check "checked=1 is stored as true"  "$(_ft_get_raw rr2 checked; printf %s "$FT_RET")" "true"
 check "…it is still selected"        "$(ft_radio_is_selected rr2 && printf yes || printf no)" "yes"
 check "…and still paints on"         "$(_glyph rr2 Two)" "●"

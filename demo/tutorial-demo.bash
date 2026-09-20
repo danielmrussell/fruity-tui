@@ -24,7 +24,7 @@
 #  spilled (again, CSS: an explicit height is a hard constraint).
 #
 #  Multi-step programs keep ONE form forever and rebuild its contents:
-#  ft-empty app reopens it as the current container, you declare the same
+#  ft_empty app reopens it as the current container, you declare the same
 #  stable names again, end_ft_form closes it (which rebuilds the Tab order),
 #  ft_refresh repaints. Names are ids; state lives in plain shell variables;
 #  <name>_on_activate hooks are your event listeners.
@@ -68,7 +68,7 @@ _prose_panel() {                # name title text
     # cursor mode and scroll/select/copy the write-up; Esc leaves. rows=6 keeps the
     # box a fixed height so long prose (page 11) scrolls instead of shoving the demo
     # off-screen. The CODE panel below is the same, just not read-only-looking.
-    ft-label     name="${1}Title" color=accent "$2"
+    ft-label name="${1}Title" color=accent text="$2"
     ft-textfield name="$1" value="$3" readOnly=true wrap=true size=58 rows=5
 }
 _code_panel() {                 # name title text
@@ -76,7 +76,7 @@ _code_panel() {                 # name title text
     # absolutely want to lift these into their own apps). wrap=false keeps each
     # code line intact and scrolls horizontally (arrow right) instead of wrapping,
     # so nothing gets mangled. Body colour, so it stays readable in every theme.
-    ft-label name="${1}Title" color=accent "$2"
+    ft-label name="${1}Title" color=accent text="$2"
     ft-textfield name="$1" value="$3" readOnly=true wrap=false size=58 rows=7
 }
 
@@ -98,7 +98,7 @@ _show_step() {
         ...
     end_ft_frame
 end_ft_form
-ft-run app' ;;
+ft_run app' ;;
     2)  explain=\
 "A label was added. Controls NEST: anything between a constructor and its end_ statement is a child. The frame grew to fit it -- width/height are unset, so it is auto-sized to its content, exactly like an HTML block. Note the shorthand: a bare last argument IS the content, the same as text=..., so it reads like text between HTML tags."
         code='ft-label name=hello "Hello, terminal!"' ;;
@@ -114,43 +114,43 @@ ft-run app' ;;
 # overflowY=auto    # scrollbar when needed (default)
 # overflowY=clip    # cut off cleanly, no scrollbar' ;;
     6)  explain=\
-"A flex row of three frames: left grows 1 share, right grows 3, the middle is a fixed width. The labelled WIDTH and HEIGHT sliders reshape it live -- Tab to one, then Left/Right adjust (PgUp/PgDn jump, Home/End snap). A focused slider lights up in the theme's one focus colour; each one's one-line _on_change hook just feeds its value into ft-modify. Two glyph styles are shown (fill, blocks); track and dots also exist. (The demo sits in a fixed-size box so a tick reflows only that region -- snappy.)"
+"A flex row of three frames: left grows 1 share, right grows 3, the middle is a fixed width. The labelled WIDTH and HEIGHT sliders reshape it live -- Tab to one, then Left/Right adjust (PgUp/PgDn jump, Home/End snap). A focused slider lights up in the theme's one focus colour; each one's one-line _on_change hook just feeds its value into ft_set. Two glyph styles are shown (fill, blocks); track and dots also exist. (The demo sits in a fixed-size box so a tick reflows only that region -- snappy.)"
         code='ft-label  Width
 ft-slider name=rowW min=30 max=56 value=56 step=2 variant=fill   showValue=true onChange=rowW_on_change
-ft-label  Height
+ft-label text=Height
 ft-slider name=rowH min=3  max=6  value=3         variant=blocks showValue=true onChange=rowH_on_change
 ...
-rowW_on_change() { ft-modify flexRow width="$1"; }   # flexRow = the container
-rowH_on_change() { ft-modify flexRow height="$1"; }' ;;
+rowW_on_change() { ft_set flexRow width="$1"; }   # flexRow = the container
+rowH_on_change() { ft_set flexRow height="$1"; }' ;;
     7)  explain=\
 "Every input keeps its own value automatically -- no handler needed just to remember what is set. Ticking Show advanced ENABLES the compression radios (its _on_activate); unticking disables them again (its _on_deactivate); disabled controls dim and drop out of Tab order. There is no special submit: Save is an ordinary button whose _on_activate reads the values and acts -- here it writes a one-line summary and, if Beep is on, rings the bell (audible only if your terminal's bell is enabled). Reading values on a button is exactly how Samba Mago will collect samba-tool settings. (The controls sit in a fixed-width box, so the growing status line never shoves them around.) Note: ft_get is fork-free -- it fills your variable, no \$(...) subshell."
         code='ft-checkbox name=cbAdvanced "Show advanced" accessKey=A onActivate=cbAdvanced_on_activate onDeactivate=cbAdvanced_on_deactivate
 ft-div name=advBox
-    ft-radio name=rNone group=comp value=none "No compression" accessKey=N
-    ft-radio name=rFast group=comp value=fast "Fast"           accessKey=F
-    ft-radio name=rBest group=comp value=best "Best"           accessKey=T
+    ft-radio name=rNone group=comp value=none text="No compression" accessKey=N
+    ft-radio name=rFast group=comp value=fast text="Fast" accessKey=F
+    ft-radio name=rBest group=comp value=best text="Best" accessKey=T
 end_ft_div
-ft-checkbox name=cbBeep "Beep on save" accessKey=P
-ft-button   name=btnSave "Save" accessKey=S onActivate=btnSave_on_activate
+ft-checkbox name=cbBeep text="Beep on save" accessKey=P
+ft-button name=btnSave text="Save" accessKey=S onActivate=btnSave_on_activate
 ...
 btnSave_on_activate() {           # the "submit": just read the values
     local comp beep
     ft_radio_value comp comp      # one read: none|fast|best  (fork-free)
     ft_get cbBeep value beep      # fork-free: fills $beep
-    ft-modify status text="compression=$comp beep=$beep"
+    ft_set status text="compression=$comp beep=$beep"
     [[ $beep == true ]] && ft_beep
 }' ;;
     8)  explain=\
 "Two select styles, both keeping value current for you to read on Save. The LIST BOX (size=4) shows every option; Up/Down move a cursor (the focus colour = what Space toggles), Home/End jump; selected rows get a ✓ and the theme's selection colour, distinct from the cursor colour. The THEME DROPDOWN (size=1) shows only the current pick; Down (or Enter) drops it open with the selected option marked ✓ in the selection colour and the cursor in the focus colour -- move with Up/Down (clamped -- no wraparound), Enter commits, Esc cancels. Picking a theme actually RE-THEMES this page via its _on_change hook: proof that colours are just palette variables you can swap live."
         code='ft-select name=perms size=4 multiple=true
-    ft-option value=read  "Read"
-    ft-option value=write "Write"
-    ft-option value=admin "Administer"
+    ft-option value=read text="Read"
+    ft-option value=write text="Write"
+    ft-option value=admin text="Administer"
 end_ft_select
 ft-select name=theme                 # size=1 -> dropdown onChange=theme_on_change
-    ft-option value=dark  "Dark"
-    ft-option value=light "Light"
-    ft-option value=ocean "Ocean"
+    ft-option value=dark text="Dark"
+    ft-option value=light text="Light"
+    ft-option value=ocean text="Ocean"
 end_ft_select
 theme_on_change() { apply_theme "$1"; ft_refresh; }   # $1 = chosen theme' ;;
     9)  explain=\
@@ -158,22 +158,22 @@ theme_on_change() { apply_theme "$1"; ft_refresh; }   # $1 = chosen theme' ;;
         code='# TWO ways to hide the SAME box -- one toggle button each:
 btnDisp_on_activate() {                # display: remove it, space COLLAPSES
     ft_get hideBox display d
-    [[ $d == none ]] && ft-modify hideBox display=flex \
-                     || ft-modify hideBox display=none
+    [[ $d == none ]] && ft_set hideBox display=flex \
+                     || ft_set hideBox display=none
 }
 btnVis_on_activate() {                 # visibility: blank it, space KEPT
     ft_get hideBox visibility v
-    [[ $v == hidden ]] && ft-modify hideBox visibility=visible \
-                       || ft-modify hideBox visibility=hidden
+    [[ $v == hidden ]] && ft_set hideBox visibility=visible \
+                       || ft_set hideBox visibility=hidden
 }' ;;
     10) explain=\
-"Borders mirror CSS and are just paint properties you can ft-modify live -- try the control in each frame. DOUBLE: the checkbox flips borderStyle solid⇄double and relabels the title. ROUNDED: the checkbox flips borderRadius 0⇄1 -- like CSS it takes a NUMBER of cells; any radius ≥1 draws the arc corners (bigger radii clamp to the terminal'\''s one arc glyph). DASHED: the checkbox toggles the border off and back on (border=false keeps the box, drops the lines). STARS: the dropdown retiles the whole border with any single glyph (borderGlyph) -- star, heart, diamond, dot. borderColor takes any theme colour; everything is orthogonal (rounded+dashed works)."
+"Borders mirror CSS and are just paint properties you can ft_set live -- try the control in each frame. DOUBLE: the checkbox flips borderStyle solid⇄double and relabels the title. ROUNDED: the checkbox flips borderRadius 0⇄1 -- like CSS it takes a NUMBER of cells; any radius ≥1 draws the arc corners (bigger radii clamp to the terminal'\''s one arc glyph). DASHED: the checkbox toggles the border off and back on (border=false keeps the box, drops the lines). STARS: the dropdown retiles the whole border with any single glyph (borderGlyph) -- star, heart, diamond, dot. borderColor takes any theme colour; everything is orthogonal (rounded+dashed works)."
         code='# a border property is just another CSS property:
-stDc_on_activate()   { ft-modify stD borderStyle=double
-                       ft-modify stD title="Double"; }
-stRad_on_activate()  { ft-modify stR borderRadius=1; }
-stHc_on_deactivate() { ft-modify stH border=false; }   # hide border
-stSsel_on_change()   { ft-modify stS borderGlyph=$1; } # $this=stSsel, $1=glyph' ;;
+stDc_on_activate()   { ft_set stD borderStyle=double
+                       ft_set stD title="Double"; }
+stRad_on_activate()  { ft_set stR borderRadius=1; }
+stHc_on_deactivate() { ft_set stH border=false; }   # hide border
+stSsel_on_change()   { ft_set stS borderGlyph=$1; } # $this=stSsel, $1=glyph' ;;
     11) explain=\
 "Text input is the ft-textfield class -- the SAME class scales from one line to
 many. size sets the visible TEXT width; rows=1 (default) is a single-line field,
@@ -189,7 +189,7 @@ two gutters -- showLineNumbers down the left, wrapIndicator's ↩ on the right o
 soft-wrapped rows. Toggle Wrap (W) and Line #s (L) from the buttons below."
         code='# One class, sized two ways -- rows makes the difference:
 ft-textfield name=user  size=24 value="admin"      # rows=1: one line
-ft-textfield name=notes size=34 rows=5 wrap=true \  # rows>1: a text box
+ft-textfield name=notes size=34 rows=5 wrap=true text=\  # rows>1: a text box
              showLineNumbers=true \   # 1,2,3.. down the left gutter
              wrapIndicator=true       # ↩ marks a soft-wrapped row
 
@@ -211,8 +211,8 @@ All colours are themed, so it reads correctly on Light and Ocean too. rows=7
 caps the body, so the fourteen keys SCROLL: Tab to the table, then ↑/↓ PgUp/PgDn
 (Home/End jump); the header row stays pinned. Tab first reaches this write-up."
         code='ft-table name=keys variant=minimal striped=true
-    ft-table-header "Keys"                  # auto-sizes; pin with width=N
-    ft-table-header "What it does"
+    ft-table-header text="Keys" # auto-sizes; pin with width=N
+    ft-table-header text="What it does"
     ft-table-row "Home Ctrl+A / End Ctrl+E" "Jump to line start / end"
     ft-table-row "Ctrl+W / Alt+D"           "Delete word left / right"
     ...
@@ -246,9 +246,9 @@ end_ft_table
 # Save opens the real file dialog (Save mode) and reports the chosen path:
 btnSaveSettings_on_activate() {
     if ft_file_dialog operation=save path=~/settings.conf submit=Save; then
-        ft-modify saveStatus text=\"Would save to: \$FT_FILE_RESULT\"
+        ft_set saveStatus text=\"Would text=save text=to: text=\$FT_FILE_RESULT\"
     else
-        ft-modify saveStatus text=\"Save cancelled.\"
+        ft_set saveStatus text=\"Save text=cancelled.\"
     fi
 }' ;;
     14) explain=\
@@ -271,7 +271,7 @@ fi
 # operation=open|save  path=<dir or dir/file>  title=..  submit=<button label>' ;;
     esac
 
-    ft-empty stage
+    ft_empty stage
         ft-frame name=win title="Fruity TUI Tutorial ($STEP/$LAST)" \
                  display=flex flexDirection=column gap=1 padding=1 alignItems=center \
                  borderStyle=double
@@ -279,8 +279,8 @@ fi
             _code_panel  code    "The code you'd add" "$code"
 
             case "$STEP" in
-            2)  ft-label name=hello "Hello, terminal!" ;;
-            3)  ft-label name=hello width=22 "A long sentence wraps when its box cannot grow." ;;
+            2)  ft-label name=hello text="Hello, terminal!" ;;
+            3)  ft-label name=hello width=22 text="A long sentence wraps when its box cannot grow." ;;
             4)  # maxHeight makes the box shorter than its 30 lines, so it
                 # overflows → grows a scrollbar gutter → becomes focusable.
                 ft-label name=big text="$THIRTY_LINES" width=56 maxHeight=10 ;;
@@ -290,20 +290,20 @@ fi
                 # whole screen -- keeps adjustment snappy.
                 ft-div name=demoBox width=58 height=10 display=flex flexDirection=column gap=1 alignItems=center
                     ft-div name=flexRow display=flex width=56 height=3
-                        ft-frame name=lft grow-1 flexGrow=1
+                        ft-frame name=lft title=grow-1 flexGrow=1
                         end_ft_frame
-                        ft-frame name=mid fixed width=16
+                        ft-frame name=mid title=fixed width=16
                         end_ft_frame
-                        ft-frame name=rgt grow-3 flexGrow=3
+                        ft-frame name=rgt title=grow-3 flexGrow=3
                         end_ft_frame
                     end_ft_div
                     ft-div name=sliders display=flex gap=4
                         ft-div name=wCol display=flex flexDirection=column alignItems=center
-                            ft-label name=wLbl Width
+                            ft-label name=wLbl text=Width
                             ft-slider name=rowW min=30 max=56 value=56 step=2 width=22 variant=fill showValue=true onChange=rowW_on_change
                         end_ft_div
                         ft-div name=hCol display=flex flexDirection=column alignItems=center
-                            ft-label name=hLbl Height
+                            ft-label name=hLbl text=Height
                             ft-slider name=rowH min=3 max=6 value=3 width=12 variant=blocks showValue=true onChange=rowH_on_change
                         end_ft_div
                     end_ft_div
@@ -315,27 +315,27 @@ fi
                 # opts (its own centred, fixed-width row) so it can grow on Save
                 # without stretching the control box.
                 ft-div name=opts display=flex flexDirection=column gap=0 alignItems=start
-                    ft-checkbox name=cbAdvanced "Show advanced" accessKey=A onActivate=cbAdvanced_on_activate onDeactivate=cbAdvanced_on_deactivate
+                    ft-checkbox name=cbAdvanced text="Show advanced" accessKey=A onActivate=cbAdvanced_on_activate onDeactivate=cbAdvanced_on_deactivate
                     ft-div name=advBox display=flex flexDirection=column gap=0 alignItems=start
-                        ft-radio name=rNone group=comp value=none "No compression" accessKey=N disabled=true
-                        ft-radio name=rFast group=comp value=fast "Fast"           accessKey=F disabled=true
-                        ft-radio name=rBest group=comp value=best "Best"           accessKey=T disabled=true
+                        ft-radio name=rNone group=comp value=none text="No compression" accessKey=N disabled=true
+                        ft-radio name=rFast group=comp value=fast text="Fast" accessKey=F disabled=true
+                        ft-radio name=rBest group=comp value=best text="Best" accessKey=T disabled=true
                     end_ft_div
-                    ft-checkbox name=cbBeep "Beep on save" accessKey=P
+                    ft-checkbox name=cbBeep text="Beep on save" accessKey=P
                 end_ft_div
-                ft-label name=status "(nothing saved yet)" width=46 color=notice textAlign=center ;;
+                ft-label name=status text="(nothing saved yet)" width=46 color=notice textAlign=center ;;
             8)  ft-div name=selrow display=flex gap=6 alignItems=start
                     ft-select name=perms size=4 multiple=true
-                        ft-option value=read  "Read"
-                        ft-option value=write "Write"
-                        ft-option value=admin "Administer"
+                        ft-option value=read text="Read"
+                        ft-option value=write text="Write"
+                        ft-option value=admin text="Administer"
                     end_ft_select
                     local _ti=0
                     case "$THEME_SEL" in dark) _ti=0 ;; light) _ti=1 ;; ocean) _ti=2 ;; esac
                     ft-select name=theme selectedIndex="$_ti" onChange=theme_on_change
-                        ft-option value=dark  "Dark"
-                        ft-option value=light "Light"
-                        ft-option value=ocean "Ocean"
+                        ft-option value=dark text="Dark"
+                        ft-option value=light text="Light"
+                        ft-option value=ocean text="Ocean"
                     end_ft_select
                 end_ft_div ;;
             9)  # ONE box, hidden two different ways by the two toggle buttons
@@ -343,31 +343,31 @@ fi
                 # difference: Invisible keeps the box's space (buttons stay put),
                 # Remove collapses it (buttons jump up).
                 ft-frame name=hideBox title="a box" width=50 height=4 display=flex flexDirection=column alignItems=center gap=0
-                    ft-label name=note  "I can be hidden two ways."
-                    ft-label name=note2 "Invisible keeps my space; Remove collapses it."
+                    ft-label name=note text="I can be hidden two ways."
+                    ft-label name=note2 text="Invisible keeps my space; Remove collapses it."
                 end_ft_frame ;;
             10) # Each frame holds a LIVE control that mutates its OWN border --
-                # a border property is just another CSS property you ft-modify.
+                # a border property is just another CSS property you ft_set.
                 ft-div name=styles display=flex gap=2 alignItems=start
-                    ft-frame name=stD Double borderStyle=double borderColor=cyan width=18 height=6 display=flex flexDirection=column alignItems=center gap=0
-                        ft-label    name=stDt "single ⇄ double"
-                        ft-checkbox name=stDc "Double" checked=true onActivate=stDc_on_activate onDeactivate=stDc_on_deactivate
+                    ft-frame name=stD title=Double borderStyle=double borderColor=cyan width=18 height=6 display=flex flexDirection=column alignItems=center gap=0
+                        ft-label name=stDt text="single ⇄ double"
+                        ft-checkbox name=stDc text="Double" checked=true onActivate=stDc_on_activate onDeactivate=stDc_on_deactivate
                     end_ft_frame
-                    ft-frame name=stR Rounded borderRadius=1 borderColor=green width=18 height=6 display=flex flexDirection=column alignItems=center gap=0
-                        ft-label    name=stRt "round corners"
-                        ft-checkbox name=stRad "Rounded" checked=true onActivate=stRad_on_activate onDeactivate=stRad_on_deactivate
+                    ft-frame name=stR title=Rounded borderRadius=1 borderColor=green width=18 height=6 display=flex flexDirection=column alignItems=center gap=0
+                        ft-label name=stRt text="round corners"
+                        ft-checkbox name=stRad text="Rounded" checked=true onActivate=stRad_on_activate onDeactivate=stRad_on_deactivate
                     end_ft_frame
-                    ft-frame name=stH Dashed borderStyle=dashed borderColor=orange width=18 height=6 display=flex flexDirection=column alignItems=center gap=0
-                        ft-label    name=stHt "border on/off"
-                        ft-checkbox name=stHc "Border" checked=true onDeactivate=stHc_on_deactivate onActivate=stHc_on_activate
+                    ft-frame name=stH title=Dashed borderStyle=dashed borderColor=orange width=18 height=6 display=flex flexDirection=column alignItems=center gap=0
+                        ft-label name=stHt text="border on/off"
+                        ft-checkbox name=stHc text="Border" checked=true onDeactivate=stHc_on_deactivate onActivate=stHc_on_activate
                     end_ft_frame
-                    ft-frame name=stS Stars borderGlyph=★ borderColor=gold width=18 height=6 display=flex flexDirection=column alignItems=center gap=0
-                        ft-label  name=stSt "pick a glyph"
+                    ft-frame name=stS title=Stars borderGlyph=★ borderColor=gold width=18 height=6 display=flex flexDirection=column alignItems=center gap=0
+                        ft-label name=stSt text="pick a glyph"
                         ft-select name=stSsel size=1 onChange=stSsel_on_change
-                            ft-option value=★ "Star"
-                            ft-option value=♥ "Heart"
-                            ft-option value=◆ "Diamond"
-                            ft-option value=● "Dot"
+                            ft-option value=★ text="Star"
+                            ft-option value=♥ text="Heart"
+                            ft-option value=◆ text="Diamond"
+                            ft-option value=● text="Dot"
                         end_ft_select
                     end_ft_frame
                 end_ft_div ;;
@@ -385,9 +385,9 @@ fi
                                      placeholder="A multi-line text box -- type, press Enter for new lines. With Wrap on, long lines fold to the next row (a ↩ marks each folded row); turn Wrap off and a long line scrolls sideways instead (the caret drags the view)."
                     end_ft_div
                     ft-div name=trowT display=flex flexDirection=column alignItems=start
-                        ft-checkbox name=cbWrap    "Wrap long lines" accessKey=W checked=true onActivate=cbWrap_on_activate onDeactivate=cbWrap_on_deactivate
-                        ft-checkbox name=cbWrapInd "  └ ↩ wrap marks" accessKey=M checked=true onActivate=cbWrapInd_on_activate onDeactivate=cbWrapInd_on_deactivate
-                        ft-checkbox name=cbLineNo  "Line numbers"    accessKey=L checked=true onActivate=cbLineNo_on_activate onDeactivate=cbLineNo_on_deactivate
+                        ft-checkbox name=cbWrap text="Wrap long lines" accessKey=W checked=true onActivate=cbWrap_on_activate onDeactivate=cbWrap_on_deactivate
+                        ft-checkbox name=cbWrapInd text="  └ ↩ wrap marks" accessKey=M checked=true onActivate=cbWrapInd_on_activate onDeactivate=cbWrapInd_on_deactivate
+                        ft-checkbox name=cbLineNo text="Line numbers" accessKey=L checked=true onActivate=cbLineNo_on_activate onDeactivate=cbLineNo_on_deactivate
                     end_ft_div
                 end_ft_div ;;
             12) # The readline keys, rendered by ft-table -- and made LIVE: the
@@ -400,17 +400,17 @@ fi
                     ft-div name=tblStyleWrap display=flex gap=1 alignItems=center
                         ft-label name=tblStyleL text="Style"
                         ft-select name=tblStyle size=1 selectedIndex="$_si" onChange=tblStyle_on_change
-                            ft-option value=grid    "Grid"
-                            ft-option value=heavy   "Heavy"
-                            ft-option value=lines   "Lines"
-                            ft-option value=minimal "Minimal"
+                            ft-option value=grid text="Grid"
+                            ft-option value=heavy text="Heavy"
+                            ft-option value=lines text="Lines"
+                            ft-option value=minimal text="Minimal"
                         end_ft_select
                     end_ft_div
-                    ft-checkbox name=tblStripe "Striped" accessKey=T checked="$TBL_STRIPE_SEL" onChange=tblStripe_on_change
+                    ft-checkbox name=tblStripe text="Striped" accessKey=T checked="$TBL_STRIPE_SEL" onChange=tblStripe_on_change
                 end_ft_div
                 ft-table name=keys style="$TBL_STYLE_SEL" striped="$TBL_STRIPE_SEL" rows=7
-                    ft-table-header "Keys"
-                    ft-table-header "What it does"
+                    ft-table-header text="Keys"
+                    ft-table-header text="What it does"
                     ft-table-row "← / Ctrl+B"         "Move back one character"
                     ft-table-row "→ / Ctrl+F"         "Move forward one character"
                     ft-table-row "Alt+← / Alt+B"      "Move back one word"
@@ -431,8 +431,8 @@ fi
                 # opens the real file dialog (shown on its own on the next page).
                 ft-div name=review display=flex flexDirection=column gap=1 alignItems=center
                     ft-table name=revTbl variant=lines
-                        ft-table-header "Setting"      width=14
-                        ft-table-header "Value"
+                        ft-table-header text="Setting" width=14
+                        ft-table-header text="Value"
                         ft-table-row "Name"         "$SET_NAME"
                         ft-table-row "Wrap lines"   "$SET_WRAP"
                         ft-table-row "Wrap marks"   "$SET_MARKS"
@@ -440,13 +440,13 @@ fi
                         ft-table-row "Table style"  "$TBL_STYLE_SEL"
                         ft-table-row "Striped rows" "$TBL_STRIPE_SEL"
                     end_ft_table
-                    ft-button name=btnSaveSettings "Save to file..." accessKey=S onActivate=btnSaveSettings_on_activate
+                    ft-button name=btnSaveSettings text="Save to file..." accessKey=S onActivate=btnSaveSettings_on_activate
                     ft-label  name=saveStatus color=notice textAlign=center width=64 \
                               text="Save opens the real file dialog to pick where these go."
                 end_ft_div ;;
             14) # A page all about the file dialog itself.
                 ft-div name=fdrow display=flex flexDirection=column gap=1 alignItems=center
-                    ft-button name=btnOpenFD "Open the file dialog..." accessKey=O onActivate=btnOpenFD_on_activate
+                    ft-button name=btnOpenFD text="Open the file dialog..." accessKey=O onActivate=btnOpenFD_on_activate
                     ft-label  name=fdResult color=notice textAlign=center width=64 \
                               text="Click to open it (Save mode). The path you pick shows here."
                 end_ft_div ;;
@@ -461,22 +461,22 @@ fi
                 # never resizes the button -- the text change is then a local
                 # repaint, not a whole-frame reflow.
                 ft-div name=actionrow display=flex gap=2 justifyContent=center
-                    ft-button name=btnVis  "Invisible" accessKey=V width=11 onActivate=btnVis_on_activate
-                    ft-button name=btnDisp "Remove"    accessKey=R width=11 onActivate=btnDisp_on_activate
+                    ft-button name=btnVis text="Invisible" accessKey=V width=11 onActivate=btnVis_on_activate
+                    ft-button name=btnDisp text="Remove" accessKey=R width=11 onActivate=btnDisp_on_activate
                 end_ft_div
             fi
             ft-div name=btnrow display=flex gap=2 justifyContent=center
-                ft-button name=btnBack Back accessKey=B onActivate=btnBack_on_activate
-                [[ "$STEP" == 7 ]] && ft-button name=btnSave Save accessKey=S onActivate=btnSave_on_activate
-                ft-button name=btnOk   "$oktext" accessKey=K onActivate=btnOk_on_activate
-                ft-button name=btnQuit Quit accessKey=Q onActivate=btnQuit_on_activate
+                ft-button name=btnBack text=Back accessKey=B onActivate=btnBack_on_activate
+                [[ "$STEP" == 7 ]] && ft-button name=btnSave text=Save accessKey=S onActivate=btnSave_on_activate
+                ft-button name=btnOk text="$oktext" accessKey=K onActivate=btnOk_on_activate
+                ft-button name=btnQuit text=Quit accessKey=Q onActivate=btnQuit_on_activate
             end_ft_div
         end_ft_frame
     end_ft_div
-    ft-modify navbar status="Step $STEP of $LAST  —  Tab to move, Enter to use a control, h for Help"
+    ft_set navbar status="Step $STEP of $LAST  —  Tab to move, Enter to use a control, h for Help"
 
     (( STEP == 7 )) && ft_radio_select rNone
-    (( STEP == 1 )) && ft-modify btnBack display=none
+    (( STEP == 1 )) && ft_set btnBack display=none
     ft_refresh
     # Focus starts on the explanation panel -- the first scrollbar -- so you can
     # scroll the write-up with the arrow keys the instant a page loads, then Tab
@@ -487,22 +487,22 @@ fi
 
     # Step 4's lesson adapts to the ACTUAL layout: on a tall terminal the
     # thirty lines may simply fit (no scrollbar); on a short one they overflow
-    # and the box grows a scrollbar and becomes focusable. ft-run's resize
+    # and the box grows a scrollbar and becomes focusable. ft_run's resize
     # handler re-runs this builder, so the text flips live as you resize.
     if (( STEP == 4 )); then
         # The DOM's own question: is there more content than there is room for?
         ft_get big scrollHeight; local total=${FT_RET:-0}
         ft_get big clientHeight; local shown=${FT_RET:-0}
         if (( total > shown )); then
-            ft-modify explain "SCROLLING (active): the thirty lines overflow the box, so it grew a scrollbar in its right edge and became Tab-focusable -- Tab to it and scroll. Two defaults did this with no wiring: auto heights never exceed the space actually available (a terminal cannot scroll your whole UI), and a too-tall label scrolls itself. Resize the terminal and this re-adapts live."
+            ft_set explain text="SCROLLING (active): the thirty lines overflow the box, so it grew a scrollbar in its right edge and became Tab-focusable -- Tab to it and scroll. Two defaults did this with no wiring: auto heights never exceed the space actually available (a terminal cannot scroll your whole UI), and a too-tall label scrolls itself. Resize the terminal and this re-adapts live."
         else
-            ft-modify explain "FITS (no scrollbar): your terminal is tall enough to show ALL thirty lines below, so overflow:auto shows no scrollbar at all. Make the window SMALLER and watch one appear the instant the text stops fitting -- the box becomes Tab-focusable and scrollable right then. You wired nothing; it is the default."
+            ft_set explain text="FITS (no scrollbar): your terminal is tall enough to show ALL thirty lines below, so overflow:auto shows no scrollbar at all. Make the window SMALLER and watch one appear the instant the text stops fitting -- the box becomes Tab-focusable and scrollable right then. You wired nothing; it is the default."
         fi
     fi
 }
 
 # ── App logic: plain hooks ───────────────────────────────────────────────────
-# Navigation only CHANGES STATE and invalidates; ft-run's render callback
+# Navigation only CHANGES STATE and invalidates; ft_run's render callback
 # (_show_step) rebuilds once per input burst. So holding K to fast-forward
 # runs the cheap STEP++ many times but rebuilds+paints exactly once.
 btnOk_on_activate()   { if (( STEP < LAST )); then (( STEP++ )); ft_invalidate; else ft_quit; fi; }
@@ -511,14 +511,14 @@ btnQuit_on_activate() { ft_quit; }
 
 # Step 7 — enable/disable the advanced radios from the checkbox's hooks.
 cbAdvanced_on_activate() {
-    ft-modify rNone disabled=false
-    ft-modify rFast disabled=false
-    ft-modify rBest disabled=false
+    ft_set rNone disabled=false
+    ft_set rFast disabled=false
+    ft_set rBest disabled=false
 }
 cbAdvanced_on_deactivate() {
-    ft-modify rNone disabled=true
-    ft-modify rFast disabled=true
-    ft-modify rBest disabled=true
+    ft_set rNone disabled=true
+    ft_set rFast disabled=true
+    ft_set rBest disabled=true
 }
 # The "submit": an ordinary button that reads the current values (fork-free
 # ft_get, no subshell) and acts.
@@ -531,18 +531,18 @@ btnSave_on_activate() {
     ft_get cbAdvanced value adv
     # text= is explicit so the =-bearing summary is content, never mis-read as
     # a property assignment.
-    ft-modify status text="saved: advanced=$adv compression=$comp beep=$beep"
+    ft_set status text="saved: advanced=$adv compression=$comp beep=$beep"
     [[ "$beep" == true ]] && ft_beep
 }
 
 # Inside every hook, $this is the control's OWN name and $1 is its new value
 # (a slider's number, a checkbox's true/false, a select's chosen option value).
-# The name is $this, never an argument -- so `ft-modify "$this" ...` and
+# The name is $this, never an argument -- so `ft_set "$this" ...` and
 # `${this}_<prop>` both refer to the control that fired the event.
 #
 # Step 6 — sliders reshape the flex row live.
-rowW_on_change() { ft-modify flexRow width="$1"; }    # flexRow is the container
-rowH_on_change() { ft-modify flexRow height="$1"; }   # (a user name, not a keyword)
+rowW_on_change() { ft_set flexRow width="$1"; }    # flexRow is the container
+rowH_on_change() { ft_set flexRow height="$1"; }   # (a user name, not a keyword)
 
 # Step 11 — the Wrap checkbox flips the text box between wrapping and
 # horizontal-scroll. Off => long lines run past the right edge and the caret
@@ -551,16 +551,16 @@ rowH_on_change() { ft-modify flexRow height="$1"; }   # (a user name, not a keyw
 # with Wrap and faded (disabled) when Wrap is off.
 # Each toggle also stashes its state in a plain var (SET_*) so the final Review
 # page (step 13) can read it back after this page has been torn down and rebuilt.
-cbWrap_on_activate()   { ft-modify tfNotes wrap=true;  ft-modify cbWrapInd disabled=false; SET_WRAP=on;  }
-cbWrap_on_deactivate() { ft-modify tfNotes wrap=false; ft-modify cbWrapInd disabled=true;  SET_WRAP=off; }
+cbWrap_on_activate()   { ft_set tfNotes wrap=true;  ft_set cbWrapInd disabled=false; SET_WRAP=on;  }
+cbWrap_on_deactivate() { ft_set tfNotes wrap=false; ft_set cbWrapInd disabled=true;  SET_WRAP=off; }
 # Line #s toggles the left line-number gutter live. It is a LAYOUT property (the
-# gutter widens the box), so ft-modify reflows the field to make room.
-cbLineNo_on_activate()   { ft-modify tfNotes showLineNumbers=true;  SET_LINES=on;  }
-cbLineNo_on_deactivate() { ft-modify tfNotes showLineNumbers=false; SET_LINES=off; }
+# gutter widens the box), so ft_set reflows the field to make room.
+cbLineNo_on_activate()   { ft_set tfNotes showLineNumbers=true;  SET_LINES=on;  }
+cbLineNo_on_deactivate() { ft_set tfNotes showLineNumbers=false; SET_LINES=off; }
 # ↩ marks toggles the right wrap-indicator gutter (also a layout property, so
-# ft-modify reflows the box to add or reclaim the column).
-cbWrapInd_on_activate()   { ft-modify tfNotes wrapIndicator=true;  SET_MARKS=on;  }
-cbWrapInd_on_deactivate() { ft-modify tfNotes wrapIndicator=false; SET_MARKS=off; }
+# ft_set reflows the box to add or reclaim the column).
+cbWrapInd_on_activate()   { ft_set tfNotes wrapIndicator=true;  SET_MARKS=on;  }
+cbWrapInd_on_deactivate() { ft_set tfNotes wrapIndicator=false; SET_MARKS=off; }
 # The Name field feeds the same settings bag as you type.
 tfName_on_change() { SET_NAME="$1"; }
 
@@ -575,28 +575,28 @@ _settings_summary() {
 btnSaveSettings_on_activate() {
     _settings_summary
     if ft_file_dialog operation=save path=~/.samba-mago.conf submit=Save; then
-        ft-modify saveStatus text="Would write {$SET_SUMMARY} to: $FT_FILE_RESULT"
+        ft_set saveStatus text="Would write {$SET_SUMMARY} to: $FT_FILE_RESULT"
     else
-        ft-modify saveStatus text="Save cancelled."
+        ft_set saveStatus text="Save cancelled."
     fi
 }
 # Page 14: the file dialog on its own.
 btnOpenFD_on_activate() {
     if ft_file_dialog operation=save path=~/report.txt submit=Save; then
-        ft-modify fdResult text="You chose: $FT_FILE_RESULT"
+        ft_set fdResult text="You chose: $FT_FILE_RESULT"
     else
-        ft-modify fdResult text="Cancelled -- nothing chosen."
+        ft_set fdResult text="Cancelled -- nothing chosen."
     fi
 }
 
 # Step 10 — each frame's control mutates its OWN border property live.
-stDc_on_activate()   { ft-modify stD borderStyle=double; ft-modify stD title="Double"; }
-stDc_on_deactivate() { ft-modify stD borderStyle=solid;  ft-modify stD title="Single"; }
-stRad_on_activate()  { ft-modify stR borderRadius=1; }             # rounded corners on
-stRad_on_deactivate(){ ft-modify stR borderRadius=0; }           # square corners
-stHc_on_activate()   { ft-modify stH border=true;  }               # show the border
-stHc_on_deactivate() { ft-modify stH border=false; }               # hide it (keeps the box)
-stSsel_on_change()   { ft-modify stS borderGlyph="$1"; }           # $this=stSsel, $1=chosen glyph
+stDc_on_activate()   { ft_set stD borderStyle=double; ft_set stD title="Double"; }
+stDc_on_deactivate() { ft_set stD borderStyle=solid;  ft_set stD title="Single"; }
+stRad_on_activate()  { ft_set stR borderRadius=1; }             # rounded corners on
+stRad_on_deactivate(){ ft_set stR borderRadius=0; }           # square corners
+stHc_on_activate()   { ft_set stH border=true;  }               # show the border
+stHc_on_deactivate() { ft_set stH border=false; }               # hide it (keeps the box)
+stSsel_on_change()   { ft_set stS borderGlyph="$1"; }           # $this=stSsel, $1=chosen glyph
 
 # Step 8 — a few theme presets; the theme dropdown re-themes the page live by
 # overriding palette variables and refreshing. (Colours are just variables.)
@@ -671,23 +671,23 @@ theme_on_change() { THEME_SEL=$1; apply_theme "$1"; ft_refresh; }   # $1 = chose
 # shows underlined (R in Remove/Restore, V in inVisible/Visible).
 btnDisp_on_activate() {
     local d; ft_get hideBox display d
-    if [[ "$d" == none ]]; then ft-modify hideBox display=flex; ft-modify btnDisp text="Remove"
-    else ft-modify hideBox display=none; ft-modify btnDisp text="Restore"; fi
+    if [[ "$d" == none ]]; then ft_set hideBox display=flex; ft_set btnDisp text="Remove"
+    else ft_set hideBox display=none; ft_set btnDisp text="Restore"; fi
 }
 btnVis_on_activate() {
     local v; ft_get hideBox visibility v
-    if [[ "$v" == hidden ]]; then ft-modify hideBox visibility=visible; ft-modify btnVis text="Invisible"
-    else ft-modify hideBox visibility=hidden; ft-modify btnVis text="Visible"; fi
+    if [[ "$v" == hidden ]]; then ft_set hideBox visibility=visible; ft_set btnVis text="Invisible"
+    else ft_set hideBox visibility=hidden; ft_set btnVis text="Visible"; fi
 }
 
 # Page 12: live table experiments. Style changes the grid's SIZE (a reflow);
 # striped is a pure repaint. Both persist in vars so a page rebuild keeps them.
-tblStyle_on_change()  { TBL_STYLE_SEL=$1;  ft-modify keys style="$1"; }
-tblStripe_on_change() { TBL_STRIPE_SEL=$1; ft-modify keys striped="$1"; }
+tblStyle_on_change()  { TBL_STYLE_SEL=$1;  ft_set keys style="$1"; }
+tblStripe_on_change() { TBL_STRIPE_SEL=$1; ft_set keys striped="$1"; }
 
 # Rebuild the current step on terminal resize (also refreshes step 4's text).
 _resize() {
-    ft-modify app width="$FT_COLS" height="$FT_ROWS"
+    ft_set app width="$FT_COLS" height="$FT_ROWS"
     _show_step
 }
 
@@ -723,11 +723,11 @@ end_ft_form
 # the strip but are handled elsewhere (Tab = focus traversal, Enter/Esc = the focused
 # control, K/B = the OK/Back button accelerators), so declaring them here never shadows
 # that. Q is a real binding (ft_quit) that also carries a label.
-ft-modify app \
+ft_set app \
     key='[Kk]' keyCap="Next page" keyImp=150 \
     key=ENTER keyCap="Edit / activate" keyImp=100 \
     key=TAB keyCap="Next field" keyImp=90 \
     key=ESC keyCap="Exit edit" keyImp=80 \
     key='[Bb]' keyCap="Back" keyImp=50 \
     key='[Qq]' keyCap="Quit" keyImp=40 onKey=ft_quit
-ft-run app _show_step _resize "" _show_step
+ft_run app _show_step _resize "" _show_step

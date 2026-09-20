@@ -16,13 +16,13 @@ wedge_now() {
 }
 
 ft-form name=app width=40 height=8
-    ft-label  name=hint "Press W to wedge this app on purpose."
-    ft-button name=b "Nothing"
+    ft-label name=hint text="Press W to wedge this app on purpose."
+    ft-button name=b text="Nothing"
 end_ft_form
 
 ft_keymap wedge_map
 ft_keymap_set wedge_map key=W onKey='wedge_now $this'
-ft-modify app keymap=wedge_map
+ft_set app keymap=wedge_map
 
 _setup() { ft_layout app; }
-ft-run app _setup
+ft_run app _setup

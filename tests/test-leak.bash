@@ -101,11 +101,11 @@ note "removing a control releases its state, whatever its type"
 # the sweep before looking. What must hold either way: nothing keyed by a dead node survives.
 build_victim() {                # type — each control's own required arguments
     case $1 in
-        label)     ft-label     name=victim "Some text" ;;
-        heading)   ft-heading   name=victim "A heading" ;;
-        button)    ft-button    name=victim "Press" accessKey=P ;;
-        checkbox)  ft-checkbox  name=victim "Tick" ;;
-        radio)     ft-radio     name=victim "One" group=grp ;;
+        label)     ft-label name=victim text="Some text" ;;
+        heading)   ft-heading name=victim text="A heading" ;;
+        button)    ft-button name=victim text="Press" accessKey=P ;;
+        checkbox)  ft-checkbox name=victim text="Tick" ;;
+        radio)     ft-radio name=victim text="One" group=grp ;;
         textfield) ft-textfield name=victim size=20 value="hello" ;;
         select)    ft-select    name=victim size=1
                    end_ft_select ;;
@@ -113,7 +113,7 @@ build_victim() {                # type — each control's own required arguments
         scrollbar) ft-scrollbar name=victim orientation=vertical ;;
         statusbar) ft-statusbar name=victim status="ready" ;;
         keylegend) ft-keylegend name=victim keys=auto ;;
-        boxheader) ft-boxheader name=victim "Header" ;;
+        boxheader) ft-boxheader name=victim text="Header" ;;
         frame)     ft-frame     name=victim title=T
                    end_ft_frame ;;
     esac
@@ -160,7 +160,7 @@ end_ft_form
 ft_layout app; FT_ROOT=app
 scan_arrays; baseline=$(total_entries)
 for round in 1 2 3 4; do
-    for (( i=0; i<40; i++ )); do ft-label name="row_${round}_$i" class=row parent=list "Line $i"; done
+    for (( i=0; i<40; i++ )); do ft-label name="row_${round}_$i" class=row parent=list text="Line $i"; done
     ft_layout app
     for (( i=0; i<40; i++ )); do ft_style "row_${round}_$i" color >/dev/null 2>&1; done
     for (( i=0; i<40; i++ )); do ft_remove "row_${round}_$i"; done
@@ -179,13 +179,13 @@ note "…and a recycled name still gets its OWN style and keys, not the dead one
 ft_stylesheet name=leak2 style=".hot { color: 201; } .cool { color: 33; }"
 ft_remove app 2>/dev/null
 ft-form name=p1 width=80 height=8
-    ft-label name=spec class=hot "Specimen"
+    ft-label name=spec class=hot text="Specimen"
 end_ft_form
 ft_layout p1; FT_ROOT=p1
 ft_style spec color; check "first build resolves .hot" "$FT_RET" 201
 ft_remove spec
 ft-form name=p2 width=80 height=8
-    ft-label name=spec class=cool "Specimen"
+    ft-label name=spec class=cool text="Specimen"
 end_ft_form
 ft_layout p2; FT_ROOT=p2
 ft_style spec color; check "same name rebuilt as .cool resolves .cool" "$FT_RET" 33
@@ -195,14 +195,14 @@ hit_x() { pressed+="X "; }
 ft_keymap km_leak; ft_keymap_set km_leak key=x onKey='hit_x $this'
 ft_remove p2 2>/dev/null
 ft-form name=p3 width=80 height=8
-    ft-button name=btn "Press" keymap=km_leak
+    ft-button name=btn text="Press" keymap=km_leak
 end_ft_form
 ft_layout p3; FT_ROOT=p3; ft_focus btn
 pressed=""; ft_dispatch_event x >/dev/null 2>&1
 check "a control with keymap=… responds to it" "$pressed" "X "
 ft_remove btn
 ft-form name=p4 width=80 height=8
-    ft-button name=btn "Press"
+    ft-button name=btn text="Press"
 end_ft_form
 ft_layout p4; FT_ROOT=p4; ft_focus btn
 pressed=""; ft_dispatch_event x >/dev/null 2>&1

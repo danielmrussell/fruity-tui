@@ -11,7 +11,7 @@
 #    · a callout demo that removes an overlay by capturing FT_BEACON_EXTENT and handing it
 #      back to ft_damage — three times — once via the private _ft_bigarrow_damage_all;
 #    · every css-demo handler that sets a colour and then tells the renderer to repaint:
-#      `ft-modify inhbox color=$1; _ft_dirty_subtree inhbox`.
+#      `ft_set inhbox color=$1; _ft_dirty_subtree inhbox`.
 #
 #  The design law says copy CSS/CSSOM, sketch the user code FIRST, and fix the root rather
 #  than repeating a fix per case. That law was written down in docs/ and in nobody's test,
@@ -50,7 +50,7 @@ cd "$here" || exit 1
 # widened counter on that date, every baseline below is at or under its pre-widening value.
 declare -A BASELINE=(
     [css-demo.bash]=0          # was 12 — half were handlers that set a style then told the
-                               #   renderer to repaint (ft-modify acts on the property KIND now,
+                               #   renderer to repaint (ft_set acts on the property KIND now,
                                #   subtree-wide when it inherits); the rest was `_repaint_spec`,
                                #   three HAND-PICKED subtrees after every stylesheet edit —
                                #   which was also WRONG: page 3's bare `textfield` rule styles
@@ -75,18 +75,18 @@ declare -A BASELINE=(
 # reached zero is the one most worth watching: the map names the demos that once did engine work,
 # and any of them going back above 0 fails here by name.
 #
-# What paid for the thirty-four: ft_remove repairs what it removed; ft-modify dirties by property
+# What paid for the thirty-four: ft_remove repairs what it removed; ft_set dirties by property
 # kind, subtree-wide when the property inherits; ft_stylesheet restyles what its own selectors can
 # match; FT_PROTO_REPROP lets a prototype ACT on a change (a beacon re-arms its effect) instead of
 # an app calling _ft_beacon_arm; labels publish their scroll metrics; ft_dirty_subtree became
 # public, because an app that edits a STYLESHEET at runtime has changed how a branch resolves
-# without touching any property and no ft-modify can see it.
+# without touching any property and no ft_set can see it.
 #
 # The last fourteen were trailing `ft_redraw_dirty` calls, and they went in two groups for two
 # DIFFERENT reasons — both measured, neither assumed:
 #   · in a HANDLER the loop has set FT_COALESCING=1, and ft_redraw_dirty returns immediately;
 #     measured at the tty, 0 bytes written and the dirty set left pending for the loop's settle;
-#   · in the function ft-run takes as its `setup` argument, ft-run calls ft_redraw_all on the whole
+#   · in the function ft_run takes as its `setup` argument, ft_run calls ft_redraw_all on the whole
 #     root immediately afterwards (ft-forms.bash:6501 then :6508), so anything painted there is
 #     superseded on the same frame.
 # The scaffolding those calls really served — a gate driving a handler directly, outside any burst

@@ -150,7 +150,7 @@ _ka_build() {                   # innermap
     KA_OUTER=0; KA_INNER=0; KA_ARGS=""
     ft-form name=ka width=40 height=8
         ft-div name=kadiv keymap=ka_outer_map
-            ft-button name=kabtn "Go" keymap="$1"
+            ft-button name=kabtn text="Go" keymap="$1"
         end_ft_div
     end_ft_form
     ft_layout ka; FT_ROOT=ka; ft_focus kabtn
@@ -201,7 +201,7 @@ check "…and does not claim the key"       "$KA_OUTER" "1"
 ft_remove kb 2>/dev/null
 ft_keymap ka_empty2; _ft_keymap_put ka_empty2 X $'X\t'
 ft-form name=kb width=40 height=8
-    ft-button name=touch "Go" keymap=ka_empty2
+    ft-button name=touch text="Go" keymap=ka_empty2
 end_ft_form
 ft_layout kb; FT_ROOT=kb; ft_focus touch
 marker=$XDG_STATE_HOME/ka-name-ran
@@ -254,22 +254,27 @@ LIS=0
 ka_listener() { LIS=1; }
 ft_remove kl 2>/dev/null
 ft-form name=kl width=40 height=8
-    ft-button name=klb "Go" onActivate=ka_listener
+    ft-button name=klb text="Go" onActivate=ka_listener
 end_ft_form
 ft_layout kl; FT_ROOT=kl; ft_focus klb
 ft_activate klb
 check "a real handler fires" "$LIS" "1"
 ft_remove kl2 2>/dev/null
-ft-form name=kl2 width=40 height=8
-    ft-button name=klb2 "Go" onActivate="touch $XDG_STATE_HOME/listener-ran"
-end_ft_form
-ft_layout kl2; FT_ROOT=kl2
 rm -f "$XDG_STATE_HOME/listener-ran"
 f=$XDG_STATE_HOME/ka3.err
-ft_activate klb2 2>"$f" >/dev/null
+ft-form name=kl2 width=40 height=8
+    # `onActivate="touch FILE"` has a SPACE in its value and `onActivate` is not a registered
+    # property, so this is not an assignment at all — it is loose content, which is refused now
+    # rather than quietly becoming the button's text. It is refused at the door instead of
+    # reaching the listener plist, and either way the command must never run.
+    ft-button name=klb2 text="Go" onActivate="touch $XDG_STATE_HOME/listener-ran" 2>"$f"
+end_ft_form
+ft_layout kl2; FT_ROOT=kl2
+ft_activate klb2 >/dev/null 2>&1
 check "a listener naming a COMMAND runs nothing" \
       "$([[ -e "$XDG_STATE_HOME/listener-ran" ]] && echo RAN || echo no)" "no"
-check "…and says nothing on screen" "$(<"$f")" ""
+check "…and it was refused where it was written, not on the screen" \
+      "$(case "$(<"$f")" in *"is not a property"*) echo refused ;; *) echo "${_x:-silent}" ;; esac)" "refused"
 
 note "LEAVING a control ends its activation — for every class, not just ones that opted in"
 # Runlevel decides what the arrows MEAN: at rest they move between controls, activated they
@@ -282,8 +287,8 @@ ft-form name=blurapp width=60 height=14 display=flex flexDirection=column
     ft-slider    name=blSlider min=0 max=100 value=40
     ft-textfield name=blField  value="hello"
     ft-select    name=blSelect
-        ft-option value=a "Alpha"
-        ft-option value=b "Beta"
+        ft-option value=a text="Alpha"
+        ft-option value=b text="Beta"
     end_ft_select
 end_ft_form
 FT_ROOT=blurapp; ft_layout blurapp

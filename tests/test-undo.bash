@@ -130,7 +130,7 @@ check "Ctrl+Z again"                     "$(_val uz)" "hello"
 ft_dispatch_event "CTRL+r" >/dev/null 2>&1
 check "Ctrl+R redid it"                  "$(_val uz)" "hello "
 # …and, like the emacs Ctrl+/ binding, it works while merely FOCUSED, not only mid-edit.
-ft-modify uz runlevel=unfocused
+ft_set uz runlevel=unfocused
 ft_dispatch_event "CTRL+z" >/dev/null 2>&1
 check "Ctrl+Z works when only focused"   "$(_val uz)" "hello"
 # The tty must actually release the key, or the binding above can never fire on a real

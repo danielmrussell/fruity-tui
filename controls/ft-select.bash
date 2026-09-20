@@ -73,12 +73,12 @@ _ft_define_keymap_select() {
 # to unfold, and delving just gives it the arrows.
 select_runlevel_browsing_enter() {      # name
     ft_resolved_prop "$1" size 1; (( FT_RET > 1 )) && return 0
-    ft_resolved_prop "$1" selectedIndex 0; ft-modify "$1" open=true cursor="${FT_RET:-0}"
+    ft_resolved_prop "$1" selectedIndex 0; ft_set "$1" open=true cursor="${FT_RET:-0}"
     return 0
 }
 select_runlevel_browsing_exit() {       # name
     ft_resolved_prop "$1" size 1; (( FT_RET > 1 )) && return 0
-    ft-modify "$1" open=false
+    ft_set "$1" open=false
     return 0
 }
 # Copy WHAT YOU ARE LOOKING AT: the option under the cursor while the list is open,
@@ -122,7 +122,7 @@ ft_prototype_select() {
 }
 
 ft-select()     { ft_new select "$@" && FT_NEST_STACK+=("$FT_RET"); }
-end_ft_select() { ft-end select; }
+end_ft_select() { ft_end select; }
 
 select_on_children_complete() { _ft_select_sync "$1"; }
 _ft_select_sync() {             # name — value := selection (single or multiple)
@@ -150,14 +150,14 @@ _ft_select_sync() {             # name — value := selection (single or multipl
 
 # THE SELECTION IS THE TRUTH, and `value` is the friendly name for the same fact — exactly as in
 # ft-multitoggle, for exactly the same reason. `_ft_select_sync` derived `value` from
-# `selectedIndex` when the children were complete and nowhere else, so `ft-modify se
+# `selectedIndex` when the children were complete and nowhere else, so `ft_set se
 # selectedIndex=2` PAINTED the third option while `ft_get se value` still answered the first
 # one's: the control told the app one thing and the user another, at the same time. In the DOM
 # both directions act — `select.selectedIndex = 2` moves `.value`, and `select.value = "c"`
 # moves the selection.
 #
 # Reconciling here rather than in FT_PROTO_REPROP because _ft_setprop is EVERY route in —
-# ft-modify, the DSL, a state restore — and REPROP is only the first of them.
+# ft_set, the DSL, a state restore — and REPROP is only the first of them.
 #
 # A MULTIPLE SELECT IS NOT THIS SHAPE: its value is the joined list of every option carrying
 # selected=true, so `selectedIndex` does not determine it and must not overwrite it.
@@ -243,9 +243,9 @@ _ft_select_geom() {             # name
 # _ft_select_place_cursor, which _ft_setprop calls for every route in. It used to demand an
 # ALREADY-CLAMPED index and every caller obliged — except an app writing `cursor=` itself, which
 # is the one caller that could not know.
-_ft_select_cursor_to() { ft-modify "$1" cursor="$2"; }
+_ft_select_cursor_to() { ft_set "$1" cursor="$2"; }
 
-# The placement itself. Stamped, not written back through ft-modify: the setter is our caller.
+# The placement itself. Stamped, not written back through ft_set: the setter is our caller.
 _ft_select_place_cursor() {     # name newcur
     local name=$1 cur=$2
     case $cur in ''|*[!0-9-]*|-*-*|-) return 0 ;; esac
@@ -319,14 +319,14 @@ ft_select_key_pgdn() { _ft_select_page "$1"; _ft_select_move "$1" "$FT_RET"; }
 # Only `selectedIndex` is written, here and on the cancel: `value` follows it in
 # _ft_select_setprop now, on every route in, so writing both would be two ways to do one thing —
 # and the on_change handler already reads the new value through the property because the
-# reconciler ran inside the ft-modify above it.
+# reconciler ran inside the ft_set above it.
 _ft_select_commit_index() {     # name idx — single-select commit + hook/cancel
     local name=$1 idx=$2
     _ft_options "$name"
     ft_resolved_prop "$name" selectedIndex 0; local old=$FT_RET
     _ft_option_value "${FT_OPTS[$idx]}"; local newval=$FT_RET
-    ft-modify "$name" selectedIndex="$idx"
-    _ft_hook "$name" on_change "$newval" || ft-modify "$name" selectedIndex="$old"
+    ft_set "$name" selectedIndex="$idx"
+    _ft_hook "$name" on_change "$newval" || ft_set "$name" selectedIndex="$old"
     return 0
 }
 
@@ -334,11 +334,11 @@ _ft_select_commit_index() {     # name idx — single-select commit + hook/cance
 # selection, Esc bound (only while open) to cancel.
 ft_select_open() {
     local name=$1
-    ft_resolved_prop "$name" selectedIndex 0; local sel=$FT_RET   # SAVE it: ft-modify below
+    ft_resolved_prop "$name" selectedIndex 0; local sel=$FT_RET   # SAVE it: ft_set below
                                                           # clobbers FT_RET, and the
                                                           # cursor must START on the
                                                           # currently-selected option.
-    ft-modify "$name" open=true cursor="$sel" scroll=0
+    ft_set "$name" open=true cursor="$sel" scroll=0
     _ft_keymap_of "$name"
     ft_keymap_set "$FT_RET" key=ESC onKey='ft_select_close $this'
     # The dropdown is an OVERLAY: mark one open and suspend the keycap pulse right away, so
@@ -432,7 +432,7 @@ ft_select_close() {             # name — close the dropdown, repaint what it c
     _ft_options "$name"; local n=${#FT_OPTS[@]}
     local col=${FT_ABSOLUTE_X[$name]:-0} cols=${FT_MEASURED_WIDTH[$name]:-0}
     _ft_select_geom "$name"; local etop=$_SEL_TOP evis=$_SEL_VIS   # the exact overlay rectangle
-    ft-modify "$name" open=false
+    ft_set "$name" open=false
     # Balance the overlay depth we took on open, so the keycap pulse resumes once the last
     # overlay closes. Guarded by `was` so a redundant close can't underflow it.
     [[ "$was" == true ]] && (( FT_OVERLAY_DEPTH > 0 )) && (( FT_OVERLAY_DEPTH-- ))

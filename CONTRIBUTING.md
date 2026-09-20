@@ -32,8 +32,8 @@ should make them think *"ah — of course."*
   is a bug with a delayed fuse.
 
 **The recurring root cause in this codebase, by a distance: the same predicate on one route and
-not its siblings.** Removing a control repaired the screen; hiding it did not. `ft-modify`
-repainted; `ft_remove_attribute` did not. A prototype default was documented at cascade level 5 and
+not its siblings.** Removing a control repaired the screen; hiding it did not. `ft_set`
+repainted; `ft_unset` did not. A prototype default was documented at cascade level 5 and
 implemented at level 1. When you fix a guard, *enumerate every route into that state* and fix
 them together, or write down why the others differ.
 
@@ -43,7 +43,7 @@ Several engine tables are derived from an instance property at construction — 
 route gets forgotten, because construction is where you are looking when you add one. Three
 found this way, and the third was found only by going looking for the other two's shape:
 
-| table | set at construction | followed by `ft-modify` |
+| table | set at construction | followed by `ft_set` |
 |---|---|---|
 | `FT_DRAW` | ✓ | ✓ |
 | `FT_FOCUSABLE` | ✓ | ✗ — `focusable=false` at runtime was inert |
@@ -63,7 +63,7 @@ writing the table in each. And when the two halves disagree about what is regist
 Sweeping the engine tables finds the properties above. Sweeping the *prototypes* finds the next
 one. `activeTab` on `ft-tabs` was declared layout-kind, so writing it reflowed the subtree — and
 the reflow faithfully re-laid out the wrong tab, because which body is visible is `display` on
-each body and only `_ft_tabs_show_only` writes those. `ft-modify tabs activeTab=1` moved the
+each body and only `_ft_tabs_show_only` writes those. `ft_set tabs activeTab=1` moved the
 number and switched nothing.
 
 A property *kind* says what the ENGINE owes a change: repaint, reflow, restyle. It cannot say
@@ -85,25 +85,25 @@ set, because each looks different and is the same bug:
 | `label.scrollTop` | stored verbatim | painted line 9 of 12, property said 99 |
 
 **Three mechanisms, and picking the wrong one is most of the work.** `FT_PROTO_REPROP` is told by
-`ft-modify` and by nothing else — enough when the state can only change at runtime. `setProp=`
-(`FT_PROTO_SETPROP`) is called from `_ft_setprop`, which is *every* route in: `ft-modify`, the
-DSL, a state restore. Prefer it whenever **any route other than `ft-modify`** can produce the bad
+`ft_set` and by nothing else — enough when the state can only change at runtime. `setProp=`
+(`FT_PROTO_SETPROP`) is called from `_ft_setprop`, which is *every* route in: `ft_set`, the
+DSL, a state restore. Prefer it whenever **any route other than `ft_set`** can produce the bad
 state — `ft-slider value=50 max=10` writes the two in that order, and only the second one can fix
 the first.
 
 **"Construction is already handled" is not the test**, and reading it that way cost a real bug.
 `ft-tabs` registered a REPROP for `activeTab` on exactly that reasoning: its children-complete
-hook applies the index once the bodies exist, so construction was covered and `ft-modify` was
+hook applies the index once the bodies exist, so construction was covered and `ft_set` was
 covered, and the mechanism looked sufficient. A STATE RESTORE is neither of those — it writes
 through `_ft_setprop` — so a reloaded session came back with `activeTab=1` in the property and
-tab one still on screen. Ask "can this state arrive any way but `ft-modify`", and remember that a
+tab one still on screen. Ask "can this state arrive any way but `ft_set`", and remember that a
 save file is one of the ways. And
 when the rule belongs to no prototype at all — a scroll offset is bounded by the box's own published
 `scrollHeight`/`clientHeight`, whatever kind of box it is — it belongs in `_ft_setprop` beside
 the numeric validation.
 
 **A reconciler READS the property that just changed**, so it runs at the END of `_ft_setprop`,
-after the memo invalidation. Reconciling first, `ft-modify sl max=4` sanitized against a max of
+after the memo invalidation. Reconciling first, `ft_set sl max=4` sanitized against a max of
 100 out of the cache and changed nothing.
 
 **And do not let the paint quietly fix it.** Every one of those bugs had a draw-time correction

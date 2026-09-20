@@ -113,7 +113,7 @@ wellof() {                      # name n textw → FT_RET  (after _ft_textfield_
 
 note "the well is exactly its own width, whatever is in it (textw=$TEXTW)"
 for v in "$ASCII" "$CJK" "ab日cd語ef" "👍👍👍👍👍👍👍👍" "short"; do
-    ft-modify one value="$v"
+    ft_set one value="$v"
     FT_TEXTFIELD_CARET[one]=0; _ft_setprop one scrollLeft 0
     paint one; boxrow one 0
     ft_display_width "$FT_RET"
@@ -123,7 +123,7 @@ done
 
 note "THE BUG: the caret at the end of a wide-glyph value is still on screen"
 # The field follows the caret in COLUMNS, so the last glyphs of the value are what shows.
-ft-modify one value="$CJK"
+ft_set one value="$CJK"
 FT_TEXTFIELD_CARET[one]=20; _ft_setprop one scrollLeft 0
 paint one; wellof one 0 "$TEXTW"
 check "the END of the value is visible"  "$FT_RET" "日本語日本  "
@@ -134,14 +134,14 @@ check "the terminal cursor is inside the well" \
 check "…on the column right after the last glyph" \
       "$FT_CARET_C" "$(( FT_ABSOLUTE_X[one] + 1 + 10 ))"
 
-ft-modify one value="$ASCII"        # the same field, the same caret, in ASCII — unchanged
+ft_set one value="$ASCII"        # the same field, the same caret, in ASCII — unchanged
 FT_TEXTFIELD_CARET[one]=20; _ft_setprop one scrollLeft 0
 paint one; wellof one 0 "$TEXTW"
 check "ASCII is untouched: the end still shows" "$FT_RET" "jklmnopqrst "
 check "…with the same offset it always had"     "$(_hoff one)" "9"
 
 note "a caret in the middle keeps its glyph whole"
-ft-modify one value="$CJK"
+ft_set one value="$CJK"
 FT_TEXTFIELD_CARET[one]=3; _ft_setprop one scrollLeft 0
 paint one; wellof one 0 "$TEXTW"
 check "no scrolling needed yet"    "$(_hoff one)" "0"
@@ -153,7 +153,7 @@ check "the cursor sits on column 6 of the well (3 glyphs in)" \
 note "a click lands on the character the user pointed at"
 # Round trip through the SCREEN: put the caret at k, ask where that is, click there, expect k.
 for v in "$ASCII" "$CJK" "ab日cd語ef"; do
-    ft-modify one value="$v"
+    ft_set one value="$v"
     _ft_setprop one scrollLeft 0
     bad=""
     for (( k=0; k<=6; k++ )); do
@@ -167,7 +167,7 @@ for v in "$ASCII" "$CJK" "ab日cd語ef"; do
 done
 
 note "clicking PAST the text puts the caret at the end, not beyond it"
-ft-modify one value="日本"          # 2 characters, 4 columns, in a 12-column well
+ft_set one value="日本"          # 2 characters, 4 columns, in a 12-column well
 _ft_setprop one scrollLeft 0
 _ft_textfield_caret_at one 11 1
 check "a click in the empty right of the well → the last character" "$FT_RET" "2"
@@ -177,7 +177,7 @@ check "a click on the second half of glyph 1 → the next boundary"   "$FT_RET" 
 # ── The text area ────────────────────────────────────────────────────────────
 note "a non-wrapping text area pans sideways in columns"
 ft_focus area
-ft-modify area value="$CJK"$'\n'"$ASCII"
+ft_set area value="$CJK"$'\n'"$ASCII"
 FT_TEXTFIELD_CARET[area]=0; _ft_setprop area scrollLeft 0; _ft_setprop area scrollTop 0
 _ft_textfield_textw area; ATW=$FT_RET
 # An IDLE viewer, so the pan under test is the one set here — an engaged field re-derives
@@ -232,8 +232,8 @@ _ft_textfield_caret_at area 6 1;  check "row 0, mid-glyph → snaps to character
 _ft_textfield_caret_at area 4 2;  check "row 1 (ASCII) column 3 → character 24" "$FT_RET" "24"
 
 note "NOTHING wrote to stderr while any of that was drawn"
-err=$( { ft-modify one value="$CJK"; FT_TEXTFIELD_CARET[one]=20; paint one
-         ft-modify area value="$CJK"; _ft_setprop area scrollLeft 7; paint area
+err=$( { ft_set one value="$CJK"; FT_TEXTFIELD_CARET[one]=20; paint one
+         ft_set area value="$CJK"; _ft_setprop area scrollLeft 7; paint area
          _ft_textfield_caret_at one 99 1; _ft_textfield_caret_at area 0 9
          _ft_textfield_caret_screen one; _ft_textfield_caret_screen area; } 2>&1 >/dev/null )
 check "clean" "${err:-clean}" "clean"

@@ -24,7 +24,7 @@ ft_term_size
 # with FT_NO_WTFIX=1; also toggleable live from Settings.
 [[ -z "${FT_NO_WTFIX:-}" ]] && declare -F ft_wt_autofix_enter >/dev/null && ft_wt_autofix_enter
 
-_status() { ft-modify status text="$1"; }
+_status() { ft_set status text="$1"; }
 
 fUser_on_change() { _status "user = \"$1\""; }
 fHost_on_change() { _status "host = \"$1\""; }
@@ -70,7 +70,7 @@ apply_theme() {
 theme_on_change() { apply_theme "$1"; ft_refresh; }
 
 _build() {
-    ft-empty app
+    ft_empty app
         ft-frame name=win title="ft-tabs — a control full of controls" \
                  display=flex flexDirection=column gap=1 padding=1 alignItems=center \
                  borderStyle=double
@@ -87,7 +87,7 @@ _build() {
                         ft-label name=lH text="Host" width=6
                         ft-textfield name=fHost size=26 placeholder="dc1.example.com" onChange=fHost_on_change
                     end_ft_div
-                    ft-checkbox name=cbRemember "Remember me" accessKey=R checked=true onChange=cbRemember_on_change
+                    ft-checkbox name=cbRemember text="Remember me" accessKey=R checked=true onChange=cbRemember_on_change
                 end_ft_tab
                 # ── Tab 2: sliders ────────────────────────────────────────────
                 ft-tab title="Tuning (2)"
@@ -103,8 +103,8 @@ _build() {
                 # ── Tab 3: a data table ───────────────────────────────────────
                 ft-tab title="Plan (3)"
                     ft-table name=plan variant=grid striped=true
-                        ft-table-header "Task" width=18
-                        ft-table-header "When"
+                        ft-table-header text="Task" width=18
+                        ft-table-header text="When"
                         ft-table-row "Provision DC"  "today"
                         ft-table-row "Join domain"   "tomorrow"
                         ft-table-row "Set up shares"  "this week"
@@ -119,9 +119,9 @@ _build() {
                     ft-div name=rowT display=flex gap=1 alignItems=center
                         ft-label name=lT text="Theme" width=6
                         ft-select name=theme size=1 onChange=theme_on_change
-                            ft-option value=dark  "Dark"
-                            ft-option value=light "Light"
-                            ft-option value=ocean "Ocean"
+                            ft-option value=dark text="Dark"
+                            ft-option value=light text="Light"
+                            ft-option value=ocean text="Ocean"
                         end_ft_select
                     end_ft_div
                 end_ft_tab
@@ -130,7 +130,7 @@ _build() {
             ft-label name=status text="←/→ or 1-4 switch tabs · Tab enters · Esc = menu · Shift+Tab leaves" \
                      width=60 color=notice textAlign=center
             ft-div name=btnrow display=flex gap=2 justifyContent=center
-                ft-button name=btnQuit Quit accessKey=Q onActivate=btnQuit_on_activate
+                ft-button name=btnQuit text=Quit accessKey=Q onActivate=btnQuit_on_activate
             end_ft_div
         end_ft_frame
     end_ft_form
@@ -142,4 +142,4 @@ ft-form name=app width="$FT_COLS" height="$FT_ROWS" \
         display=flex justifyContent=center alignItems=center \
         key='[Qq]' onKey=ft_quit key=1 onKey=_tab1 key=2 onKey=_tab2 key=3 onKey=_tab3 key=4 onKey=_tab4
 end_ft_form
-ft-run app _build
+ft_run app _build

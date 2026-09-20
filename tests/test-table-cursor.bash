@@ -2,7 +2,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 #  A TABLE'S CURSOR AND SCROLL ARE THE TABLE'S STATE, SO WRITING THEM DOES THE WORK.
 #
-#  `ft-modify tb cursor=99` on a six-row table stored 99 and highlighted NOTHING — measured on
+#  `ft_set tb cursor=99` on a six-row table stored 99 and highlighted NOTHING — measured on
 #  the paint: with a valid cursor exactly one row carries the cursor colours, and with 99 no row
 #  did, while `ft_get tb cursor` went on answering 99. `scrollTop=99` was stored verbatim too.
 #  ft_table_cursor_set clamped and scrolled the row into view; the property did neither. An app
@@ -25,17 +25,17 @@ FT_COLS=70; FT_ROWS=24; FT_USE_UTF8=1; FT_COLOR_MODE=256
 
 ft-form name=app width=70 height=24
     ft-table name=tb rows=3 striped=false
-        ft-table-header "Name"
-        ft-table-header "Size"
+        ft-table-header text="Name"
+        ft-table-header text="Size"
         ft-table-row "alpha"   "1";  ft-table-row "bravo" "2"; ft-table-row "charlie" "3"
         ft-table-row "delta"   "4";  ft-table-row "echo"  "5"; ft-table-row "foxtrot" "6"
     end_ft_table
     ft-table name=empty rows=3
-        ft-table-header "Nothing"
+        ft-table-header text="Nothing"
     end_ft_table
     ft-select name=se size=4              # a listbox: four of eight options visible, so it scrolls
-        ft-option "one"; ft-option "two"; ft-option "three"; ft-option "four"
-        ft-option "five"; ft-option "six"; ft-option "seven"; ft-option "eight"
+        ft-option text="one"; ft-option text="two"; ft-option text="three"; ft-option text="four"
+        ft-option text="five"; ft-option text="six"; ft-option text="seven"; ft-option text="eight"
     end_ft_select
 end_ft_form
 ft_layout app
@@ -70,37 +70,37 @@ _p() { ft_get "$1" "$2"; printf '%s' "${FT_RET:-<unset>}"; }
 
 note "the fixture really scrolls, and really marks one row (else every check below is vacuous)"
 check "three of six rows are shown" "$(_visible)" "alpha bravo charlie"
-ft-modify tb cursor=1
+ft_set tb cursor=1
 check "exactly one row is marked"   "$(_cursor_row)" "bravo"
 
 note "a cursor past the last row lands ON the last row, and the view follows it"
-ft-modify tb cursor=99
+ft_set tb cursor=99
 check "clamped to the last row"     "$(_p tb cursor)"    "5"
 check "…and the view scrolled to it" "$(_p tb scrollTop)" "3"
 check "…which is what is on screen"  "$(_visible)"        "delta echo foxtrot"
 check "…and it is the marked row"    "$(_cursor_row)"     "foxtrot"
 
 note "…and a negative one lands on the first, scrolling back"
-ft-modify tb cursor=-4
+ft_set tb cursor=-4
 check "clamped to the first row"     "$(_p tb cursor)"    "0"
 check "…and the view came back"      "$(_p tb scrollTop)" "0"
 check "…and it is the marked row"    "$(_cursor_row)"     "alpha"
 
 note "the scroll offset is bounded by the rows there are"
-ft-modify tb scrollTop=99
+ft_set tb scrollTop=99
 check "past the end clamps"          "$(_p tb scrollTop)" "3"
 check "…and shows the last window"   "$(_visible)"        "delta echo foxtrot"
-ft-modify tb scrollTop=-2
+ft_set tb scrollTop=-2
 check "before the start clamps"      "$(_p tb scrollTop)" "0"
-ft-modify tb scrollTop=1
+ft_set tb scrollTop=1
 check "in range is left alone"       "$(_p tb scrollTop)" "1"
 check "…and that is the window"      "$(_visible)"        "bravo charlie delta"
 
 note "the verbs are the property write now, so the two routes cannot disagree"
-ft-modify tb cursor=0 scrollTop=0
+ft_set tb cursor=0 scrollTop=0
 ft_table_cursor_set tb 99
 check "the verb clamps the same way"  "$(_p tb cursor),$(_p tb scrollTop)" "5,3"
-ft-modify tb cursor=99
+ft_set tb cursor=99
 check "…and so does the property"     "$(_p tb cursor),$(_p tb scrollTop)" "5,3"
 ft_table_key_home tb
 check "Home goes to the first row"    "$(_p tb cursor),$(_p tb scrollTop)" "0,0"
@@ -110,17 +110,17 @@ ft_table_key_up tb
 check "Up steps back one"             "$(_p tb cursor)" "4"
 
 note "a table with no rows takes a cursor write without inventing one"
-ft-modify empty cursor=3
+ft_set empty cursor=3
 check "no rows, no cursor to move"    "$(_p empty cursor)" "0"
-ft-modify empty scrollTop=7
+ft_set empty scrollTop=7
 check "…and nothing to scroll"        "$(_p empty scrollTop)" "0"
 
 note "a select's cursor is the same rule: bounded, and the window follows it"
-ft-modify se cursor=0 scroll=0
-ft-modify se cursor=99
+ft_set se cursor=0 scroll=0
+ft_set se cursor=99
 check "clamped to the last option"    "$(_p se cursor)" "7"
 check "…and the window scrolled to it" "$(_p se scroll)" "4"    # 8 options, 4 visible
-ft-modify se cursor=-3
+ft_set se cursor=-3
 check "…and a negative one to the first" "$(_p se cursor)" "0"
 check "…scrolling back to the top"       "$(_p se scroll)" "0"
 ft_select_key_end se

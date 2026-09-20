@@ -111,7 +111,7 @@ key=<pattern> [keyCap="<label>"] [keyImp=crucial|important|normal|minor|0-255] [
 
 `key=` opens a group; the fields after it describe it until the next `key=`. A group with a
 `keyCap` and no `onKey` is legend-only: advertised, handled by somebody else. `EQUALS` is the
-pattern for the `=` key. They are accepted on any tag, in `ft_keymap_set`, in `ft-modify` (which
+pattern for the `=` key. They are accepted on any tag, in `ft_keymap_set`, in `ft_set` (which
 rebinds a live control), and as `ft-key` rows inside a block:
 
 ```bash

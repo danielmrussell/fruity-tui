@@ -6,9 +6,9 @@
 #  of which 560 ms was _ft_beacon_paint_callout — the search prices ~1000 candidate boxes and
 #  routes a leader for each finalist, and it ran inside ft_draw_one, inside the settle for one
 #  keypress. The page the user asked for is correct WITHOUT the callout, so the settle hands the
-#  frame over and ft-run pays for the callout immediately afterwards.
+#  frame over and ft_run pays for the callout immediately afterwards.
 #
-#  THE PREDICATE IS THE WHOLE SAFETY ARGUMENT: deferral needs a pump, and ft-run's loop is the
+#  THE PREDICATE IS THE WHOLE SAFETY ARGUMENT: deferral needs a pump, and ft_run's loop is the
 #  only one. With FT_RUN_ACTIVE=0 — every test in this directory, ft_beacon_place, any app that
 #  drives its own paints — the search happens in place, synchronously, exactly as before. That is
 #  what leaves ~600 existing callout assertions untouched, and it is asserted here rather than
@@ -93,7 +93,7 @@ note "a burst leaves ONE debt per beacon, not one per change — the held-key ca
 _teardown; _build
 FT_RUN_ACTIVE=1
 for _t in "first text" "second text" "third text" "fourth text"; do
-    ft-modify c1 text="$_t"
+    ft_set c1 text="$_t"
     _paint
 done
 check "four changes, one debt"          "$(_debts)" "1"
@@ -116,7 +116,7 @@ _teardown; _build
 FT_RUN_ACTIVE=0
 _paint                                        # place it first, so the drag has a shape to keep
 FT_RUN_ACTIVE=1
-ft-modify c1 parkedTop=3 parkedLeft=40
+ft_set c1 parkedTop=3 parkedLeft=40
 _paint
 check "the dragged callout still paints" "$(( FT_RET > 0 ))" "1"
 check "…and owes nothing"                "$(_debts)" "0"

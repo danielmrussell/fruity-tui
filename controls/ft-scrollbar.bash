@@ -40,7 +40,7 @@
 #  actual position change, onScroll=fn NAME NEWOFFSET is called if
 #  defined — the app's one line of glue to scroll its paired content:
 #
-#      sb_on_scroll() { ft-modify msg scrollTop="$1"; }   # $this=sb, $1=offset
+#      sb_on_scroll() { ft_set msg scrollTop="$1"; }   # $this=sb, $1=offset
 #
 #  Depends on ft-core.bash, ft-forms.bash, ft-keymap.bash.
 # ─────────────────────────────────────────────────────────────────────────────
@@ -100,11 +100,11 @@ declare -A FT_SCROLLBAR_FOR_TARGET=()
 ft-scrollbar() { ft_new scrollbar "$@"; }
 
 # THE ONE WRITER of that registry, reached from the reconciler on every route a `for` can be
-# written (the constructor, ft-modify, a state restore) and from the destroy hook. It used to be
+# written (the constructor, ft_set, a state restore) and from the destroy hook. It used to be
 # written by the CONSTRUCTOR and nowhere else:
 #
 #     ft-scrollbar name=sb for=logA     logA→sb   logB→<none>
-#     ft-modify sb for=logB             logA→sb   logB→<none>    while ft_get sb for = logB
+#     ft_set sb for=logB             logA→sb   logB→<none>    while ft_get sb for = logB
 #     ft_remove sb                      logA→sb                  …naming a control that is gone
 #
 # So logA drew NO scrollbar at all — its own gutter stood down for a bar that had left — while
@@ -266,7 +266,7 @@ ft_scrollbar_percent() {        # name
 # ft_scrollbar_set and only there, so the two spellings of one job disagreed completely:
 #
 #     ft_scrollbar_set sb 7      bar=7   target=7          onScroll fired
-#     ft-modify sb scrollTop=7   bar=7   target=<unset>    onScroll never fired
+#     ft_set sb scrollTop=7   bar=7   target=<unset>    onScroll never fired
 #
 # …and the property route is the one an app reaches for, the one ft-state restores through, and
 # the one the header of this file documents. Same shape as label.scrollTop, one control over.
@@ -301,7 +301,7 @@ _ft_scrollbar_setprop() {       # name prop value previous
     ft_dirty "$name"
     # The target's offset is the SAME axis as the bar's, not always scrollTop — a horizontal bar
     # was syncing its target's vertical offset.
-    [[ -n "$FT_SCROLLBAR_TARGET" ]] && ft-modify "$FT_SCROLLBAR_TARGET" "$prop=$v"
+    [[ -n "$FT_SCROLLBAR_TARGET" ]] && ft_set "$FT_SCROLLBAR_TARGET" "$prop=$v"
     _ft_hook "$name" on_scroll "$v"        # $this=name, $1=new offset
     return 0
 }
@@ -311,7 +311,7 @@ _ft_scrollbar_setprop() {       # name prop value previous
 # route reaches them.
 ft_scrollbar_set() {
     _ft_sb_state "$1"
-    ft-modify "$1" "$FT_SCROLLBAR_POSITION_PROP=$2"
+    ft_set "$1" "$FT_SCROLLBAR_POSITION_PROP=$2"
     return 0
 }
 ft_scrollbar_scroll() {         # name delta
@@ -428,8 +428,8 @@ _ft_draw_scrollbar() {                   # name
     # re-clamps its own on this same path — had gone back to 0. Two numbers for one scroll
     # position, disagreeing. Written back through the setter rather than corrected here, so the
     # clamp, the target sync and onScroll stay in the one place that owns them (the shape
-    # _ft_label_metrics already uses), and through _ft_setprop rather than ft-modify because the
-    # value being written is the stale one and ft-modify skips a write it thinks is a no-op.
+    # _ft_label_metrics already uses), and through _ft_setprop rather than ft_set because the
+    # value being written is the stale one and ft_set skips a write it thinks is a no-op.
     # Only when it is actually wrong: this runs on the draw path. The scroll event that follows
     # is a real one — the view moved, because the content did.
     local _sbmax=$(( FT_SCROLLBAR_TOTAL - FT_SCROLLBAR_CLIENT )); (( _sbmax < 0 )) && _sbmax=0

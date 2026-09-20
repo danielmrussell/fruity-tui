@@ -75,29 +75,29 @@ no  "…and neither axis is confused for the other"    ft_has_scrollbar autoLabe
 
 note "the axis property wins over the shorthand, and both are honoured"
 # CSS's rule: overflow-y decides the vertical axis when it is set; the overflow shorthand
-# decides it when it is not. Driven through ft-modify, which is how a control's overflow is
+# decides it when it is not. Driven through ft_set, which is how a control's overflow is
 # actually spelled in every demo.
-ft-modify visibleLabel overflowY=auto;   _paint_cold
+ft_set visibleLabel overflowY=auto;   _paint_cold
 ok  "overflowY=auto shows a scrollbar"              ft_has_scrollbar visibleLabel y
-ft-modify visibleLabel overflowY=clip;   _paint_cold
+ft_set visibleLabel overflowY=clip;   _paint_cold
 no  "…clip hard-clips, so no scrollbar"             ft_has_scrollbar visibleLabel y
-ft-modify visibleLabel overflowY=hidden; _paint_cold
+ft_set visibleLabel overflowY=hidden; _paint_cold
 no  "…hidden has no bar either (still scrollable programmatically)" ft_has_scrollbar visibleLabel y
-ft_remove_attribute visibleLabel overflowY; _paint_cold
+ft_unset visibleLabel overflowY; _paint_cold
 ok  "a label with NO overflow property still scrolls (its documented class default)" \
     ft_has_scrollbar visibleLabel y
-ft-modify visibleLabel overflowY=visible;  _paint_cold
+ft_set visibleLabel overflowY=visible;  _paint_cold
 
 # The shorthand-vs-axis rule is asked of the DIV, not the label: ft-label deliberately defaults
 # overflowY=auto (controls/ft-label.bash:71, documented in its header), so the axis property is
 # never unset there and the shorthand can never be the one deciding. Asking on a control
 # whose prototype pins the answer would be a test that cannot fail for the reason it claims.
-ft-modify scroller overflow=clip; ft_layout app
+ft_set scroller overflow=clip; ft_layout app
 no  "a div with overflow=clip shows no bar"         ft_has_scrollbar scroller y
-ft-modify scroller overflowY=auto; ft_layout app
+ft_set scroller overflowY=auto; ft_layout app
 ok  "…and its overflow-y outranks the shorthand"    ft_has_scrollbar scroller y
-ft_remove_attribute scroller overflowY
-ft-modify scroller overflow=auto; ft_layout app; _paint_cold
+ft_unset scroller overflowY
+ft_set scroller overflow=auto; ft_layout app; _paint_cold
 
 note "the label that owns a bar still draws one — this fix must not delete it"
 # The label paints its own thumb inline and never calls ft_scrollbar_paint, so the check above

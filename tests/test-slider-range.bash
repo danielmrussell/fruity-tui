@@ -2,9 +2,9 @@
 # ─────────────────────────────────────────────────────────────────────────────
 #  A SLIDER'S VALUE IS SANITIZED AT EVERY WRITE, NOT CORRECTED AT EVERY PAINT.
 #
-#  `ft-modify sl max=4` on a slider showing 5 left the property at 5. _ft_draw_slider clamped
+#  `ft_set sl max=4` on a slider showing 5 left the property at 5. _ft_draw_slider clamped
 #  for itself, so the knob AND the value text said 4 while `ft_get sl value` said 5: the app and
-#  the user were reading different numbers off the same control. `ft-modify sl value=500` was
+#  the user were reading different numbers off the same control. `ft_set sl value=500` was
 #  the same divergence from the other end, and `value=7 step=5` put the knob where the slider's
 #  own arrow keys could never place it.
 #
@@ -59,37 +59,37 @@ _k5=$(_knob); (( _k5 > 0 )) && check "the knob is on the track, not at the end" 
                             || check "the knob is on the track, not at the end" 0 1
 
 note "lowering max UNDER the value brings the value down with it"
-ft-modify sl max=4
+ft_set sl max=4
 _agree "max=4 pulls value to 4" "4"
 _k4=$(_knob)
 (( _k4 > _k5 )) && check "…and the knob moved right, to the new end" 1 1 \
                 || check "…and the knob moved right, to the new end ($_k5 → $_k4)" 0 1
-ft-modify sl max=10 value=5
+ft_set sl max=10 value=5
 
 note "raising min OVER the value pushes the value up"
-ft-modify sl min=8 max=20
+ft_set sl min=8 max=20
 _agree "min=8 pushes value to 8" "8"
 check "…and the knob is at the low end now" "$(_knob)" "0"
 
 note "writing the value out of range clamps it — el.value = 500 with max=10 gives 10"
-ft-modify sl min=0 max=10 step=1 value=5
-ft-modify sl value=500
+ft_set sl min=0 max=10 step=1 value=5
+ft_set sl value=500
 _agree "above max" "10"
-ft-modify sl value=-7
+ft_set sl value=-7
 _agree "below min" "0"
 
 note "step alignment: the step base is MIN, and ties round up"
-ft-modify sl min=0 max=10 step=5 value=0
-ft-modify sl value=7
+ft_set sl min=0 max=10 step=5 value=0
+ft_set sl value=7
 _agree "7 with step 5 → 5" "5"
-ft-modify sl value=8
+ft_set sl value=8
 _agree "8 with step 5 → 10" "10"
-ft-modify sl value=2                                    # 2 and 3 are the tie neighbours of 2.5
+ft_set sl value=2                                    # 2 and 3 are the tie neighbours of 2.5
 _agree "2 rounds down" "0"
-ft-modify sl value=3
+ft_set sl value=3
 _agree "3 rounds up" "5"
-ft-modify sl min=10 max=20 step=4 value=10
-ft-modify sl value=19
+ft_set sl min=10 max=20 step=4 value=10
+ft_set sl value=19
 _agree "the last aligned value below max, not max" "18"
 
 note "the same rule at CONSTRUCTION, where only the DSL route can apply it"
@@ -102,8 +102,8 @@ check "a value written before its max is still clamped" "$(ft_get born value; pr
 check "an off-grid starting value snaps"                "$(ft_get grid value; printf %s "$FT_RET")" "16"
 
 note "a max below its min collapses the range onto min, as in HTML"
-ft-modify sl min=10 max=20 step=1 value=15
-ft-modify sl max=3
+ft_set sl min=10 max=20 step=1 value=15
+ft_set sl max=3
 _agree "max under min → min wins" "10"
 
 note "a non-numeric value cannot reach (( )) — it becomes the range's midpoint"
@@ -112,16 +112,16 @@ note "a non-numeric value cannot reach (( )) — it becomes the range's midpoint
 # anywhere on the value's path runs the command — verified in isolation, the canary does fire.
 # THE PAINT BELOW IS THE POINT: it is where the old code did its clamping, so the check has to
 # come after a real draw or it passes by never having drawn anything.
-ft-modify sl min=0 max=10 step=1 value=5
+ft_set sl min=0 max=10 step=1 value=5
 rm -f /tmp/ft-slider-injection-canary
-ft-modify sl value='q[$(touch /tmp/ft-slider-injection-canary)]' 2>/dev/null
+ft_set sl value='q[$(touch /tmp/ft-slider-injection-canary)]' 2>/dev/null
 _shown >/dev/null
 check "the subscript did NOT execute" "$([[ -e /tmp/ft-slider-injection-canary ]] && printf ran || printf no)" "no"
 _agree "…and the value is the midpoint" "5"
 rm -f /tmp/ft-slider-injection-canary
 
 note "the key route agrees with the property route"
-ft-modify sl min=0 max=10 step=3 value=0
+ft_set sl min=0 max=10 step=3 value=0
 ft_focus sl >/dev/null 2>&1
 ft_slider_key_max sl;  _agree "End goes to the last aligned value" "9"
 ft_slider_key_min sl;  _agree "Home goes to min" "0"
@@ -129,20 +129,20 @@ ft_slider_key_inc sl;  _agree "Right steps by one step" "3"
 ft_slider_key_biginc sl; _agree "PgUp steps by five, clamped" "9"
 
 note "the mouse route lands on aligned values too — it no longer carries its own copy of the rule"
-ft-modify sl min=0 max=10 step=3 value=0
+ft_set sl min=0 max=10 step=3 value=0
 FT_MEASURED_WIDTH[sl]=24
 _ft_mouse_slider sl press 9 0
 _v=$(_prop); case "$_v" in 0|3|6|9) check "a click lands on the grid" 1 1 ;;
                           *) check "a click lands on the grid ($_v)" 0 1 ;; esac
 
 note "a cancelled on_change restores the value the user was looking at"
-ft-modify sl min=0 max=10 step=1 value=5
+ft_set sl min=0 max=10 step=1 value=5
 _veto() { return 1; }
-ft-modify sl onChange=_veto
+ft_set sl onChange=_veto
 ft_slider_set sl 9
 _agree "the refusal put it back" "5"
-ft_remove_attribute sl onChange
-ft-modify sl eventListeners=""
+ft_unset sl onChange
+ft_set sl eventListeners=""
 ft_slider_set sl 9
 _agree "…and with the handler gone it moves" "9"
 
@@ -158,13 +158,13 @@ _agree "…and with the handler gone it moves" "9"
 #  HTML: an invalid step is ignored and the step is the default 1.
 # ─────────────────────────────────────────────────────────────────────────────
 note "an invalid step is ignored, and the arrows keep meaning what their captions say"
-ft-modify sl min=0 max=10 step=2 value=5
+ft_set sl min=0 max=10 step=2 value=5
 ft_focus sl >/dev/null 2>&1
 _step_of() { ft_get sl step; printf '%s' "$FT_RET"; }
 _arrows() {                     # → "right,left" from value 5
-    ft-modify sl value=5; ft_slider_key_inc sl >/dev/null 2>&1
+    ft_set sl value=5; ft_slider_key_inc sl >/dev/null 2>&1
     local r; r=$(ft_get sl value; printf %s "$FT_RET")
-    ft-modify sl value=5; ft_slider_key_dec sl >/dev/null 2>&1
+    ft_set sl value=5; ft_slider_key_dec sl >/dev/null 2>&1
     printf '%s,%s' "$r" "$(ft_get sl value; printf %s "$FT_RET")"
 }
 # POSITIVE CONTROL first — a probe that reports "inert" for everything proves nothing.
@@ -173,17 +173,17 @@ _arrows() {                     # → "right,left" from value 5
 # the expectation is 8,4 rather than 7,3 because of it, and getting that wrong the first time is
 # exactly what a positive control is for.
 check "step=2 moves by two from where 5 lands" "$(_arrows)" "8,4"
-ft-modify sl step=1
+ft_set sl step=1
 check "step=1 moves by one"                   "$(_arrows)" "6,4"
 for _bad in 0 -1 -3; do
-    ft-modify sl step=$_bad
+    ft_set sl step=$_bad
     check "step=$_bad is ignored, and reads back 1" "$(_step_of)" "1"
     check "…and the arrows still move by one"       "$(_arrows)" "6,4"
 done
 # …and the step survives being removed: the prototype default is 1.
-ft-modify sl step=4
+ft_set sl step=4
 check "a valid step is kept"                  "$(_step_of)" "4"
-ft_remove_attribute sl step
+ft_unset sl step
 check "removing it falls back to the default" "$(_step_of)" "1"
 check "…and the arrows follow"                "$(_arrows)" "6,4"
 

@@ -54,7 +54,7 @@ ft-form name=app width="$FT_COLS" height="$FT_ROWS" display=flex flexDirection=c
     # The base status is static help. Once a field is ENGAGED the framework's own mode hint
     # takes the bar over and names the runlevel you are in — so the bar is live without the
     # demo tracking anything. (An earlier version updated it from a callback and lagged a
-    # keypress behind: ft-run's `render` argument only fires on invalidation, not per frame,
+    # keypress behind: ft_run's `render` argument only fires on invalidation, not per frame,
     # and there is no instance-level focus event to hang it on.)
     ft-statusbar name=bar flexShrink=0 \
                  status="Tab moves · Enter climbs a rung · Esc leaves · B legend style · Q quit"
@@ -64,8 +64,8 @@ end_ft_form
 # are visible without editing the file.
 toggle_caps() {
     ft_get legend capStyle
-    [[ "$FT_RET" == boxed ]] && ft-modify legend capStyle=flat \
-                             || ft-modify legend capStyle=boxed
+    [[ "$FT_RET" == boxed ]] && ft_set legend capStyle=flat \
+                             || ft_set legend capStyle=boxed
     ft_refresh
 }
 
@@ -74,10 +74,10 @@ toggle_caps() {
 # legend. So the demo advertised "Q quit" in its status line while the legend never showed it.
 # Re-declaring the same patterns as caps upgrades them in place (same pattern = replace).
 _bind_app_keys() {
-    ft-modify app \
+    ft_set app \
         key='[Bb]' keyCap="Legend style" keyImp=normal onKey=toggle_caps \
         key='[Qq]' keyCap="Quit" keyImp=normal onKey=ft_quit
 }
 
 _setup() { _bind_app_keys; ft_layout app; ft_focus one; }
-ft-run app _setup
+ft_run app _setup

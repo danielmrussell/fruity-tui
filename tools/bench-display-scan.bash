@@ -40,8 +40,8 @@ if [[ "${1:-}" == scene ]]; then
         text="A dashboard line whose text is comfortably longer than the box the layout gives it"
       ft-frame name=win title="Servers" flexGrow=1 minHeight=0 overflow=hidden
         ft-table name=tbl width=60 variant=grid striped=true
-            ft-table-header "Host"; ft-table-header "State"
-            ft-table-header "Path"; ft-table-header "Seen"
+            ft-table-header text="Host"; ft-table-header text="State"
+            ft-table-header text="Path"; ft-table-header text="Seen"
             for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18; do
                 ft-table-row "srv-$i.internal" "running" \
                     "/var/lib/very/long/path/that/does/not/fit/in/its/column/$i" \

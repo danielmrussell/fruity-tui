@@ -64,7 +64,7 @@ check "on_change got new index (1)" "$GACT" "1"
 # accelerator live on purpose, because activating it is what un-hides it, and ft-help gives
 # every help tab one. So the ordinary case is: focus is on a button INSIDE the open panel and
 # the user presses another tab's letter. Every other way of hiding a control repairs focus
-# (ft-modify's display route runs `_ft_focus_skippable FT_FOCUS && ft_focus_move 1`); the tab
+# (ft_set's display route runs `_ft_focus_skippable FT_FOCUS && ft_focus_move 1`); the tab
 # switch wrote `display` directly and did not, so focus stayed on the hidden button, the
 # keymap cascade and legend with it, and ENTER ACTIVATED SOMETHING INVISIBLE.
 note "an accelerator switch never leaves focus on the panel it hid"

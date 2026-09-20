@@ -60,7 +60,7 @@ if [[ -z "${FT_STATE_FILE:-}" ]]; then
 fi
 
 # RELOADING IS THE OTHER HALF OF SAVING. A save the app never reads back is a file, not a
-# feature — "it resets entirely" is what the user sees. ft-run restores automatically when
+# feature — "it resets entirely" is what the user sees. ft_run restores automatically when
 # a state file for this app exists, after the app has built its UI and before the first
 # paint, so the very first frame is where you left off. FT_STATE_AUTOLOAD=0 opts out (and
 # an app that wants to ask first can set it to 0 and call ft_state_load itself).

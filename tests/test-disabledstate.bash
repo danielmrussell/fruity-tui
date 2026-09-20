@@ -27,10 +27,10 @@ kid_on_activate() { fired=1; }
 
 ft-form name=app width="$FT_COLS" height="$FT_ROWS"
     ft-div name=holder
-        ft-button name=kid "Go" onActivate=kid_on_activate
+        ft-button name=kid text="Go" onActivate=kid_on_activate
     end_ft_div
     ft-div name=other
-        ft-button name=free "Free"
+        ft-button name=free text="Free"
     end_ft_div
 end_ft_form
 FT_ROOT=app; ft_layout app
@@ -42,7 +42,7 @@ fired=0; ft_activate kid >/dev/null 2>&1
 check "the handler fires"         "$fired" 1
 
 note "disable the CONTAINER — the behaviour follows it down"
-ft-modify holder disabled=true
+ft_set holder disabled=true
 ft_resolved_prop kid disabled
 check "the engine resolves the child as disabled" "$FT_RET" true
 fired=0; ft_activate kid >/dev/null 2>&1
@@ -64,13 +64,13 @@ ft_style free --probe
 check "…and an untouched button is still enabled" "$FT_RET" en
 
 note "un-disabling the container releases the child again"
-ft-modify holder disabled=false
+ft_set holder disabled=false
 check "the selector says enabled again" "$(ft_matches kid :enabled && echo yes || echo no)" yes
 fired=0; ft_activate kid >/dev/null 2>&1
 check "and the handler fires again"     "$fired" 1
 
 note "disabling the control directly still works (it always did)"
-ft-modify kid disabled=true
+ft_set kid disabled=true
 check "directly disabled matches :disabled" "$(ft_matches kid :disabled && echo yes || echo no)" yes
 check "…and not :enabled"                   "$(ft_matches kid :enabled  && echo yes || echo no)" no
 

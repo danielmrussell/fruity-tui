@@ -3,7 +3,7 @@
 #  MOVING A NODE CHANGES WHAT IT INHERITS — so the move must invalidate it.
 #
 #  Every other route into "this node's cascade inputs changed" invalidates: a property write
-#  (_ft_setprop), ft_remove_attribute, a stylesheet registration. The DOM move mixins —
+#  (_ft_setprop), ft_unset, a stylesheet registration. The DOM move mixins —
 #  ft_append / ft_before / ft_after — rewrote FT_PARENT and FT_KIDS and bumped nothing, and
 #  the style caches are keyed on the cascade EPOCH plus a per-node version. So after a move
 #  the resolver served the OLD parent's inherited value from a warm cache, and the documented

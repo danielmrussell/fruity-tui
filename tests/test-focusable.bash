@@ -4,7 +4,7 @@
 #
 #  ft-forms.bash states the rule where the prototype table is declared: "a boolean is always
 #  present, always 1 or 0, and always tested as a NUMBER". `ft_prototype focusable=true` is
-#  normalised at the declaration and ft-modify normalises a runtime write — but an INSTANCE
+#  normalised at the declaration and ft_set normalises a runtime write — but an INSTANCE
 #  property went into FT_FOCUSABLE raw, and every reader tests `== 1`. So
 #
 #      ft-label name=x focusable=true
@@ -29,11 +29,11 @@ exec {FT_TTY}>/dev/null
 FT_COLS=60; FT_ROWS=20
 
 ft-form name=app width=60 height=20
-    ft-button name=btnTrue  "true"  focusable=true
-    ft-button name=btnOne   "one"   focusable=1
-    ft-button name=btnFalse "false" focusable=false
-    ft-button name=btnZero  "zero"  focusable=0
-    ft-button name=btnPlain "plain"
+    ft-button name=btnTrue text="true" focusable=true
+    ft-button name=btnOne text="one" focusable=1
+    ft-button name=btnFalse text="false" focusable=false
+    ft-button name=btnZero text="zero" focusable=0
+    ft-button name=btnPlain text="plain"
 end_ft_form
 ft_layout app
 FT_ROOT=app
@@ -63,12 +63,12 @@ ft_focus btnFalse >/dev/null 2>&1
 check "…and refuses the one turned off" "${FT_FOCUS:-<refused>}" "<refused>"
 
 note "a runtime write answers the same way — the two routes may not disagree"
-# ft-modify already normalised; construction did not. That divergence IS the bug, so both
+# ft_set already normalised; construction did not. That divergence IS the bug, so both
 # are asserted here rather than only the one that was broken.
-ft-modify btnFalse focusable=true
-check "ft-modify focusable=true → 1" "${FT_FOCUSABLE[btnFalse]:-}" "1"
-ft-modify btnFalse focusable=false
-check "ft-modify focusable=false → 0" "${FT_FOCUSABLE[btnFalse]:-}" "0"
+ft_set btnFalse focusable=true
+check "ft_set focusable=true → 1" "${FT_FOCUSABLE[btnFalse]:-}" "1"
+ft_set btnFalse focusable=false
+check "ft_set focusable=false → 0" "${FT_FOCUSABLE[btnFalse]:-}" "0"
 
 note "ring MEMBERSHIP and being SKIPPABLE are different questions"
 # A label with nothing to scroll is focusable by prototype (it may scroll when it overflows) and

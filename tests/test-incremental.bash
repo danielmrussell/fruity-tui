@@ -16,7 +16,7 @@
 #  THE SHAPE OF ONE CASE:
 #
 #      the screen as a cold full repaint left it
-#        → the action, inside a coalesced burst, exactly as ft-run dispatches one
+#        → the action, inside a coalesced burst, exactly as ft_run dispatches one
 #        → settle: ft_reflow_flush, ft_redraw_dirty                  (bytes → ID.inc)
 #        → go_cold, ft_repaint_all                                    (bytes → ID.full)
 #
@@ -37,8 +37,8 @@
 #
 #  WHAT IS WRITTEN, AND WHY IT IS NOT A HAND LIST OF THINGS THAT MATTER. Every name in
 #  FT_PROP_KIND — the table that says what the engine owes a change — is written with a sample
-#  value on every fixture's subject, and then put back (by ft-modify when it had a value, by
-#  ft_remove_attribute when it did not, so both routes are driven). A name with no sample must be
+#  value on every fixture's subject, and then put back (by ft_set when it had a value, by
+#  ft_unset when it did not, so both routes are driven). A name with no sample must be
 #  EXEMPTED here with a reason, and the file fails by name when a new property arrives without
 #  either — so the corpus grows with the framework instead of with somebody's memory.
 #
@@ -100,7 +100,7 @@ declare -A _INC_SAMPLE=(
 # so it has to be true: re-read the reason before adding to this list.
 declare -A _INC_EXEMPT=(
     [name]="identity — a control is renamed by rebuilding it"
-    [parent]="refused by ft-modify; the tree moves by verb, and ft_append is driven below"
+    [parent]="refused by ft_set; the tree moves by verb, and ft_append is driven below"
     [id]="a tree node's identity in the expansion record, not something it draws"
     [group]="a radio's identity; which radio is chosen is driven by its verbs below"
     [draw]="names a paint FUNCTION; what that function paints is the app's"
@@ -174,11 +174,11 @@ _inc_sabotage() {
                             names[j+1]=$tn; depths[j+1]=$td
                         done
                         FT_PAINT_ORDER=("${names[@]}"); } ;;
-        # ft_remove_attribute forgets that leaving or rejoining the flow MOVES the siblings —
-        # the `position` arm its private copy of ft-modify's dispatch never had.
+        # ft_unset forgets that leaving or rejoining the flow MOVES the siblings —
+        # the `position` arm its private copy of ft_set's dispatch never had.
         removeroute) eval "_inc_owed_original() $(declare -f _ft_prop_owed | tail -n +2)"
                      _ft_prop_owed() {
-                         [[ "${FUNCNAME[1]}" == ft_remove_attribute && "$2" == position ]] && return 0
+                         [[ "${FUNCNAME[1]}" == ft_unset && "$2" == position ]] && return 0
                          _inc_owed_original "$@"; } ;;
     esac
 }
@@ -212,10 +212,10 @@ if [[ "${1:-}" == --fixture ]]; then
                 label)       ft-label name=sub text="$_INC_DOC" width=20 height=4 overflowY=auto ;;
                 textfield)   ft-textfield name=sub size=18 rows=4 height=4 value="$_INC_DOC" ;;
                 textviewer)  ft-textfield name=sub size=18 rows=4 height=4 readOnly=true value="$_INC_DOC" ;;
-                button)      ft-button name=sub "Press me" ;;
-                checkbox)    ft-checkbox name=sub "Tick me" ;;
-                radio)       ft-radio name=sub group=incg "One"
-                             ft-radio name=sub2 group=incg "Two" ;;
+                button)      ft-button name=sub text="Press me" ;;
+                checkbox)    ft-checkbox name=sub text="Tick me" ;;
+                radio)       ft-radio name=sub group=incg text="One"
+                             ft-radio name=sub2 group=incg text="Two" ;;
                 multitoggle) ft-multitoggle name=sub text="Priority"
                                  ft-option value=low    glyph="Low"
                                  ft-option value=medium glyph="Medium"
@@ -223,22 +223,22 @@ if [[ "${1:-}" == --fixture ]]; then
                              end_ft_multitoggle ;;
                 slider)      ft-slider name=sub min=0 max=20 value=5 width=24 showValue=true ;;
                 select)      ft-select name=sub size=3
-                                 ft-option value=a "Alpha"
-                                 ft-option value=b "Bravo"
-                                 ft-option value=c "Charlie"
-                                 ft-option value=d "Delta"
+                                 ft-option value=a text="Alpha"
+                                 ft-option value=b text="Bravo"
+                                 ft-option value=c text="Charlie"
+                                 ft-option value=d text="Delta"
                              end_ft_select ;;
                 table)       ft-table name=sub rows=3
-                                 ft-table-header "Key"
+                                 ft-table-header text="Key"
                                  ft-table-row alpha; ft-table-row bravo;   ft-table-row charlie
                                  ft-table-row delta; ft-table-row echo;    ft-table-row foxtrot
                              end_ft_table ;;
                 tree)        ft-tree name=sub rows=5 width=24
-                                 ft-tree-node "src"          id=src  depth=0 expanded=true
-                                 ft-tree-node "ft-core.bash" id=core depth=1
-                                 ft-tree-node "controls"     id=ctl  depth=1 expanded=false
-                                 ft-tree-node "ft-tree.bash" id=tree depth=2
-                                 ft-tree-node "README.md"    id=rd   depth=0
+                                 ft-tree-node text="src" id=src depth=0 expanded=true
+                                 ft-tree-node text="ft-core.bash" id=core depth=1
+                                 ft-tree-node text="controls" id=ctl depth=1 expanded=false
+                                 ft-tree-node text="ft-tree.bash" id=tree depth=2
+                                 ft-tree-node text="README.md" id=rd depth=0
                              end_ft_tree ;;
                 tabs)        ft-tabs name=sub width=30 height=7
                                  ft-tab name=tab1 title=One
@@ -258,15 +258,15 @@ if [[ "${1:-}" == --fixture ]]; then
                 # an inherited property is the whole of what reaches them.
                 div)         ft-div name=sub display=flex flexDirection=column
                                  ft-label name=inner text="inside the div"
-                                 ft-button name=inner2 "Inner"
+                                 ft-button name=inner2 text="Inner"
                              end_ft_div ;;
-                heading)     ft-heading name=sub "Section" ;;
+                heading)     ft-heading name=sub text="Section" ;;
                 boxheader)   ft-boxheader name=sub text="Interface" ;;
                 keylegend)   ft-keylegend name=sub keys="Enter=Open  Del=Delete" ;;
                 statusbar)   ft-statusbar name=sub status="ready" width=30 ;;
                 # The TARGET is a subject too: a callout's whole job is to follow what it points
                 # at, and writes to the beacon alone moved the screen five times in 142 cases.
-                beacon)      ft-button name=target "Aim here"
+                beacon)      ft-button name=target text="Aim here"
                              ft-beacon name=sub target=target variant=callout number=1 effect=none text="Look"
                              _INC_SUBJECTS="sub target" ;;
             esac
@@ -289,7 +289,7 @@ if [[ "${1:-}" == --fixture ]]; then
         local command=${3//$'\n'/⏎}
         printf '%s\t%s\t%s\n' "$1" "$2" "${command//$'\t'/⇥}" >> "$_INC_DIR/cases"
     }
-    # One case: the action inside a burst, the settle ft-run does after it, the oracle.
+    # One case: the action inside a burst, the settle ft_run does after it, the oracle.
     # STDERR IS NOT SWALLOWED. An action that makes the framework complain is a failure of this
     # file under tests/run-all.bash, which is the right verdict for it.
     _inc_case() {               # item command…
@@ -353,9 +353,9 @@ if [[ "${1:-}" == --fixture ]]; then
                 [[ "$FT_RET" == true ]] && _sample=false || _sample=true
             fi
             (( _had )) && [[ "$_sample" == "$_original" ]] && continue
-            _inc_case "$_name" ft-modify "$_subject" "$_name=$_sample"
-            if (( _had )); then _inc_case "$_name" ft-modify "$_subject" "$_name=$_original"
-            else                _inc_case "$_name" ft_remove_attribute "$_subject" "$_name"
+            _inc_case "$_name" ft_set "$_subject" "$_name=$_sample"
+            if (( _had )); then _inc_case "$_name" ft_set "$_subject" "$_name=$_original"
+            else                _inc_case "$_name" ft_unset "$_subject" "$_name"
             fi
             # PUTTING IT BACK MUST PUT THE LAYOUT BACK. When it does not, every later case paints
             # over controls that now overlap, and which one wins depends on paint order — so a
@@ -510,7 +510,7 @@ _inc_moved() {                  # fixture item command-prefix → changed|unchan
 }
 # Known answers name their fixtures, so they are asked only of a run that built all of them.
 if [[ -z "${FT_INCREMENTAL_TYPES:-}" ]]; then
-    check "a label's text write reached the screen"     "$(_inc_moved label text 'ft-modify sub text=')" "changed"
+    check "a label's text write reached the screen"     "$(_inc_moved label text 'ft_set sub text=')" "changed"
     check "scrolling a bar's target reached the screen" "$(_inc_moved scrollbar verb 'ft_label_scroll_set doc')" "changed"
     check "a stylesheet edit reached the screen" \
           "$(_inc_moved button stylesheet 'ft_stylesheet name=incsheet style=.hot { color: red')" "changed"

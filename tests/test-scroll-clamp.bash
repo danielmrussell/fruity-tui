@@ -2,14 +2,14 @@
 # ─────────────────────────────────────────────────────────────────────────────
 #  A SCROLL OFFSET IS CLAMPED AT THE WRITE, NOT CORRECTED AT THE PAINT.
 #
-#  `ft-modify log scrollTop=99` on a 12-line label in a 4-row box stored 99 and PAINTED line 9,
+#  `ft_set log scrollTop=99` on a 12-line label in a 4-row box stored 99 and PAINTED line 9,
 #  and `scrollTop=-5` stored -5 and painted line 1. ft_label_scroll_set — the verb for the same
 #  job — stored 8. Two routes, two answers, and the property route was the one an app reads back.
 #  In a browser `el.scrollTop = 99` reads back scrollHeight-clientHeight.
 #
 #  The bounds are the box's own published scrollHeight/clientHeight, so the rule is the
 #  framework's: _ft_clamp_scroll in _ft_setprop, on every route in. A scrollbar bound to a target
-#  writes the property directly (`ft-modify TARGET scrollTop=N`), so it inherits the clamp too.
+#  writes the property directly (`ft_set TARGET scrollTop=N`), so it inherits the clamp too.
 #
 #  AND THE DOCUMENT CAN SHRINK UNDER THE OFFSET, which no clamp at write time can anticipate:
 #  replacing a scrolled label's text with one line left scrollTop where it was. Both publishers
@@ -58,49 +58,49 @@ check "…into a four-row viewport" "$(_n lg clientHeight)" "4"
 check "…and it starts at the top" "$(_first lg)"          "line 1"
 
 note "a label: the offset lands inside [0, scrollHeight-clientHeight] whatever you write"
-ft-modify lg scrollTop=3
+ft_set lg scrollTop=3
 check "an in-range offset is kept"  "$(_n lg scrollTop)" "3"
 check "…and it paints there"        "$(_first lg)"       "line 4"
-ft-modify lg scrollTop=99
+ft_set lg scrollTop=99
 check "past the bottom clamps"      "$(_n lg scrollTop)" "8"
 check "…and the paint agrees"       "$(_first lg)"       "line 9"
-ft-modify lg scrollTop=-5
+ft_set lg scrollTop=-5
 check "above the top clamps"        "$(_n lg scrollTop)" "0"
 check "…and the paint agrees"       "$(_first lg)"       "line 1"
 
 note "…which is what the verb has always answered — the two routes now agree"
 ft_label_scroll_set lg 99
 check "the verb clamps the same way" "$(_n lg scrollTop)" "8"
-ft-modify lg scrollTop=99
+ft_set lg scrollTop=99
 check "…and so does the property"    "$(_n lg scrollTop)" "8"
 
 note "the document shrinking under a scrolled label takes the offset with it"
-ft-modify lg scrollTop=99; _draw lg
+ft_set lg scrollTop=99; _draw lg
 check "scrolled to the end"          "$(_n lg scrollTop)" "8"
-ft-modify lg text="only one line"; _draw lg
+ft_set lg text="only one line"; _draw lg
 check "one line left → offset is 0"  "$(_n lg scrollTop)" "0"
 check "…and the extent says so"      "$(_n lg scrollHeight)" "1"
-ft-modify lg text="$_long"; _draw lg
+ft_set lg text="$_long"; _draw lg
 check "and the long text restores the range" "$(_n lg scrollHeight)" "12"
 
 note "a scrollable CONTAINER, whose extent comes from the arrange rather than a draw"
 check "six rows of children"      "$(_n box scrollHeight)" "6"
 check "…in four rows of viewport" "$(_n box clientHeight)" "4"
-ft-modify box scrollTop=99
+ft_set box scrollTop=99
 check "past the bottom clamps"    "$(_n box scrollTop)" "2"
-ft-modify box scrollTop=-3
+ft_set box scrollTop=-3
 check "above the top clamps"      "$(_n box scrollTop)" "0"
-ft-modify box scrollTop=1
+ft_set box scrollTop=1
 check "in range is kept"          "$(_n box scrollTop)" "1"
 
 note "…and its children going away brings the offset back with them"
-ft-modify box scrollTop=2
+ft_set box scrollTop=2
 check "scrolled to the end"       "$(_n box scrollTop)" "2"
-ft-modify k4 display=none; ft-modify k5 display=none; ft-modify k6 display=none
+ft_set k4 display=none; ft_set k5 display=none; ft_set k6 display=none
 ft_layout app
 check "three rows left → offset 0" "$(_n box scrollTop)" "0"
 check "…and the extent shrank"     "$(_n box scrollHeight)" "3"
-ft-modify k4 display=block; ft-modify k5 display=block; ft-modify k6 display=block
+ft_set k4 display=block; ft_set k5 display=block; ft_set k6 display=block
 ft_layout app
 
 note "a childless scroller measures its OWN content — the arrange must not answer for it"
@@ -108,7 +108,7 @@ note "a childless scroller measures its OWN content — the arrange must not ans
 ft_layout app; _draw lg
 check "a layout does not zero the label's extent" "$(_n lg scrollHeight)" "12"
 check "…nor pin its offset to the top"            "$(_n lg clientHeight)" "4"
-ft-modify lg scrollTop=6
+ft_set lg scrollTop=6
 ft_layout app
 check "an offset survives a relayout"             "$(_n lg scrollTop)" "6"
 check "…and still paints where it says"           "$(_first lg)"       "line 7"
@@ -116,8 +116,8 @@ check "…and still paints where it says"           "$(_first lg)"       "line 7
 note "an extent is a number, so an app cannot post one into (( ))"
 _canary=$(mktemp -u)
 _err=$(mktemp)
-ft-modify lg scrollHeight="q[\$(touch $_canary)]" 2>"$_err"
-ft-modify lg scrollTop=3
+ft_set lg scrollHeight="q[\$(touch $_canary)]" 2>"$_err"
+ft_set lg scrollTop=3
 check "the subscript did NOT execute" "$([[ -e "$_canary" ]] && printf ran || printf no)" "no"
 grep -q 'is not a number' "$_err" && check "…and the declaration was dropped, loudly" 1 1 \
                                   || check "…and the declaration was dropped, loudly" 0 1

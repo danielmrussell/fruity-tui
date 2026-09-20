@@ -34,9 +34,9 @@ end_ft_form
 ft_layout root
 _ft_get_raw legend keys; check "keys stored with spaces" "$FT_RET" "Enter=Open  Del=Delete"
 check "legend laid out 3 tall (capStyle=boxed, the default)" "${FT_MEASURED_HEIGHT[legend]}" "3"
-ft-modify legend capStyle=flat; ft_layout root
+ft_set legend capStyle=flat; ft_layout root
 check "…and 1 tall with capStyle=flat"                       "${FT_MEASURED_HEIGHT[legend]}" "1"
-ft-modify legend capStyle=boxed; ft_layout root
+ft_set legend capStyle=boxed; ft_layout root
 
 note "the legend paints its caps + labels"
 FT_OUT=""; _ft_draw_keylegend legend
@@ -44,12 +44,12 @@ vis=$(printf '%s' "$FT_OUT" | _vis)
 [[ "$vis" == *"Enter"*"Open"*"Del"*"Delete"* ]] && check "legend painted" 1 1 || check "legend painted" 0 1
 
 note "an over-long legend is clipped to the strip, never spilling past its width"
-ft-modify legend keys="A=aaaaaaaaaa  B=bbbbbbbbbb  C=cccccccccc  D=dddddddddd  E=eeeeeeeeee  F=ffffffffff  G=gggggggggg  H=hhhhhhhhhh"
+ft_set legend keys="A=aaaaaaaaaa  B=bbbbbbbbbb  C=cccccccccc  D=dddddddddd  E=eeeeeeeeee  F=ffffffffff  G=gggggggggg  H=hhhhhhhhhh"
 FT_OUT=""; ft_layout root; _ft_draw_keylegend legend
 check "legend width unchanged" "${FT_MEASURED_WIDTH[legend]}" "80"
 
 note "in a MODE (FT_MODE_HINT) the exit key (Esc) is pulled to the FRONT with a distinct chip"
-ft-modify legend keys="Tab=Next  Enter=Edit  Esc=Exit edit  Q=Quit"
+ft_set legend keys="Tab=Next  Enter=Edit  Esc=Exit edit  Q=Quit"
 FT_OUT=""; _ft_draw_keylegend legend
 vis=$(printf '%s' "$FT_OUT" | _vis | tr -s ' ')
 # Match on ORDER alone, not on the cap's punctuation: capStyle=boxed renders `│ Tab │ Next`
@@ -173,12 +173,12 @@ _ft_kcpulse_disarm; [[ -z "${FT_ANIM_PHASE[__ft_kcpulse]:-}" ]] && check "disarm
 # `keys=auto` is DERIVED from the focused control, so every transition that changes what the
 # control can do has to mark it dirty. _ft_legend_dirty was called on focus changes, runlevel
 # changes and the textfield's state — and NOT when the KEYS THEMSELVES change, which was fair
-# enough while a binding could only be written before the app ran. `ft-modify btn key=…` and
+# enough while a binding could only be written before the app ran. `ft_set btn key=…` and
 # `defaultKeys=` make rebinding an ordinary thing to do at runtime, and the legend went on
 # advertising the keys the control used to have until something else happened to repaint it.
 note "changing a control's keys repaints a derived legend"
 ft-form name=slroot width=80 height=8
-    ft-button name=slbtn "Go"
+    ft-button name=slbtn text="Go"
     ft-keylegend name=sllegend keys=auto
 end_ft_form
 FT_ROOT=slroot; ft_layout slroot; ft_focus slbtn
@@ -187,20 +187,20 @@ before=$(_legend_text)
 check "the legend starts on the button's own key" \
       "$(case "$before" in *Activate*) echo yes ;; *) echo "${before:-empty}" ;; esac)" "yes"
 
-FT_DIRTY=(); ft-modify slbtn key=Z keyCap="Zap it" keyImp=crucial onKey='ft_quit'
+FT_DIRTY=(); ft_set slbtn key=Z keyCap="Zap it" keyImp=crucial onKey='ft_quit'
 check "binding a key marks the legend dirty"  "${FT_DIRTY[sllegend]:-no}" "1"
 check "…and the new cap is what it draws" \
       "$(case "$(_legend_text)" in *Zap*) echo yes ;; *) echo missing ;; esac)" "yes"
 
-FT_DIRTY=(); ft-modify slbtn defaultKeys=false
+FT_DIRTY=(); ft_set slbtn defaultKeys=false
 check "silencing prototype keys marks it dirty" "${FT_DIRTY[sllegend]:-no}" "1"
 check "…and the prototype's cap is gone" \
       "$(case "$(_legend_text)" in *Activate*) echo still-there ;; *) echo gone ;; esac)" "gone"
 
-FT_DIRTY=(); ft-modify slbtn keymap=kmt
+FT_DIRTY=(); ft_set slbtn keymap=kmt
 check "pointing at a shared keymap marks it dirty" "${FT_DIRTY[sllegend]:-no}" "1"
 # The bar advertises ACCELERATORS as well as keys, and they move the same way.
-FT_DIRTY=(); ft-modify slbtn accessKey=g
+FT_DIRTY=(); ft_set slbtn accessKey=g
 check "changing an accessKey marks it dirty"       "${FT_DIRTY[sllegend]:-no}" "1"
 
 summary

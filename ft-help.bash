@@ -22,7 +22,7 @@ _FT_HELP_LOADED=1
 declare -A FT_PROTO_HELP=()     # [<type>:<index>] = "Title<newline>body…"
 declare -A FT_PROTO_HELPLABEL=() FT_PROTO_HELPACCEL=() # [<type>:<index>] tab label / accessKey
 # helpText<n> = a tab's body, helpLabel<n> = its header, helpAccel<n> = its accessKey.
-# Register 0..9 (only registered props are stored by ft-modify / the DSL).
+# Register 0..9 (only registered props are stored by ft_set / the DSL).
 for _fh in "" 1 2 3 4 5 6 7 8 9; do
     ft_prop_kind_set "helpText$_fh"  paint
     ft_prop_kind_set "helpLabel$_fh" paint
@@ -276,8 +276,8 @@ _ft_help_build() {
                 done
             end_ft_tabs
             ft-div name=__helpbtns display=flex gap=2 justifyContent=center width="$tabw"
-                ft-button name=__helpabout accessKey=A About onActivate=__helpabout_on_activate
-                ft-button name=__helpquit  accessKey=Q Quit onActivate=__helpquit_on_activate
+                ft-button name=__helpabout accessKey=A text=About onActivate=__helpabout_on_activate
+                ft-button name=__helpquit accessKey=Q text=Quit onActivate=__helpquit_on_activate
             end_ft_div
         end_ft_frame
     end_ft_form

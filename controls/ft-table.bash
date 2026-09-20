@@ -192,7 +192,7 @@ _ft_table_glyphs() {            # borderStyle
     esac
 }
 ft-table()     { ft_new table "$@" && FT_NEST_STACK+=("$FT_RET"); }
-end_ft_table() { ft-end table; }
+end_ft_table() { ft_end table; }
 
 # ── Data children (display=none — the table renders them, never themselves) ───
 # A table is DECLARED with column HEADERS plus DATA. The header set is fixed;
@@ -474,10 +474,10 @@ _ft_table_focus_skip() {        # name → 0 = skip (only a scrolling table is f
 # `cursor` AND `scrollTop` ARE THE TABLE'S STATE, so the two verbs below are now nothing but
 # the property write, and the rule that used to live in each of them lives once, in the
 # reconciler _ft_setprop calls. Written as a property they were stored verbatim:
-# `ft-modify tb cursor=99` on a six-row table reported 99 while NO row was highlighted, and
+# `ft_set tb cursor=99` on a six-row table reported 99 while NO row was highlighted, and
 # `scrollTop=99` reported 99 with the body where it was. The verbs clamped; the property did
 # not; an app that reached for the obvious name got the wrong one of the two.
-ft_table_scroll_set() { ft-modify "$1" scrollTop="$2"; }
+ft_table_scroll_set() { ft_set "$1" scrollTop="$2"; }
 # (A scroll-by-delta helper lived here, from when the arrows PANNED the window. Nothing has
 # called it since the cursor model below replaced that: every key and every wheel tick moves
 # the row and lets scrolling follow. Left in place it went on teaching the superseded model to
@@ -487,12 +487,12 @@ ft_table_scroll_set() { ft-modify "$1" scrollTop="$2"; }
 # the arrows move IT — scrolling follows to keep it in view, which is the other way round
 # from before, when the arrows only panned the window and nothing was ever "the row you are
 # on". A table could therefore never say which row you meant, so copying one was impossible.
-ft_table_cursor_set() { ft-modify "$1" cursor="$2"; }
+ft_table_cursor_set() { ft_set "$1" cursor="$2"; }
 
 # The prototype's setProp reconciler: _ft_setprop is every route in, so a cursor written by an
 # app, by a key, by the DSL or by a state restore is bounded the same way and drags the view
 # after it.
-# Stamped, not written back through ft-modify: the setter is our caller.
+# Stamped, not written back through ft_set: the setter is our caller.
 _ft_table_setprop() {           # name prop value
     local n=$1 v=$3 last sc
     case $2 in cursor|scrollTop) : ;; *) return 0 ;; esac

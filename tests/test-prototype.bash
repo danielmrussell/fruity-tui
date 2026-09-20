@@ -78,14 +78,14 @@ check "underflow reported" "$(
     case "$err" in *'no open container'*) echo yes ;; *) echo "$err" ;; esac
 )" "yes"
 
-note "ft-empty + ft_refresh: THE rebuild idiom"
+note "ft_empty + ft_refresh: THE rebuild idiom"
 ft-form name=rb width=40 height=10
     ft-button name=rbBtn text=" A "
 end_ft_form
 FT_ROOT=rb
 exec {FT_TTY}>/dev/null
 check "button focused after first build" "$FT_FOCUS" "rbBtn"
-ft-empty rb
+ft_empty rb
 check "children destroyed" "${FT_TYPE[rbBtn]+set}" ""
 check "the container itself survives" "${FT_TYPE[rb]}" "form"
 ft-button name=rbBtn parent=rb text=" A again "
@@ -101,7 +101,7 @@ gadget_on_children_complete() { _GADGET_DONE=$1; }
 ft-gadget name=gHook
 FT_NEST_STACK+=("gHook")
 ft-label name=gKid text=x
-ft-end gadget
+ft_end gadget
 check "hook received the finished parent" "$_GADGET_DONE" "gHook"
 check "children were already known inside it" "${FT_KIDS[gHook]}" "gKid"
 check "nothing was destroyed" "${FT_TYPE[gHook]},${FT_TYPE[gKid]}" "gadget,label"
@@ -162,8 +162,8 @@ check "a LATE extends= is rejected" "$(case "$err" in *'must come before'*) echo
 note "booleans are stored 1/0 — never '' — so a reader can test them arithmetically"
 # `[[ -n ]]` on a boolean was true for "0", which is how a heading came to claim mouse
 # clicks. Every prototype must therefore CARRY the flag, not merely omit it when false.
-ft-heading name=hbool "x"
-ft-button  name=bbool "y"
+ft-heading name=hbool text="x"
+ft-button name=bbool text="y"
 check "focusable=false stored as 0"      "${FT_PROTO_FOCUSABLE[heading]}" 0
 check "focusable=true stored as 1"       "${FT_PROTO_FOCUSABLE[button]}"  1
 check "an undeclared boolean is 0 too"   "${FT_PROTO_NOHIT[heading]}"     0
@@ -172,8 +172,8 @@ check "a class that declares it gets 1"  "${FT_PROTO_FILLS_BACKGROUND[form]}"   
 
 note "_ft_mouse_target only offers a control that can actually TAKE the click"
 ft-form name=mf width=40 height=8
-    ft-button   name=mfBtn "OK"
-    ft-heading  name=mfHd  "Section"
+    ft-button name=mfBtn text="OK"
+    ft-heading name=mfHd text="Section"
 end_ft_form
 _ft_mouse_target mfBtn; check "a button takes its own click" "$FT_RET" mfBtn
 if _ft_mouse_target mfHd; then r=$FT_RET; else r="(none)"; fi
@@ -241,7 +241,7 @@ check "…and its own draw"               "$(_cyc 'ft_prototype_init button; [[ 
 note "a stylesheet rule outranks a class default (styling-model §2)"
 ft-form name=capp width=90 height=30
     ft-frame name=cfr title="F"
-        ft-button name=cbtn "Go"
+        ft-button name=cbtn text="Go"
     end_ft_frame
 end_ft_form
 FT_ROOT=capp; ft_layout capp >/dev/null 2>&1
@@ -256,9 +256,9 @@ for _pair in "padding 2" "gap 3" "overflow auto" "flexDirection column" \
 done
 
 note "…and an INLINE property still outranks the stylesheet"
-ft-modify cfr padding=5
+ft_set cfr padding=5
 ft_style cfr padding; check "inline beats the sheet"      "$FT_RET" "5"
-ft_remove_attribute cfr padding
+ft_unset cfr padding
 ft_style cfr padding; check "…and removing it hands back" "$FT_RET" "2"
 
 note "…while the class default is what you get when nothing else speaks"
@@ -287,9 +287,9 @@ note "a class default suppresses INHERITANCE, which is CSS's own rule"
 # `cursor` (a ROW INDEX that collides with CSS's inherited `cursor`) and a button's centred
 # `textAlign`. Without this rule a tree takes a select's cursor index and a button stops
 # centring inside a right-aligned container.
-ft-modify cfr textAlign=right
+ft_set cfr textAlign=right
 ft_resolved_prop cbtn textAlign "?"; check "a button keeps centring inside an aligned container" "$FT_RET" "center"
-ft_remove_attribute cfr textAlign
+ft_unset cfr textAlign
 
 note "…and the invariant that makes 'empty means undeclared' safe"
 # The resolver treats an empty prototype default as "declares nothing" — one assoc read instead of a
@@ -403,7 +403,7 @@ check "the prototype's handler runs"            "$PSEQ" "proto "
 # other level of resolution uses.
 PSEQ=""; ft_activate pl2
 check "the app's handler adds to it, in that order" "$PSEQ" "proto app "
-ft-modify pl2 onActivate=
+ft_set pl2 onActivate=
 PSEQ=""; ft_activate pl2
 check "onActivate= clears both, like el.onactivate = null" "${PSEQ:-nothing}" "nothing"
 # It must not become a phantom PROPERTY while it is at it.

@@ -124,14 +124,14 @@ ft_prototype_treenode() {
 }
 
 ft-tree()     { ft_new tree "$@" && FT_NEST_STACK+=("$FT_RET"); }
-end_ft_tree() { ft-end tree; }
+end_ft_tree() { ft_end tree; }
 
 _FT_TREE_SEQ=0
 ft-tree-node() {                # [name=..] "label" [id=..] [depth=N] [expanded=true]
     # An explicit name= WINS, the way it does for ft-table-header and ft-table-row. This
     # used to prepend a generated name unconditionally, so `ft-tree-node name=mine …` was
     # accepted, ignored, and the node kept its generated name — leaving the caller holding
-    # an identifier that addresses nothing, and `ft-modify mine expanded=false` a silent
+    # an identifier that addresses nothing, and `ft_set mine expanded=false` a silent
     # no-op. A node with no name of its own still gets one; that part was always fine.
     local a
     for a in "$@"; do [[ "$a" == name=* ]] && { ft_new treenode "$@"; return; }; done
@@ -193,7 +193,7 @@ _ft_tree_set_cursor() {         # name nodeidx
     (( vp >= sc + rows )) && sc=$(( vp - rows + 1 ))
     (( sc > vn - rows )) && sc=$(( vn - rows )); (( sc < 0 )) && sc=0
     local newval=${FT_TREE_NODE_ID[$idx]}
-    ft-modify "$name" cursor="$idx" scroll="$sc" value="$newval"
+    ft_set "$name" cursor="$idx" scroll="$sc" value="$newval"
     _ft_hook "$name" on_change "$newval"
     ft_dirty "$name"; return 0
 }

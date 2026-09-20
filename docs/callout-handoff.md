@@ -133,12 +133,12 @@ scored once. The obstacle list is SEVEN arrays in lockstep — grow and shrink i
 
 A drag PARKS a callout, and the park is two ordinary properties — `parkedTop` and `parkedLeft`.
 Both unset means "never parked, place me automatically". Being properties rather than an engine
-table is deliberate: `ft-state` saves and restores them with everything else, `ft-modify` can
+table is deliberate: `ft-state` saves and restores them with everything else, `ft_set` can
 move a chip from app code, and a probe can read where a chip sits without reaching into this
 file's private tables.
 
 ```bash
-ft-modify note parkedTop=4 parkedLeft=9   # park it exactly there
+ft_set note parkedTop=4 parkedLeft=9   # park it exactly there
 ft_beacon_unpark note                     # forget it; the placer chooses again
 ft_beacon_side  note                      # → above|below|left|right, where it actually went
 ```
@@ -661,7 +661,7 @@ a chip-sized band on all four sides of its target at every size it claims to sup
 Found by building the teaching demo, which exercises anchors the css-demo never does.
 
 **Fixed — `anchor` was missing from the placement cache key.** `pkey` covered place, padding,
-target rect, drag, screen size, width and text, but not anchor: `ft-modify c anchor=topRight`
+target rect, drag, screen size, width and text, but not anchor: `ft_set c anchor=topRight`
 alone reused the box chosen for the OLD anchor while the end-of-paint leader recomputed the head
 from the new one. The arrow moved, the box did not, and the box had been optimised for a
 different arrow. Only a callout that also changed its text hid it.

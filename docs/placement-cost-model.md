@@ -445,7 +445,7 @@ line now beats a jog, as ruled), weighted burial 83 → 99, buried TEXT 73 → 9
 ## Stage 8 (2026-09-07) — the search is fast enough; it is on the wrong side of the keystroke
 
 Reported as "the callout demo is still really sluggish; tutorial-demo feels SIGNIFICANTLY
-snappier." Measured, callout-demo page 4 at 118×40, one step press settled exactly as `ft-run`
+snappier." Measured, callout-demo page 4 at 118×40, one step press settled exactly as `ft_run`
 settles it:
 
 ```
@@ -455,7 +455,7 @@ tutorial-demo (no overlays, no beacons)      65 ms per Tab
 ```
 
 **The demo is exonerated, and this is the measurement that does it.** Rewriting the step handler
-the "clean" way — `ft-modify stepcallout target=X` instead of `ft_remove` + rebuild — is **not
+the "clean" way — `ft_set stepcallout target=X` instead of `ft_remove` + rebuild — is **not
 cheaper** (171k–893k µs). Any app that moves a tooltip, coach-mark or onboarding callout pays
 this, because the search runs inside `_ft_beacon_paint_callout`, inside `ft_draw_one`, inside
 the settle for one keystroke. `ft_draw_one`'s own comment prices that re-derivation at 6 ms; on
@@ -528,8 +528,8 @@ guaranteed without arming anything. And `FT_RUN_ACTIVE` is a better gate than a 
 loop, the search happens in place, so a headless caller never enters the deferred path at all
 rather than being rescued out of it afterwards.
 
-**In `ft_next_event`, not in `ft-run`'s loop.** Written in `ft-run` first, which was wrong:
-`ft-run`'s is one of four — Help, Settings and the file dialog each run their own — so a callout
+**In `ft_next_event`, not in `ft_run`'s loop.** Written in `ft_run` first, which was wrong:
+`ft_run`'s is one of four — Help, Settings and the file dialog each run their own — so a callout
 raised inside a modal owed a search nobody paid. Paying **before** the read is also a correctness
 property rather than a preference: a deferred callout has no box yet and `_ft_beacon_hit_at`
 answers from the box, so no click is ever tested against a placement that is about to change.

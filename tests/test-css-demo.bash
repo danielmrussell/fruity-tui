@@ -12,11 +12,11 @@
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 source "$here/tests/_harness.bash"
 
-# Source the demo minus its blocking `ft-run` line (kept inside the tree so the
+# Source the demo minus its blocking `ft_run` line (kept inside the tree so the
 # demo's `here=…/..` resolves to the project root and finds fruity-tui.bash).
 export FT_NO_WTFIX=1
 noloop="$here/demo/.css-demo-noloop.bash"
-sed '/^ft-run app/d' "$here/demo/css-demo.bash" > "$noloop"
+sed '/^ft_run app/d' "$here/demo/css-demo.bash" > "$noloop"
 trap 'rm -f "$noloop"' EXIT
 source "$noloop"
 exec {FT_TTY}>/dev/null
@@ -30,21 +30,21 @@ _resize >/dev/null 2>&1
 
 note "Page 1 — inheritance: the text box inherits its container's colour"
 PAGE=1; _show_page >/dev/null 2>&1
-settle >/dev/null 2>&1   # ft-run settles the burst; a gate must too
+settle >/dev/null 2>&1   # ft_run settles the burst; a gate must too
 ft_style spec color; check "spec has no colour of its own → inherits crimson" "$FT_RET" crimson
 inhColor_on_change 46
 ft_style spec color; check "change the parent → spec re-inherits (46)" "$FT_RET" 46
 
 note "Page 2 — selectors: the specimen's class picks which rule matches"
 PAGE=2; _show_page >/dev/null 2>&1
-settle >/dev/null 2>&1   # ft-run settles the burst; a gate must too
+settle >/dev/null 2>&1   # ft_run settles the burst; a gate must too
 selClass_on_change warning; ft_style spec color; check ".warning matches → crimson" "$FT_RET" crimson
 selClass_on_change ok;      ft_style spec color; check ".ok matches → rgb green"   "$FT_RET" "rgb(64, 200, 90)"
 selClass_on_change none;    ft_style spec color; check "no class → no rule matches" "$FT_RET" ""
 
 note "Page 3 — specificity: the most specific match wins, whatever the toggle order"
 PAGE=3; SP_TYPE=on; SP_CLASS=off; SP_ID=off; _show_page >/dev/null 2>&1
-settle >/dev/null 2>&1   # ft-run settles the burst; a gate must too
+settle >/dev/null 2>&1   # ft_run settles the burst; a gate must too
 ft_style spec color; check "type only → 33" "$FT_RET" 33
 spClass_on_activate; ft_style spec color; check "type + class → class (100) wins → 202" "$FT_RET" 202
 spId_on_activate;    ft_style spec color; check "type + class + id → id (10000) wins → 201" "$FT_RET" 201
@@ -52,7 +52,7 @@ spId_on_deactivate;  ft_style spec color; check "drop the id rule → class wins
 
 note "Page 4 — states: disabling the box makes textfield:disabled match; focus makes :focus match"
 PAGE=4; ST_DISABLED=off; _show_page >/dev/null 2>&1
-settle >/dev/null 2>&1   # ft-run settles the burst; a gate must too
+settle >/dev/null 2>&1   # ft_run settles the burst; a gate must too
 stDisabled_on_activate
 _ft_get_raw spec disabled; check "the checkbox disables the box" "$FT_RET" true
 ft_style spec color;       check "textfield:disabled → 244" "$FT_RET" 244
@@ -61,12 +61,12 @@ FT_FOCUS=""
 
 note "Page 5 — custom properties: --accent drives the colour through var()"
 PAGE=5; _show_page >/dev/null 2>&1
-settle >/dev/null 2>&1   # ft-run settles the burst; a gate must too
+settle >/dev/null 2>&1   # ft_run settles the burst; a gate must too
 varPick_on_change 201; ft_style spec color; check "var(--accent) follows the chosen value (201)" "$FT_RET" 201
 
 note "Page 6 — colour formats: name / #hex / rgb() / hsl() all resolve to the SAME crimson"
 PAGE=6; _show_page >/dev/null 2>&1
-settle >/dev/null 2>&1   # ft-run settles the burst; a gate must too
+settle >/dev/null 2>&1   # ft_run settles the burst; a gate must too
 _is_crimson(){ _ft_compose_sgr spec "$FT_COLOR_INPUT"; case "$FT_RET" in *"38;5;161"*) echo crimson ;; *) echo other ;; esac; }
 cfFmt_on_change "crimson";          check "crimson (name)"      "$(_is_crimson)" crimson
 cfFmt_on_change "#dc143c";          check "#dc143c (hex)"       "$(_is_crimson)" crimson
@@ -75,7 +75,7 @@ cfFmt_on_change "hsl(348,83%,47%)"; check "hsl(348,83%,47%)"    "$(_is_crimson)"
 
 note "Page 7 — pseudo-elements: a ::structure rule targets one part of the box"
 PAGE=7; STRUCT=border; _show_page >/dev/null 2>&1
-settle >/dev/null 2>&1   # ft-run settles the burst; a gate must too
+settle >/dev/null 2>&1   # ft_run settles the burst; a gate must too
 _ft_css_query_pe spec border borderColor; check "::border { border-color: magenta }" "$FT_RET" magenta
 structPick_on_change caret
 # EVERY pseudo-element on this page is tinted the SAME demo colour — the page teaches "here is
@@ -85,7 +85,7 @@ _ft_css_query_pe spec caret backgroundColor; check "switch to ::caret { backgrou
 
 note "Page 8 — animation: a @keyframes runs live on the specimen; none stops it"
 PAGE=8; AN_NAME=glow; AN_DUR=2; _show_page >/dev/null 2>&1
-settle >/dev/null 2>&1   # ft-run settles the burst; a gate must too
+settle >/dev/null 2>&1   # ft_run settles the burst; a gate must too
 ft_style spec animation; check "animation resolves to 'glow 2s'" "$FT_RET" "glow 2s"
 unset "FT_ANIM_PHASE[spec]" 2>/dev/null; FT_ANIM_PHASE[spec]=0
 if _ft_css_anim_fg spec; then check "glow is actually animating spec" running running
@@ -94,7 +94,7 @@ animPick_on_change none; ft_style spec animation; check "animation: none is an e
 
 note "Page 9 — combinators: a .card ancestor makes the descendant rule match — and PROVES it by a second box that never does"
 PAGE=9; CB_NEST=off; _show_page >/dev/null 2>&1
-settle >/dev/null 2>&1   # ft-run settles the burst; a gate must too
+settle >/dev/null 2>&1   # ft_run settles the burst; a gate must too
 cbNest_on_activate
 ft_style spec    color; check "the box INSIDE .card matches → gold"                 "$FT_RET" gold
 ft_style specOut color; check "the box OUTSIDE .card is UNaffected (combinator proof)" "$([[ "$FT_RET" == gold ]] && echo gold || echo other)" other
@@ -102,20 +102,20 @@ cbNest_on_deactivate; ft_style spec color; check "remove the card → not even t
 
 note "Page 2 — the demo now shows the BASH that drives the class change, beside the CSS"
 PAGE=2; _show_page >/dev/null 2>&1
-settle >/dev/null 2>&1   # ft-run settles the burst; a gate must too
+settle >/dev/null 2>&1   # ft_run settles the burst; a gate must too
 [[ -n "${FT_TYPE[bash]:-}" ]] && check "a second 'bash' code panel exists" 1 1 || check "a second 'bash' code panel exists" 0 1
-ft_resolved_prop bash value ""; case "$FT_RET" in *"ft-modify spec class="*) check "it shows the ft-modify class call" 1 1 ;; *) check "it shows the ft-modify class call" 0 1 ;; esac
+ft_resolved_prop bash value ""; case "$FT_RET" in *"ft_set spec class="*) check "it shows the ft_set class call" 1 1 ;; *) check "it shows the ft_set class call" 0 1 ;; esac
 
 note "Page 10 — themes: swapping the theme re-derives the whole palette"
 PAGE=10; _show_page >/dev/null 2>&1
-settle >/dev/null 2>&1   # ft-run settles the burst; a gate must too
+settle >/dev/null 2>&1   # ft_run settles the burst; a gate must too
 themePick_on_change light; check "ft_use_theme ft-light is now active" "$FT_ACTIVE_THEME" ft-light
 themePick_on_change ocean; check "ft_use_theme ft-ocean is now active" "$FT_ACTIVE_THEME" ft-ocean
 themePick_on_change dark;  check "…and back to ft-dark"                 "$FT_ACTIVE_THEME" ft-dark
 
 note "the dropdown navigation the demo relies on: closed arrows move focus, Enter opens"
 PAGE=1; _show_page >/dev/null 2>&1
-settle >/dev/null 2>&1   # ft-run settles the burst; a gate must too
+settle >/dev/null 2>&1   # ft_run settles the burst; a gate must too
 FT_KEY_BUBBLE=0; ft_select_key_down inhColor
 check "Down on the CLOSED colour dropdown does not open it" "$(ft_resolved_prop inhColor open false; echo "$FT_RET")" false
 check "…it declines so focus can move on"                    "$FT_KEY_BUBBLE" 1
@@ -132,7 +132,7 @@ btnBack_on_activate; check "Back returns to the previous PAGE at step 1" "$PAGE/
 
 note "each step raises a CALLOUT that points at its control and carries the instruction"
 PAGE=1; STEP=2; _show_page >/dev/null 2>&1
-settle >/dev/null 2>&1   # ft-run settles the burst; a gate must too
+settle >/dev/null 2>&1   # ft_run settles the burst; a gate must too
 check "the step callout is a callout beacon" "${FT_TYPE[stepcallout]:-}" beacon
 ft_resolved_prop stepcallout variant ""; check "…of variant callout" "$FT_RET" callout
 ft_resolved_prop stepcallout target "";  check "…pointing at step 2's control (#spec)" "$FT_RET" spec

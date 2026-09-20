@@ -114,10 +114,10 @@ _rt_build() {                   # type
         label)       ft-label name=rtc text="$_RT_DOC" width=20 height=4 overflowY=auto ;;
         textfield)   ft-textfield name=rtc size=18 rows=4 height=4 value="$_RT_DOC" ;;
         textviewer)  ft-textfield name=rtc size=18 rows=4 height=4 readOnly=true value="$_RT_DOC" ;;
-        button)      ft-button name=rtc "Press me" ;;
-        checkbox)    ft-checkbox name=rtc "Tick me" ;;
-        radio)       ft-radio name=rtc group=rtg "One"
-                     ft-radio name=rtc2 group=rtg "Two" ;;
+        button)      ft-button name=rtc text="Press me" ;;
+        checkbox)    ft-checkbox name=rtc text="Tick me" ;;
+        radio)       ft-radio name=rtc group=rtg text="One"
+                     ft-radio name=rtc2 group=rtg text="Two" ;;
         multitoggle) ft-multitoggle name=rtc text="Priority"
                          ft-option value=low    glyph="Low"
                          ft-option value=medium glyph="Medium"
@@ -125,22 +125,22 @@ _rt_build() {                   # type
                      end_ft_multitoggle ;;
         slider)      ft-slider name=rtc min=0 max=20 value=5 width=24 showValue=true ;;
         select)      ft-select name=rtc size=3
-                         ft-option value=a "Alpha"
-                         ft-option value=b "Bravo"
-                         ft-option value=c "Charlie"
-                         ft-option value=d "Delta"
+                         ft-option value=a text="Alpha"
+                         ft-option value=b text="Bravo"
+                         ft-option value=c text="Charlie"
+                         ft-option value=d text="Delta"
                      end_ft_select ;;
         table)       ft-table name=rtc rows=3
-                         ft-table-header "Key"
+                         ft-table-header text="Key"
                          ft-table-row alpha; ft-table-row bravo;   ft-table-row charlie
                          ft-table-row delta; ft-table-row echo;    ft-table-row foxtrot
                      end_ft_table ;;
         tree)        ft-tree name=rtc rows=6 width=30
-                         ft-tree-node "src"          id=src  depth=0 expanded=true
-                         ft-tree-node "ft-core.bash" id=core depth=1
-                         ft-tree-node "controls"     id=ctl  depth=1 expanded=false
-                         ft-tree-node "ft-tree.bash" id=tree depth=2
-                         ft-tree-node "README.md"    id=rd   depth=0
+                         ft-tree-node text="src" id=src depth=0 expanded=true
+                         ft-tree-node text="ft-core.bash" id=core depth=1
+                         ft-tree-node text="controls" id=ctl depth=1 expanded=false
+                         ft-tree-node text="ft-tree.bash" id=tree depth=2
+                         ft-tree-node text="README.md" id=rd depth=0
                      end_ft_tree ;;
         tabs)        ft-tabs name=rtc width=40 height=10
                          ft-tab name=rtt1 title=One
@@ -170,10 +170,10 @@ _rt_ink() {                     # → FT_RET = the whole app's ink, exactly as i
 
 # The screen with transient MODE normalised away, on both sides, which is not a loophole: a lit
 # border and an editing rung are not what a reload is for, and ft-state does not carry
-# `runlevel`. Sent through ft-modify rather than poked, so the rung's own exit script runs — that
+# `runlevel`. Sent through ft_set rather than poked, so the rung's own exit script runs — that
 # IS how a control leaves edit mode. What remains is the state that is meant to survive.
 _rt_screen() {                  # → FT_RET = the comparable screen
-    ft-modify rtc runlevel=unfocused >/dev/null 2>&1 || :
+    ft_set rtc runlevel=unfocused >/dev/null 2>&1 || :
     FT_FOCUS=""
     _rt_ink
 }

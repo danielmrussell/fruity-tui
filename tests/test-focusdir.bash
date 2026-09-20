@@ -15,9 +15,9 @@ ft_init
 exec {FT_TTY}>/dev/null
 
 ft-form name=app width=40 height=8
-    ft-button name=A "A"; ft-button name=B "B"
-    ft-button name=C "C"; ft-button name=D "D"
-    ft-button name=E "E"; ft-button name=F "F"
+    ft-button name=A text="A"; ft-button name=B text="B"
+    ft-button name=C text="C"; ft-button name=D text="D"
+    ft-button name=E text="E"; ft-button name=F text="F"
 end_ft_form
 
 # Pin an explicit grid geometry (bypass layout).
@@ -92,10 +92,10 @@ FT_FOCUS_RING=(A B C D E F)
 note "an OPEN dropdown collapses when focus moves away (Tab/arrow), via _ft_blur_select"
 ft-form name=f2 width=40 height=8
     ft-select name=dd size=1
-        ft-option value=a "Alpha"
-        ft-option value=b "Beta"
+        ft-option value=a text="Alpha"
+        ft-option value=b text="Beta"
     end_ft_select
-    ft-button name=after "OK"
+    ft-button name=after text="OK"
 end_ft_form
 ft_focus dd
 ft_select_open dd
@@ -141,7 +141,7 @@ ft_use_theme ft-dark
 ft_remove "$FT_LOCATOR"
 
 note "ft_focus works on a control added AFTER the ring was built (rebuilds + retries)"
-ft-button name=lateadd "late" parent=f2       # f2's ring was built at end_ft_form, before this
+ft-button name=lateadd text="late" parent=f2 # f2's ring was built at end_ft_form, before this
 ok "focus lands on the freshly-added control" ft_focus lateadd
 check "…and FT_FOCUS is it" "$FT_FOCUS" "lateadd"
 
@@ -155,7 +155,7 @@ check "…and FT_FOCUS is it" "$FT_FOCUS" "lateadd"
 #     P        Q          P at x=0, Q at x=20, both on row 0
 #          R              R at x=10, row 2 — centred between them
 ft-form name=f3 width=40 height=8
-    ft-button name=P "P"; ft-button name=Q "Q"; ft-button name=R "R"
+    ft-button name=P text="P"; ft-button name=Q text="Q"; ft-button name=R text="R"
 end_ft_form
 set_box P 0 0 8 1; set_box Q 20 0 8 1; set_box R 10 2 8 1
 FT_FOCUS_RING=(P Q R)
@@ -189,7 +189,7 @@ note "…and it is only a TIEBREAK — geometry still wins when there is a real 
 #     P        Q
 #          T              T at x=10, row 2
 #          R              R at x=10, row 4
-ft-button name=T "T" parent=f3
+ft-button name=T text="T" parent=f3
 set_box P 0 0 8 1; set_box Q 20 0 8 1; set_box T 10 2 8 1; set_box R 10 4 8 1
 FT_FOCUS_RING=(P Q T R)
 ft_focus R; FT_FOCUS_CAME_FROM[R]=Q; FT_FOCUS_CAME_DIR[R]=down   # as if we had arrived from Q

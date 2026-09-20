@@ -192,7 +192,7 @@ end_ft_form
   **`docs/unicode-art.md`**, which is also where box diagonals `╱╲` and braille are refuted
   with numbers. `bash demo/bigarrow-demo.bash` to look at it.
 
-**Mutating and reading:** `ft-modify NAME prop=value`, `ft_get NAME prop`,
+**Mutating and reading:** `ft_set NAME prop=value`, `ft_get NAME prop`,
 `ft_style NAME prop`. See `docs/api-naming.md` for the DOM-alignment convention and
 `docs/styling-model.md` for the cascade.
 

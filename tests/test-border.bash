@@ -109,7 +109,7 @@ FT_USE_UTF8=$_old_utf8
 note "restyling a border repaints without moving anything"
 oldx=${FT_ABSOLUTE_X[fSolid]}; oldw=${FT_MEASURED_WIDTH[fSolid]}
 FT_DIRTY=()
-ft-modify fSolid borderStyle=double borderWidth=thick
+ft_set fSolid borderStyle=double borderWidth=thick
 check "only the frame dirtied" "${!FT_DIRTY[*]}" "fSolid"
 check "geometry untouched" "${FT_ABSOLUTE_X[fSolid]},${FT_MEASURED_WIDTH[fSolid]}" "$oldx,$oldw"
 
@@ -144,7 +144,7 @@ ft_layout appv
 for _pair in zzz:solid groove:solid ridge:solid inset:solid outset:solid \
              DASHED:dashed Rounded:rounded HEAVY:heavy None:none \
              dotted:dotted double:double hidden:hidden; do
-    ft-modify vStyle borderStyle="${_pair%%:*}"
+    ft_set vStyle borderStyle="${_pair%%:*}"
     ft_get vStyle borderStyle
     check "borderStyle=${_pair%%:*} reads back as ${_pair#*:}" "$FT_RET" "${_pair#*:}"
 done
@@ -204,7 +204,7 @@ ft-form name=appb width=60 height=24
 end_ft_form
 ft_layout appb
 for _b in true false "" 1; do
-    ft-modify bx border="$_b"
+    ft_set bx border="$_b"
     ft_layout appb
     _ft_inset4 bx; _inset=$FT_INSET_LEFT
     _painted_glyphs bx; _drew=0; (( ${#FT_RET} )) && _drew=1
@@ -223,11 +223,11 @@ ft-form name=appw width=60 height=24
 end_ft_form
 ft_layout appw
 for _pair in thin:thin medium:medium thick:thick THICK:thick 0:0 none:0 5px:thin zzz:thin; do
-    ft-modify wThick borderWidth="${_pair%%:*}"
+    ft_set wThick borderWidth="${_pair%%:*}"
     ft_get wThick borderWidth
     check "borderWidth=${_pair%%:*} reads back as ${_pair#*:}" "$FT_RET" "${_pair#*:}"
 done
-ft-modify wThick borderWidth=thick
+ft_set wThick borderWidth=thick
 _ft_border wZero;   check "borderWidth=0 removes the border"     "$FT_RET" "0"
 _ft_border wThick;  check "…and thick still has one"             "$FT_RET" "1"
 _ft_inset4 wZero;   check "…so it reserves nothing"              "$FT_INSET_TOP,$FT_INSET_LEFT" "0,0"
@@ -245,7 +245,7 @@ ft_layout appg
 _glyph_err=$(mktemp)
 _glyphtry() {                   # value → _GL_REFUSED / FT_RET = the painted top rule's width
     : > "$_glyph_err"
-    ft-modify gl borderGlyph="$1" 2>"$_glyph_err"    # a file, not $( ): a subshell loses the write
+    ft_set gl borderGlyph="$1" 2>"$_glyph_err"    # a file, not $( ): a subshell loses the write
     _GL_REFUSED=no; [[ -s "$_glyph_err" ]] && _GL_REFUSED=yes
     FT_OUT=""; ft_dirty gl; ft_draw_one gl >/dev/null 2>&1
     local ink=$FT_OUT; FT_OUT=""
@@ -275,11 +275,11 @@ _ft_table_glyphs heavy
 check "table heavy = the frame's ━┃ pair"   "$H$V" $'━┃'
 ft-form name=appt width=100 height=40
 ft-table name=tHid variant=grid borderStyle=hidden
-    ft-table-header "Key"
+    ft-table-header text="Key"
     ft-table-row "a"
 end_ft_table
 ft-table name=tBox variant=grid
-    ft-table-header "Key"
+    ft-table-header text="Key"
     ft-table-row "a"
 end_ft_table
 end_ft_form

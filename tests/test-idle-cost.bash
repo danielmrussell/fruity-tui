@@ -34,7 +34,7 @@ export FT_NO_WTFIX=1 FT_RECORD=""
 # Sourced minus its blocking run loop, and kept INSIDE the tree so the demo's
 # own `here=$(dirname …)/..` still resolves to the project root.
 noloop="$here/demo/.idle-cost-noloop.bash"
-sed '/^ft-run app/d' "$here/demo/css-demo.bash" > "$noloop"
+sed '/^ft_run app/d' "$here/demo/css-demo.bash" > "$noloop"
 trap 'rm -f "$noloop"' EXIT
 source "$noloop"
 exec {FT_TTY}>/dev/null

@@ -12,7 +12,7 @@
            ║ │#spec   { }                   /* the box n│   │    ft-textfield name=spec value=…    # #s│ ║
            ║ │                                          │   │end_ft_div                                │ ║
            ║ │                                          │   │# ── the dropdown changes the PARENT, live│ ║
-           ║ │                                          │   │ft-modify inhbox color=dodgerblue     #  ▸│ ║
+           ║ │                                          │   │ft_set inhbox color=dodgerblue     #  ▸ th│ ║
            ║ └━━━━━━━━━━━━━━━━━━━━━━━━━─────────────────┘   └━━━━━━━━━━━━━━━━━━━━━━━━──────────────────┘ ║
            ║                                                                                             ║
            ║                                                                                             ║

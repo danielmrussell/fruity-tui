@@ -35,14 +35,14 @@ ft-form name=app width=70 height=26
     ft-slider name=sl  min=0 max=10 value=5
     ft-slider name=sla min=0 max=10 value=5 onActivate=slider_activated
     ft-label  name=lb  text=$'one\ntwo\nthree\nfour\nfive\nsix' width=12 maxHeight=2
-    ft-button name=bt  "Press"
+    ft-button name=bt text="Press"
     # A real tree with a branch: Enter INSIDE it toggles that branch, which is the whole point
     # of the companion. An empty ft-tree is also focus-skipped, so the companion would silently
     # not run. (ft-tree opens a scope — end_ft_tree closes it, and leaving it to end_ft_form
     # warns on stderr, which tests/run-all.bash counts as a failure.)
     ft-tree   name=tr  rows=4 onActivate=tree_activated
-        ft-tree-node "branch" id=br depth=0 expanded=true
-        ft-tree-node "leaf"   id=lf depth=1
+        ft-tree-node text="branch" id=br depth=0 expanded=true
+        ft-tree-node text="leaf" id=lf depth=1
     end_ft_tree
 end_ft_form
 ft_layout app
@@ -116,18 +116,18 @@ _enter_cap() {                  # control → the ENTER label the legend would d
     printf '<none>'
 }
 _stand_on sl || check "sl: focus landed" 0 1
-ft-modify sl runlevel=poised
+ft_set sl runlevel=poised
 check "at poised the legend says what going IN does"  "$(_enter_cap sl)" "Adjust"
-ft-modify sl runlevel=adjusting
+ft_set sl runlevel=adjusting
 check "at the bottom rung it says Leave"              "$(_enter_cap sl)" "Leave"
-ft-modify sl runlevel=poised
+ft_set sl runlevel=poised
 
 # THE COMPANION THAT MATTERS: the legend must compute the SAME predicate dispatch does, not
 # merely "am I engaged". A slider with an onActivate does NOT leave on Enter, so its legend
 # must still advertise the action — otherwise this rule is a second, drifting copy.
 _stand_on sla || check "sla: focus landed" 0 1
-ft-modify sla runlevel=adjusting
+ft_set sla runlevel=adjusting
 check "…but a control whose Enter still acts keeps its own label" "$(_enter_cap sla)" "Adjust"
-ft-modify sla runlevel=poised
+ft_set sla runlevel=poised
 
 summary

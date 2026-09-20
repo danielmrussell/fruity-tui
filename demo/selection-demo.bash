@@ -39,7 +39,7 @@ ft-form name=app width="$FT_COLS" height="$FT_ROWS" \
             ft-checkbox name=cbLines  text="Show line numbers" checked=false accessKey=W
         end_ft_div
         ft-div name=btnrow display=flex justifyContent=center
-            ft-button name=btnOk OK accessKey=K onActivate=btnOk_on_activate
+            ft-button name=btnOk text=OK accessKey=K onActivate=btnOk_on_activate
         end_ft_div
         ft-label name=status text=""
     end_ft_frame
@@ -53,8 +53,8 @@ btnOk_on_activate() {
     _onoff cbSave;   s=$FT_RET
     _onoff cbLines;  l=$FT_RET
     ft_resolved_prop rLight group; local theme=${FT_RADIO_SELECTED[$FT_RET]#r}
-    ft-modify status text="Theme: ${theme}  Notifications: $n  Auto-save: $s  Lines: $l"
+    ft_set status text="Theme: ${theme}  Notifications: $n  Auto-save: $s  Lines: $l"
 }
 
 _setup() { ft_focus rDark; ft_refresh; }
-ft-run app _setup
+ft_run app _setup

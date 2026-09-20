@@ -8,17 +8,17 @@
 #  ft_layout, while six other routes move a rect. Before the memo existed this was invisible;
 #  with it, every one of them is a smear waiting to happen:
 #
-#      ft-modify win padding=3       moves the rect, epoch does not move, and does not move
+#      ft_set win padding=3       moves the rect, epoch does not move, and does not move
 #                                    after ft_reflow_flush either — ft_reflow lands in
 #                                    _ft_reflow_now, which re-runs the passes and bumps nothing
-#      ft-modify win overflow=…      moves the rect AND the scroll gutter. This used to add
+#      ft_set win overflow=…      moves the rect AND the scroll gutter. This used to add
 #                                    "overflow is registered PAINT-kind, so it schedules no
 #                                    reflow at all" — no longer true: overflow reserves the
 #                                    gutter column in _ft_inset4, which makes it an input to the
 #                                    box, and it is layout-kind now. See tests/test-propkind.bash.
 #      ft_scroll_set / focus move    shifts a whole subtree's absolute position, no layout
 #      ft_append / ft_remove         changes the ancestor chain the rect is built from
-#      ft-modify win class=…         a sheet rule can supply the padding; no property of the
+#      ft_set win class=…         a sheet rule can supply the padding; no property of the
 #                                    node itself changed
 #      ft_clip_band                  changes the answer mid-paint with no state change at all
 #
@@ -118,47 +118,47 @@ check "the container really clips (else nothing here is tested)" \
 
 note "a runtime padding write — layout-kind, but nothing bumps the layout epoch"
 _before_epoch=$FT_LAYOUT_EPOCH
-ft-modify win padding=3
+ft_set win padding=3
 _agree "clip follows padding=3 immediately" leaf
 ft_reflow_flush
 _agree "…and after the deferred reflow settles" leaf
 check "…and FT_LAYOUT_EPOCH never moved (why it cannot be the key)" \
       "$FT_LAYOUT_EPOCH" "$_before_epoch"
 
-ft-modify win paddingLeft=4
+ft_set win paddingLeft=4
 _agree "clip follows a per-side paddingLeft" leaf
-ft-modify win border=false
+ft_set win border=false
 _agree "clip follows border=false" leaf
-ft_remove_attribute win padding
+ft_unset win padding
 _agree "clip follows removeAttribute(padding)" leaf
 
 note "a runtime overflow write — PAINT-kind, so it schedules no layout at all"
-ft-modify win overflow=visible
+ft_set win overflow=visible
 _memo leaf
 check "overflow=visible stops the frame clipping" "$MEMO" "0 0 29 99"
 _agree "…and the memo says so" leaf
-ft-modify win overflow=hidden
+ft_set win overflow=hidden
 _agree "overflow=hidden clips again" leaf
-ft-modify win overflow=auto
+ft_set win overflow=auto
 _agree "overflow=auto reserves the scrollbar gutter" leaf
-ft-modify win overflow=hidden
+ft_set win overflow=hidden
 
 note "a reflow that re-arranges WITHOUT ft_layout"
 # ft_layout bumps FT_LAYOUT_EPOCH, which the token already carries — so a full layout would
-# mask the arrange bump entirely. The route that needs it is the one ft-modify actually takes:
+# mask the arrange bump entirely. The route that needs it is the one ft_set actually takes:
 # ft_reflow → _ft_reflow_now → the four passes, and not one of those touches the epoch.
 _before_epoch=$FT_LAYOUT_EPOCH
-ft-modify win height=9
+ft_set win height=9
 ft_reflow_flush
 _agree "clip follows a height change through a plain reflow" leaf
 check "…and that route really did skip ft_layout" "$FT_LAYOUT_EPOCH" "$_before_epoch"
-ft-modify win height=20
+ft_set win height=20
 ft_reflow_flush
 _agree "…and back" leaf
 
 note "a scroll shifts the subtree with no layout pass"
-ft-modify win overflow=auto
-ft-modify win height=8
+ft_set win overflow=auto
+ft_set win height=8
 ft_layout app
 _agree "before scrolling" deep
 _memo deep; _pre_scroll=$MEMO
@@ -169,8 +169,8 @@ check "the scroll really moved the descendant's rect" \
       "$( [[ "$MEMO" != "$_pre_scroll" ]] && echo yes )" "yes"
 ft_scroll_set win 0 0 >/dev/null 2>&1
 _agree "after scrolling back" deep
-ft-modify win overflow=hidden
-ft-modify win height=20
+ft_set win overflow=hidden
+ft_set win height=20
 ft_layout app
 
 note "the tree itself moving"
@@ -199,12 +199,12 @@ _agree "a sibling removed" leaf
 note "a stylesheet supplying the box"
 ft_stylesheet name=clip style='.padded { padding: 4 }'
 _agree "a rule registered" leaf
-ft-modify win class=padded
+ft_set win class=padded
 _agree "…and matched by a class change on the ANCESTOR" leaf
 _memo leaf
 check "the rule really moved the rect (else this section tests nothing)" \
       "$( [[ "${MEMO%% *}" != 1 ]] && echo yes )" "yes"
-ft-modify win class=
+ft_set win class=
 _agree "…and unmatched again" leaf
 
 note "the band changes the answer with no state change at all"
@@ -263,7 +263,7 @@ if [[ -z "$_sab" ]]; then
     # red would be requiring a second mechanism to be the only one.
     #
     # The list is kept rather than deleted, deliberately. _ft_setprop can be called DIRECTLY,
-    # bypassing ft-modify and its reflow, and proving that no direct caller ever writes a box
+    # bypassing ft_set and its reflow, and proving that no direct caller ever writes a box
     # property is the enumeration this project's own cache rule demands before an invalidation
     # is removed. Until somebody does that enumeration it is a second line of defence, and the
     # honest way to say so is to stop asserting it is the first.

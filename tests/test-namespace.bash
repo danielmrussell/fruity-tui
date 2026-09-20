@@ -66,10 +66,10 @@ check "…nor for a property with a plain-word name" "${log_text+set}" ""
 
 note "namespacing survives the whole property surface"
 ft-textfield name=field parent=app value=hello
-ft-modify field value=world
-check "ft-modify writes through the namespace"  "$(ft_get field value; printf '%s' "$FT_RET")" "world"
+ft_set field value=world
+check "ft_set writes through the namespace"  "$(ft_get field value; printf '%s' "$FT_RET")" "world"
 check "…and only there"                         "${field_value+set}" ""
-ft_remove_attribute field value
+ft_unset field value
 check "removeAttribute clears the namespaced var" "${_ftp_field_value+set}" ""
 
 ft-label name=src parent=app text=cloned rows=3
@@ -119,9 +119,9 @@ _ns_scene=$(cat <<'SCENE'
     ft-form name=nsapp width=80 height=24
         ft-label     name=nslab text="a caption long enough to wrap somewhere sensible" width=18
         ft-textfield name=nsfld size=12 value="typed"
-        ft-button    name=nsbtn accessKey=o "OK"
+        ft-button name=nsbtn accessKey=o text="OK"
         ft-table     name=nstab variant=grid
-            ft-table-header "Key" width=8
+            ft-table-header text="Key" width=8
             ft-table-row "Ctrl+A"
         end_ft_table
         ft-scrollbar name=nsbar for=nslab height=6

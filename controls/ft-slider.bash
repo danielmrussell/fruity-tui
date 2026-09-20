@@ -20,7 +20,7 @@
 #  nonzero to cancel the change.
 #
 #      ft-slider name=width min=30 max=70 value=50 width=24 showValue=true
-#      width_on_change() { ft-modify row width="$1"; }   # $this=width, $1=value
+#      width_on_change() { ft_set row width="$1"; }   # $this=width, $1=value
 #
 #  Depends on ft-core.bash, ft-forms.bash, ft-keymap.bash.
 # ─────────────────────────────────────────────────────────────────────────────
@@ -98,7 +98,7 @@ ft-slider() {
 #
 # It lives here because THREE routes were each rounding by hand and one of them wasn't: the
 # mouse computed clamp-and-snap inline, ft_slider_set clamped without snapping, and
-# _ft_draw_slider clamped a value it had no business correcting — so `ft-modify sl max=4` on a
+# _ft_draw_slider clamped a value it had no business correcting — so `ft_set sl max=4` on a
 # slider showing 5 PAINTED "4" while `ft_get sl value` still answered 5. The app and the user
 # were reading different numbers off the same control.
 #
@@ -121,7 +121,7 @@ _ft_slider_sanitize() {         # name value → FT_RET
     FT_RET=$v
 }
 # The prototype's setProp reconciler: `value` has to be sanitized whenever it changes OR
-# whenever the range it is measured against does. _ft_setprop is every route in — ft-modify, the
+# whenever the range it is measured against does. _ft_setprop is every route in — ft_set, the
 # DSL, a state restore — which matters most at CONSTRUCTION, where `ft-slider value=50 max=10`
 # writes the two in that order and only the second one can fix the first.
 # Writes go through _ft_stamp_prop, not _ft_setprop: the setter is our caller.
@@ -222,8 +222,8 @@ ft_slider_set() {
     # what "unchanged" compares against and what a cancelled change restores.
     (( ${#old} == 0 )) && { ft_resolved_prop "$name" min 0; old=$FT_RET; }
     [[ "$v" == "$old" ]] && return 0
-    ft-modify "$name" value="$v"
-    _ft_hook "$name" on_change "$v" || ft-modify "$name" value="$old"   # nonzero = cancel
+    ft_set "$name" value="$v"
+    _ft_hook "$name" on_change "$v" || ft_set "$name" value="$old"   # nonzero = cancel
     return 0
 }
 _ft_slider_by() {

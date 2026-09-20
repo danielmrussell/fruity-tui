@@ -38,7 +38,7 @@ ft-form name=app width=80 height=30 display=flex flexDirection=column
     end_ft_div
     ft-textfield name=tf size=18 rows=4 value="$DOC"
     ft-table     name=tbl rows=3
-        ft-table-header "Name"
+        ft-table-header text="Name"
         ft-table-row alpha; ft-table-row bravo;   ft-table-row charlie
         ft-table-row delta; ft-table-row echo;    ft-table-row foxtrot
     end_ft_table
@@ -87,7 +87,7 @@ ft-form name=app2 width=80 height=30 display=flex flexDirection=column
     ft-textfield name=t3 size=18 rows=4 value="$DOC"
     ft-scrollbar name=s3 for=t3 height=4
     ft-table     name=t4 rows=3
-        ft-table-header "N"
+        ft-table-header text="N"
         ft-table-row a; ft-table-row b; ft-table-row c
         ft-table-row d; ft-table-row e; ft-table-row f
     end_ft_table
@@ -102,13 +102,13 @@ for _s in s1 s2 s3 s4; do
 done
 
 note "dragging a bound bar moves the target it is bound to"
-# The scrollbar writes  ft-modify TARGET scrollTop=N  — so this also exercises the engine's
+# The scrollbar writes  ft_set TARGET scrollTop=N  — so this also exercises the engine's
 # clamp, which bounds the offset against the very pair published above.
 for _pair in "s2 t2" "s4 t4"; do
     set -- $_pair
     _before=$(ft_get "$2" scrollTop; printf %s "${FT_RET:-0}")
     ft_scrollbar_set "$1" 99 2>/dev/null || _ft_scrollbar_set_pos "$1" 99 2>/dev/null || \
-        ft-modify "$2" scrollTop=99
+        ft_set "$2" scrollTop=99
     _after=$(ft_get "$2" scrollTop; printf %s "${FT_RET:-0}")
     check "$2 scrolled, and stopped at its own end" \
           "$(( _after > _before ))" 1
@@ -159,7 +159,7 @@ ft_layout app4
 check "a label has published before its first draw" \
       "$(ft_get fresh scrollHeight; printf '%s' "${FT_RET:-unset}")" "12"
 # So reach the fallback the only way that is left: take the pair away.
-ft_remove_attribute fresh scrollHeight; ft_remove_attribute fresh clientHeight
+ft_unset fresh scrollHeight; ft_unset fresh clientHeight
 FT_SCROLLBAR_TOTAL=""; FT_SCROLLBAR_CLIENT=""
 _ft_sb_target_extent fresh
 check "with nothing published, the extent is still measured from its text" \
@@ -175,7 +175,7 @@ check "with nothing published, the extent is still measured from its text" \
 #  that no longer existed.
 #
 #  And the offset: everything that makes a scroll a scroll — the clamp, the target's own
-#  offset, onScroll — lived in ft_scrollbar_set, so `ft-modify sb scrollTop=7` moved a number
+#  offset, onScroll — lived in ft_scrollbar_set, so `ft_set sb scrollTop=7` moved a number
 #  and nothing else. The property route is the one an app reaches for and the one ft-state
 #  restores through.
 # ─────────────────────────────────────────────────────────────────────────────
@@ -188,17 +188,17 @@ end_ft_form
 ft_layout app5; FT_ROOT=app5
 _reg() { printf '%s/%s' "${FT_SCROLLBAR_FOR_TARGET[tgtA]:-none}" "${FT_SCROLLBAR_FOR_TARGET[tgtB]:-none}"; }
 check "the constructor registers the target"      "$(_reg)" "bar/none"
-ft-modify bar for=tgtB
-check "ft-modify moves the registration"          "$(_reg)" "none/bar"
+ft_set bar for=tgtB
+check "ft_set moves the registration"          "$(_reg)" "none/bar"
 ft_get bar for
 check "…and the property agrees with it"          "$FT_RET" "tgtB"
 # The consequence, in the control that reads the registry: a label whose bar has left draws its
 # own gutter again, and the one now driven stands its down. Both were wrong the other way.
 _ft_label_metrics tgtA; check "the released label draws its own gutter"  "$LBL_GUTTER" "1"
 _ft_label_metrics tgtB; check "the driven one stands its gutter down"    "$LBL_GUTTER" "0"
-ft_remove_attribute bar for
+ft_unset bar for
 check "removing the attribute releases it too"    "$(_reg)" "none/none"
-ft-modify bar for=tgtA
+ft_set bar for=tgtA
 check "…and it can be pointed somewhere again"    "$(_reg)" "bar/none"
 ft_remove bar
 check "removing the BAR takes its entry with it"  "$(_reg)" "none/none"
@@ -215,25 +215,25 @@ end_ft_form
 ft_layout app6; FT_ROOT=app6
 SB6_FIRED=""
 sb6_on_scroll() { SB6_FIRED="$1"; }
-ft-modify sb6 onScroll=sb6_on_scroll
+ft_set sb6 onScroll=sb6_on_scroll
 _offsets() {                    # → bar/target
     _ft_get_raw sb6 scrollTop; local b=${FT_RET:-unset}
     _ft_get_raw doc scrollTop; printf '%s/%s' "$b" "${FT_RET:-unset}"
 }
-SB6_FIRED=""; ft-modify sb6 scrollTop=5
-check "ft-modify moves the bar AND the target" "$(_offsets)" "5/5"
+SB6_FIRED=""; ft_set sb6 scrollTop=5
+check "ft_set moves the bar AND the target" "$(_offsets)" "5/5"
 check "…and fires onScroll with the offset"    "$SB6_FIRED" "5"
 SB6_FIRED=""; ft_scrollbar_set sb6 2
 check "the verb does exactly the same"         "$(_offsets)" "2/2"
 check "…and fires it too"                      "$SB6_FIRED" "2"
 # The clamp is the property's, not the verb's — 12 lines in a 4-row box tops out at 8.
-SB6_FIRED=""; ft-modify sb6 scrollTop=99
+SB6_FIRED=""; ft_set sb6 scrollTop=99
 check "an out-of-range write is clamped at the write" "$(_offsets)" "8/8"
 check "…and reports the offset it actually reached"   "$SB6_FIRED" "8"
-SB6_FIRED=""; ft-modify sb6 scrollTop=99
+SB6_FIRED=""; ft_set sb6 scrollTop=99
 check "…and asking again, from the top, does not move it" "$(_offsets)" "8/8"
 check "…nor fire a scroll event for a scroll that did not happen" "$SB6_FIRED" ""
-SB6_FIRED=""; ft-modify sb6 scrollTop=-4
+SB6_FIRED=""; ft_set sb6 scrollTop=-4
 check "a negative offset is clamped to the top"  "$(_offsets)" "0/0"
 check "…and that IS a move, so it fires"         "$SB6_FIRED" "0"
 
@@ -242,9 +242,9 @@ note "an offset does not outlive the document it was measured against"
 # Scroll a 12-line target to the bottom, replace its text with one line, and the bar went on
 # holding 8 against a maximum of 0 — while the target, which re-clamps its own on the same
 # path, had already gone back to 0. Two numbers for one scroll position.
-SB6_FIRED=""; ft-modify sb6 scrollTop=8
+SB6_FIRED=""; ft_set sb6 scrollTop=8
 check "at the bottom of twelve lines in four rows" "$(_offsets)" "8/8"
-ft-modify doc text="one line only"
+ft_set doc text="one line only"
 ft_layout app6
 ft_dirty doc; ft_draw_one doc >/dev/null 2>&1
 ft_dirty sb6; ft_draw_one sb6 >/dev/null 2>&1
@@ -257,7 +257,7 @@ check "…and the bar's own state agrees"          "$FT_SCROLLBAR_POSITION" "0"
 #  A TEXTFIELD IS A SCROLL SURFACE LIKE ANY OTHER
 #
 #  It kept its offsets in two private tables (FT_TEXTFIELD_VSCROLL / FT_TEXTFIELD_SCROLL), so
-#  the public names were inert: `ft-modify tf scrollTop=5` stored 5 and left the view on line 1,
+#  the public names were inert: `ft_set tf scrollTop=5` stored 5 and left the view on line 1,
 #  `ft-scrollbar for=tf` — documented as needing no glue at all — steered nothing, and a state
 #  save carried an offset nothing would restore from. docs/api-naming.md wrote that down and
 #  asked for the offsets to be moved onto scrollTop/scrollLeft in one deliberate change.
@@ -278,13 +278,13 @@ _tf_off() { _ft_get_raw "$1" scrollTop; printf '%s' "${FT_RET:-0}"; }
 _tf_first_line
 check "the field starts at the top"              "$FT_RET" "line 1"
 check "…and says so through the DOM's name"      "$(_tf_off tfv)" "0"
-ft-modify tfv scrollTop=5
+ft_set tfv scrollTop=5
 _tf_first_line
-check "ft-modify scrollTop MOVES THE VIEW"       "$FT_RET" "line 6"
+check "ft_set scrollTop MOVES THE VIEW"       "$FT_RET" "line 6"
 check "…and the property agrees with the paint"  "$(_tf_off tfv)" "5"
 # The pair the draw publishes bounds it, on every route in — the field's own clamp and the
 # framework's have to be the same number or the last line becomes unreachable.
-ft-modify tfv scrollTop=999
+ft_set tfv scrollTop=999
 check "an out-of-range write is clamped to the last page" "$(_tf_off tfv)" "10"
 _tf_first_line
 check "…and that is what it paints"              "$FT_RET" "line 11"

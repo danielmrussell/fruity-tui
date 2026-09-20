@@ -10,8 +10,8 @@
 #  holds a document, measured on 1200 lines:
 #
 #      repaint, nothing changed                       8 ms
-#      repaint after `ft-modify f runlevel=editing` 199 ms
-#      repaint after `ft-modify f runlevel=poised`  145 ms
+#      repaint after `ft_set f runlevel=editing` 199 ms
+#      repaint after `ft_set f runlevel=poised`  145 ms
 #
 #  Every Enter INTO the field and every Esc OUT of it re-wrapped a document that had not
 #  changed — on this framework's keystone interaction. It never had to: _ft_textfield_layout's
@@ -61,16 +61,16 @@ check "…and the memo has a key"  "$(( ${#_FT_TEXTFIELD_LINES_CACHE_KEY} > 0 ))
 note "a textfield declares which properties change its text, and only those move the text counter"
 check "it declares them" "${FT_PROTO_TEXT_PROPS[textfield]:-<none>}" "value text"
 _t0=$(_tg tf); _w0=$(_wg tf)
-ft-modify tf borderColor=201
+ft_set tf borderColor=201
 check "an unrelated write does NOT move the text generation" "$(_tg tf)" "$_t0"
 check "…but it does move the write generation"               "$(( $(_wg tf) > _w0 ))" 1
 _t1=$(_tg tf); _w1=$(_wg tf)
-ft-modify tf runlevel=editing
+ft_set tf runlevel=editing
 check "runlevel — the Enter-to-edit write — does not either"  "$(_tg tf)" "$_t1"
 check "…and still moves the write generation"                 "$(( $(_wg tf) > _w1 ))" 1
-ft-modify tf runlevel=poised
+ft_set tf runlevel=poised
 _t2=$(_tg tf); _w2=$(_wg tf)
-ft-modify tf value="$DOC and more words to wrap with"
+ft_set tf value="$DOC and more words to wrap with"
 check "a value write DOES move the text generation"           "$(( $(_tg tf) > _t2 ))" 1
 check "…and the write generation too"                         "$(( $(_wg tf) > _w2 ))" 1
 
@@ -79,10 +79,10 @@ note "…which is the whole point: an unrelated write must not re-wrap the docum
 # key IS the mechanism: same key means the next layout call is a hit and no re-wrap happens.
 _ft_textfield_textw tf; _w=$FT_RET
 _ft_textfield_layout tf "$_w"; _key0=$_FT_TEXTFIELD_LINES_CACHE_KEY
-ft-modify tf borderColor=45
+ft_set tf borderColor=45
 _ft_textfield_layout tf "$_w"
 check "the wrap memo key survives an unrelated write" "$_FT_TEXTFIELD_LINES_CACHE_KEY" "$_key0"
-ft-modify tf value="something else entirely"
+ft_set tf value="something else entirely"
 _ft_textfield_textw tf; _w=$FT_RET
 _ft_textfield_layout tf "$_w"
 check "…and changes when the value does" \
@@ -102,7 +102,7 @@ note "THE RETAINED BLOCK MUST STILL INVALIDATE — the mistake this gate exists 
 _shot() { FT_OUT=""; ft_dirty tf; ft_draw_one tf >/dev/null 2>&1; local p=$FT_OUT; FT_OUT=""; printf '%s' "$p"; }
 _pic0=$(_shot); _tok0=$(_token tf)
 _narrow0=$(v=_fti_tf__textgen; printf %s "${!v:-0}")
-ft-modify tf wrapIndicator=true
+ft_set tf wrapIndicator=true
 check "the write really changes the picture (or the token check is vacuous)" \
       "$([[ "$_pic0" != "$(_shot)" ]] && echo 1 || echo 0)" 1
 check "…and it is NOT a text property, so the narrowable counter stands still" \
@@ -110,7 +110,7 @@ check "…and it is NOT a text property, so the narrowable counter stands still"
 check "…yet the retain token moves, so no stale block is served" \
       "$([[ "$(_token tf)" != "$_tok0" ]] && echo 1 || echo 0)" 1
 _tok1=$(_token tf)
-ft-modify tf value="a third value"
+ft_set tf value="a third value"
 check "a text write moves it too"  "$([[ "$(_token tf)" != "$_tok1" ]] && echo 1 || echo 0)" 1
 _tok2=$(_token tf)
 check "…while changing nothing leaves it alone (or retention would be pointless)" \
@@ -119,24 +119,24 @@ check "…while changing nothing leaves it alone (or retention would be pointles
 note "a class that declares NOTHING is untouched — the two counters move together"
 check "a label declares nothing" "${FT_PROTO_TEXT_PROPS[label]:-<none>}" "<none>"
 _lt=$(_tg lb); _lw=$(_wg lb)
-ft-modify lb color=201
+ft_set lb color=201
 check "…so an unrelated write moves its text generation too" "$(( $(_tg lb) > _lt ))" 1
 check "…and its write generation"                            "$(( $(_wg lb) > _lw ))" 1
 
 note "a REMOVAL is a write, and follows the same rule on both counters"
-ft-modify tf borderColor=201            # give it something to remove
+ft_set tf borderColor=201            # give it something to remove
 _rt=$(_tg tf); _rw=$(_wg tf)
-ft_remove_attribute tf borderColor
+ft_unset tf borderColor
 check "removing a non-text property moves only the write generation" "$(_tg tf)" "$_rt"
 check "…which it does move"                                          "$(( $(_wg tf) > _rw ))" 1
 _rt2=$(_tg tf)
-ft_remove_attribute tf value
+ft_unset tf value
 check "removing the VALUE moves the text generation"                 "$(( $(_tg tf) > _rt2 ))" 1
 
 note "a control rebuilt under a dead one's name starts both counters fresh"
 # The retained block is filed under the token; a counter that restarted at 0 while the block
 # survived would climb back through the dead control's token values.
-ft-modify tf value="x"; ft-modify tf borderColor=1
+ft_set tf value="x"; ft_set tf borderColor=1
 check "the counters have moved" "$(( $(_wg tf) > 0 && $(_tg tf) > 0 ))" 1
 ft_remove tf
 check "removal clears the write generation" "$(_wg tf)" "0"
@@ -148,7 +148,7 @@ note "a control REBUILT under the same name never inherits the dead one's pictur
 # the dead one's key after one write, and a text area on page two drew page one's lines while
 # `ft_get value` answered page two. Every generation now comes from _FT_GENERATION_CLOCK.
 #
-# Asked the way an app meets it: the documented rebuild idiom (ft-empty, the same stable names,
+# Asked the way an app meets it: the documented rebuild idiom (ft_empty, the same stable names,
 # ft_refresh), then an ordinary WARM repaint — the one an app actually gets — compared cell for
 # cell with a cold one. One assertion per control type, because the stale key was a textfield's
 # today and any type's cache keyed on a generation is one rebuild away from the same thing.
@@ -160,17 +160,17 @@ _rb_screen() {                  # → FT_RET the frame's cells, _RB_TEXT its gly
     _RB_TEXT=$(printf '%s\n' "$FT_RET" | awk -F'\t' '{split($1,a,","); r=a[1]+0; t[r]=t[r] $2} END {for (i in t) print t[i]}')
 }
 _rb_page() {                    # type page
-    ft-empty rb
+    ft_empty rb
         case $1 in
             textarea)  ft-textfield name=rbx rows=3 size=24 value="$2 notes"$'\n'"$2 again" ;;
             textfield) ft-textfield name=rbx size=24 value="$2 answer" ;;
             wrapped)   ft-label name=rbx width=12 text="$2 is a label long enough to wrap" ;;
             label)     ft-label name=rbx text="$2 label" ;;
-            button)    ft-button name=rbx "$2 button" ;;
-            checkbox)  ft-checkbox name=rbx "$2 checkbox" ;;
+            button)    ft-button name=rbx text="$2 button" ;;
+            checkbox)  ft-checkbox name=rbx text="$2 checkbox" ;;
             select)    ft-select name=rbx size=2
-                           ft-option value=a "$2 first"
-                           ft-option value=b "$2 second"
+                           ft-option value=a text="$2 first"
+                           ft-option value=b text="$2 second"
                        end_ft_select ;;
         esac
     end_ft_form

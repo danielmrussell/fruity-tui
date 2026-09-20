@@ -139,7 +139,7 @@ ft_keymap_set kd key=UP    onKey='saw up $this $key' \
                  key=BUB   onKey=bubble \
                  key=CAPONLY keyCap="Someone else handles this"
 ft-form name=app width=40 height=10
-    ft-button name=btn "Go" keymap=kd
+    ft-button name=btn text="Go" keymap=kd
 end_ft_form
 FT_ROOT=app; ft_layout app; ft_focus btn
 
@@ -173,7 +173,7 @@ note "keymap= is a LIST, last wins"
 ft_keymap la; ft_keymap_set la key=L onKey='saw from_a' key=A onKey='saw only_a'
 ft_keymap lb; ft_keymap_set lb key=L onKey='saw from_b'
 ft-form name=app2 width=40 height=10
-    ft-button name=b2 "Go" keymap="la lb"
+    ft-button name=b2 text="Go" keymap="la lb"
 end_ft_form
 FT_ROOT=app2; ft_layout app2; ft_focus b2
 SAW=""; ft_dispatch_event L
@@ -183,7 +183,7 @@ check "…and the earlier map is still consulted" "$SAW" "only_a"
 
 note "key fields on a TAG bind that control, and beat everything shared"
 ft-form name=app3 width=40 height=10
-    ft-button name=b3 "Go" keymap="la lb" key=L onKey='saw from_instance' \
+    ft-button name=b3 text="Go" keymap="la lb" key=L onKey='saw from_instance' \
               key=Z keyCap="Zap it" keyImp=crucial onKey='saw zap $this'
 end_ft_form
 FT_ROOT=app3; ft_layout app3; ft_focus b3
@@ -194,15 +194,15 @@ check "a second key on the same tag"        "$SAW" "zap b3"
 FT_CAPS=(); _ft_keymap_caps "${FT_KEYMAP[b3]}"
 check "its cap reaches the legend"          "${FT_CAPS[*]}" "$(printf '%s\t%s\t%s' "$FT_IMPORTANCE_CRUCIAL" Z "Zap it")"
 
-note "ft-modify rebinds a key on a live control"
-ft-modify b3 key=L onKey='saw rebound'
+note "ft_set rebinds a key on a live control"
+ft_set b3 key=L onKey='saw rebound'
 SAW=""; ft_dispatch_event L
 check "the new code replaced the old"       "$SAW" "rebound"
 check "…and the control's text is untouched" "$(ft_get b3 text; echo "$FT_RET")" "Go"
 
 note "an instance key beats the control's prototype"
 ft-form name=app4 width=40 height=10
-    ft-button name=b4 "Go" key=ENTER onKey='saw mine $this'
+    ft-button name=b4 text="Go" key=ENTER onKey='saw mine $this'
 end_ft_form
 FT_ROOT=app4; ft_layout app4; ft_focus b4
 SAW=""; ft_dispatch_event ENTER
@@ -216,8 +216,8 @@ check "ENTER runs the instance code, not activate" "$SAW" "mine b4"
 note "defaultKeys=false silences the prototype's keys, not the app's"
 ft-form name=dkapp width=40 height=10
     ft-div name=dkbox
-        ft-button name=dk1 "Go" onActivate=dk_activate
-        ft-button name=dk2 "No" onActivate=dk_activate
+        ft-button name=dk1 text="Go" onActivate=dk_activate
+        ft-button name=dk2 text="No" onActivate=dk_activate
     end_ft_div
 end_ft_form
 DK=""; dk_activate() { DK=fired; }
@@ -225,19 +225,19 @@ FT_ROOT=dkapp; ft_layout dkapp; ft_focus dk1
 DK=""; ft_dispatch_event ENTER
 check "by default the prototype's ENTER activates"  "$DK" "fired"
 
-ft-modify dk1 defaultKeys=false
+ft_set dk1 defaultKeys=false
 DK=""; ft_dispatch_event ENTER
 check "…silenced, ENTER does nothing"               "${DK:-nothing}" "nothing"
-ft-modify dk1 key=ENTER onKey='saw mine $this'
+ft_set dk1 key=ENTER onKey='saw mine $this'
 SAW=""; DK=""; ft_dispatch_event ENTER
 check "…but the app's own key still fires"          "$SAW" "mine dk1"
 check "…and still does not reach the prototype"     "${DK:-nothing}" "nothing"
 
-ft_remove_attribute dk1 defaultKeys
-ft-modify dkbox defaultKeys=false
+ft_unset dk1 defaultKeys
+ft_set dkbox defaultKeys=false
 ft_focus dk2; DK=""; ft_dispatch_event ENTER
 check "it INHERITS: the container silenced the child" "${DK:-nothing}" "nothing"
-ft-modify dk2 defaultKeys=true
+ft_set dk2 defaultKeys=true
 DK=""; ft_dispatch_event ENTER
 check "…and a child can say true again"               "$DK" "fired"
 
@@ -249,8 +249,8 @@ check "…and a child can say true again"               "$DK" "fired"
 # checkbox with accessKey=B sat on a page whose app-level [Bb] moved back a page.
 note "a shortcut that cannot fire is reported, not left to be discovered"
 ft-form name=ckapp width=40 height=10
-    ft-button name=ck1 "Bold"   accessKey=b
-    ft-button name=ck2 "Bottom" accessKey=b
+    ft-button name=ck1 text="Bold" accessKey=b
+    ft-button name=ck2 text="Bottom" accessKey=b
 end_ft_form
 FT_ROOT=ckapp; ft_layout ckapp
 ok "two controls sharing a letter is not a conflict" ft_accesskey_conflicts

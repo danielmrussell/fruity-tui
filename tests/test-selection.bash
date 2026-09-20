@@ -40,7 +40,7 @@ ft_get cb4 value; check "toggled value = true"           "$FT_RET" "true"
 
 note "checkmarkVariant is a PROPERTY, so it reads back and it acts on every route"
 # It used to be a constructor ARGUMENT, consumed and thrown away: a checkbox drawing ☑ answered
-# nothing when asked why, and `ft-modify cb checkmarkVariant=unicode` stored the name and
+# nothing when asked why, and `ft_set cb checkmarkVariant=unicode` stored the name and
 # changed no glyph at all — ft_get said unicode while the screen said [x].
 _glyphs_of() {                  # name → FT_RET = its two options' glyphs, off then on
     _ft_options "$1"
@@ -55,16 +55,16 @@ _glyphs_of cb4;               check "…and its glyphs are the unicode pair" "$F
 ft-checkbox name=cb5 parent=app text="Plain"
 ft_get cb5 checkmarkVariant;  check "a checkbox nobody asked answers box"  "$FT_RET" "box"
 _glyphs_of cb5;               check "…and wears the box pair"              "$FT_RET" "$_BOX"
-ft-modify cb5 checkmarkVariant=unicode
-ft_get cb5 checkmarkVariant;  check "ft-modify stores it"                  "$FT_RET" "unicode"
+ft_set cb5 checkmarkVariant=unicode
+ft_get cb5 checkmarkVariant;  check "ft_set stores it"                  "$FT_RET" "unicode"
 _glyphs_of cb5;               check "…AND changes the glyphs"              "$FT_RET" "$_UNI"
-ft-modify cb5 checkmarkVariant=box
+ft_set cb5 checkmarkVariant=box
 _glyphs_of cb5;               check "…and back again"                      "$FT_RET" "$_BOX"
 # Normalized at the write, like every other keyword: ft_get may only answer a variant that draws.
 ft-checkbox name=cb6 parent=app text="Bogus" checkmarkVariant=heavy
 ft_get cb6 checkmarkVariant;  check "an unknown variant reads back as box"  "$FT_RET" "box"
 _glyphs_of cb6;               check "…and draws the box pair"               "$FT_RET" "$_BOX"
-ft-modify cb6 checkmarkVariant=UNICODE
+ft_set cb6 checkmarkVariant=UNICODE
 ft_get cb6 checkmarkVariant;  check "…and a keyword is case-insensitive"    "$FT_RET" "unicode"
 # `[ ]` is three columns and `☐` is one, so the variant decides the control's width.
 # Asserted against the TABLE, not against ft_prop_kind: an unregistered name already answers

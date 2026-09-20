@@ -140,7 +140,7 @@ __fd_up() { _ft_fd_norm "$_FT_FILE_DIALOG_DIR/.."; _FT_FILE_DIALOG_ACTION=cd; _F
 __fdlist_on_activate() {
     local v=$1
     if [[ "$v" == d:* ]]; then _FT_FILE_DIALOG_ACTION=cd; _ft_fd_norm "$_FT_FILE_DIALOG_DIR/${v#d:}"; _FT_FILE_DIALOG_TARGET=$FT_RET
-    elif [[ "$v" == f:* ]]; then _FT_FILE_DIALOG_NAME=${v#f:}; ft-modify __fdname text="$_FT_FILE_DIALOG_NAME"; _FT_FILE_DIALOG_ACTION=pick; fi
+    elif [[ "$v" == f:* ]]; then _FT_FILE_DIALOG_NAME=${v#f:}; ft_set __fdname text="$_FT_FILE_DIALOG_NAME"; _FT_FILE_DIALOG_ACTION=pick; fi
 }
 # The Places tree: nodes keyed "p:<index>" into _FT_FILE_DIALOG_PLACE_PATH (indices dodge
 # any spaces in the paths).
@@ -172,7 +172,7 @@ _ft_fd_build() {
                  display=flex flexDirection=column gap=0 padding=1 width="$ww" height="$wh"
 
             local subaccel=${_FT_FILE_DIALOG_SUBMIT:0:1}
-            ft-label name=__fdpath color=muted "$_FT_FILE_DIALOG_DIR"
+            ft-label name=__fdpath color=muted text="$_FT_FILE_DIALOG_DIR"
             ft-div name=__fdmain display=flex gap=1 width=$(( ww - 4 )) height=$(( listrows + 2 ))
 
                 # The dialog is NOT a tree — the panes are LIST BOXES (ft-select).
@@ -181,28 +181,28 @@ _ft_fd_build() {
                 # ONLY when the future Tree view mode is selected.)
                 ft-select name=__fdplaces size="$listrows" width="$placew" showSelected=false onActivate=__fdplaces_on_activate
                     for (( i=0; i<${#_FT_FILE_DIALOG_PLACE_LABEL[@]}; i++ )); do
-                        ft-option value="p:$i" "${_FT_FILE_DIALOG_PLACE_LABEL[$i]}"
+                        ft-option value="p:$i" text="${_FT_FILE_DIALOG_PLACE_LABEL[$i]}"
                     done
                 end_ft_select
 
                 ft-select name=__fdlist size="$listrows" width="$listw" showSelected=false onActivate=__fdlist_on_activate
-                    ft-option value="d:.." ".. (up a level)"
+                    ft-option value="d:.." text=".. (up a level)"
                     for (( i=0; i<n; i++ )); do
                         if (( _FT_FILE_DIALOG_IS_DIR[i] )); then
-                            ft-option value="d:${_FT_FILE_DIALOG_NAMES[$i]}" "${_FT_FILE_DIALOG_NAMES[$i]}/"
+                            ft-option value="d:${_FT_FILE_DIALOG_NAMES[$i]}" text="${_FT_FILE_DIALOG_NAMES[$i]}/"
                         else
-                            ft-option value="f:${_FT_FILE_DIALOG_NAMES[$i]}" "${_FT_FILE_DIALOG_NAMES[$i]}"
+                            ft-option value="f:${_FT_FILE_DIALOG_NAMES[$i]}" text="${_FT_FILE_DIALOG_NAMES[$i]}"
                         fi
                     done
                 end_ft_select
             end_ft_div
 
-            ft-label name=__fdnl "File name:"
+            ft-label name=__fdnl text="File name:"
             ft-textfield name=__fdname size=$(( ww - 6 )) value="$_FT_FILE_DIALOG_NAME"
             ft-div name=__fdbtns display=flex gap=2 justifyContent=end width=$(( ww - 4 ))
-                ft-button name=__fdsubmit accessKey="$subaccel" "$_FT_FILE_DIALOG_SUBMIT" onActivate=__fdsubmit_on_activate
-                ft-button name=__fdcancel accessKey=C "Cancel" onActivate=__fdcancel_on_activate
-                ft-button name=__fdhelp   accessKey=H "Help" onActivate=__fdhelp_on_activate
+                ft-button name=__fdsubmit accessKey="$subaccel" text="$_FT_FILE_DIALOG_SUBMIT" onActivate=__fdsubmit_on_activate
+                ft-button name=__fdcancel accessKey=C text="Cancel" onActivate=__fdcancel_on_activate
+                ft-button name=__fdhelp accessKey=H text="Help" onActivate=__fdhelp_on_activate
             end_ft_div
 
             # The bottom bar: what the keys do (top) + a live folder synopsis. Enter

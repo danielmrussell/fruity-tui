@@ -19,10 +19,16 @@ ft-mywidget name=w1 label=hello
 check "custom class type recorded" "${FT_TYPE[w1]}" "mywidget"
 ft_get w1 label; check "custom class prop stored"   "$FT_RET" "hello"
 
-note "content vs assignment: a =-bearing PHRASE is text, not a bogus property"
-ft-label name=amb1 "compression=high beep=on"     # spaces + unknown key → content
-ft_get amb1 text; check "spaced =-phrase became text" "$FT_RET" "compression=high beep=on"
+note "content vs assignment: a =-bearing PHRASE is refused, not made a bogus property"
+# It used to become TEXT, because bare content was accepted and an unknown key with a spaced
+# value is not an assignment. Content by position is gone, so the phrase is refused outright —
+# and the thing that must still never happen is a property called `compression`.
+_err=$(ft-label name=amb1 "compression=high beep=on" 2>&1)
+check "spaced =-phrase is refused" \
+      "$(case "$_err" in *"is not a property"*) echo refused ;; *) echo "${_err:-silent}" ;; esac)" "refused"
 ft_get amb1 compression; check "no phantom 'compression' property set" "$FT_RET" ""
+ft_set amb1 text="compression=high beep=on"
+ft_get amb1 text; check "…and text= takes the phrase verbatim" "$FT_RET" "compression=high beep=on"
 ft-label name=amb2 text="ratio=3:1"               # explicit text= keeps its =
 ft_get amb2 text; check "explicit text= keeps its =" "$FT_RET" "ratio=3:1"
 ft-label name=amb3 width=20                        # known prop, single word → assignment

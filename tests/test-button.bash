@@ -30,8 +30,8 @@ _lead()  { local s=$1 n=0; while [[ "${s:n:1}" == " " ]]; do (( n++ )); done; pr
 _build() {                      # props… — one button and one label, same text, same width
     ft_remove bapp 2>/dev/null
     ft-form name=bapp width=60 height=8
-        ft-button name=btn "Help" "$@"
-        ft-label  name=lbl "Help" "$@"
+        ft-button name=btn text="Help" "$@"
+        ft-label name=lbl text="Help" "$@"
     end_ft_form
     ft_layout bapp
 }
@@ -59,8 +59,8 @@ done
 note "a label too long for the box is ellipsised, never painted over its neighbour"
 ft_remove bapp 2>/dev/null
 ft-form name=bapp width=60 height=8
-    ft-button name=btn  "Disconnect" width=6
-    ft-label  name=lbl  "Disconnect" width=6
+    ft-button name=btn text="Disconnect" width=6
+    ft-label name=lbl text="Disconnect" width=6
 end_ft_form
 ft_layout bapp
 _paint btn; _b=$FT_RET
@@ -77,9 +77,9 @@ case "$_b" in *Disconnect*) check "the full label is NOT painted past the box" 0
 note "the accessKey underline survives the re-join"
 ft_remove bapp 2>/dev/null
 ft-form name=bapp width=60 height=8
-    ft-button name=bk1 accessKey=e "Help"          # the letter IS in the label
-    ft-button name=bk2 accessKey=S "Write"         # it is not → " (S)" is appended
-    ft-button name=bk3 accessKey=S "Write" width=5 # …and the box is too small for it
+    ft-button name=bk1 accessKey=e text="Help" # the letter IS in the label
+    ft-button name=bk2 accessKey=S text="Write" # it is not → " (S)" is appended
+    ft-button name=bk3 accessKey=S text="Write" width=5 # …and the box is too small for it
 end_ft_form
 ft_layout bapp
 FT_OUT=""; ft_draw_one bk1
@@ -101,8 +101,8 @@ note "a TAB in a label is expanded at fit time, like every other control's text"
 # why they do it; the button now agrees with the label to the column.
 ft_remove bapp 2>/dev/null
 ft-form name=bapp width=60 height=8
-    ft-button name=btb "a	b"
-    ft-label  name=ltb "a	b"
+    ft-button name=btb text="a	b"
+    ft-label name=ltb text="a	b"
 end_ft_form
 ft_layout bapp
 _paint btb; _b=$FT_RET
@@ -152,20 +152,20 @@ _ft_accel_target kapp K; check "K reaches the OK button"      "$FT_RET" "k_ok"
 _ft_accel_target kapp C; check "C reaches Cancel"             "$FT_RET" "k_cancel"
 _ft_accel_target kapp F; check "F reaches Forward"            "$FT_RET" "k_forward"
 KB=""; kb_hit() { KB=hit; }
-ft-modify k_ok onActivate=kb_hit
+ft_set k_ok onActivate=kb_hit
 _ft_accel_dispatch kapp K
 check "…and pressing it activates the button" "$KB" "hit"
 
 # Sharing is the feature: no and new both claim n, and the first VISIBLE one answers.
 note "two kinds may share a letter — the first visible one answers"
 _ft_accel_target kapp N; check "N finds the first claimant"   "$FT_RET" "k_no"
-ft-modify k_no display=none
+ft_set k_no display=none
 _ft_accel_target kapp N; check "…and the next one when it is hidden" "$FT_RET" "k_new"
-ft-modify k_no display=inline-block
+ft_set k_no display=inline-block
 
 note "a kind is still a button: the app's text and handler win"
 ft-form name=kapp2 width=40 height=6
-    ft-button-save name=k_sa "Save As…" onActivate=kb_hit
+    ft-button-save name=k_sa text="Save As…" onActivate=kb_hit
 end_ft_form
 FT_ROOT=kapp2; ft_layout kapp2
 check "the app's text replaces the default" "$(ft_get k_sa text; printf '%s' "$FT_RET")" "Save As…"

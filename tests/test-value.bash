@@ -13,13 +13,13 @@ note "checkbox: on_activate when CHECKED, on_deactivate when UNCHECKED"
 ft-form name=app width=60 height=20
     ft-checkbox name=cb text="Beep" accessKey=P onActivate=cb_on_activate onDeactivate=cb_on_deactivate
     ft-radio name=r1 text="One" group=g disabled=true
-    ft-button name=go Submit onActivate=go_on_activate
+    ft-button name=go text=Submit onActivate=go_on_activate
 end_ft_form
 ft_layout app
 FT_ROOT=app
 LOG=""
-cb_on_activate()   { LOG+="+on"; ft-modify r1 disabled=false; }
-cb_on_deactivate() { LOG+="+off"; ft-modify r1 disabled=true; }
+cb_on_activate()   { LOG+="+on"; ft_set r1 disabled=false; }
+cb_on_deactivate() { LOG+="+off"; ft_set r1 disabled=true; }
 ft_activate cb
 ft_get cb value; check "checked: value=true, on_activate ran" "$FT_RET,$LOG" "true,+on"
 ft_get r1 disabled; check "hook re-enabled the radio" "$FT_RET" "false"
@@ -27,7 +27,7 @@ ft_activate cb
 ft_get cb value; check "unchecked: value=false, on_deactivate ran" "$FT_RET,$LOG" "false,+on+off"
 
 note "disabled controls are inert and skipped by focus"
-ft-modify r1 disabled=true
+ft_set r1 disabled=true
 ft_activate r1
 ft_radio_is_selected r1 && s=yes || s=no
 check "disabled radio ignores activation (not selected)" "$s" "no"
@@ -131,17 +131,17 @@ check "overflowY=clip label is NOT focusable (hard clip, no scrolling)" "$s" "ye
 note "focus/accessKey skip a control inside a display=none or visibility=hidden ancestor"
 ft-form name=app6 width=40 height=10
     ft-div name=hbox
-        ft-button name=inbtn Go
+        ft-button name=inbtn text=Go
     end_ft_div
 end_ft_form
 ft_layout app6
 _ft_focus_skippable inbtn && s=yes || s=no
 check "visible: button inside a shown div is focusable" "$s" "no"
-ft-modify hbox display=none
+ft_set hbox display=none
 _ft_focus_skippable inbtn && s=yes || s=no
 check "hidden ancestor: button is skipped even though its OWN display is fine" "$s" "yes"
-ft-modify hbox display=block
-ft-modify hbox visibility=hidden
+ft_set hbox display=block
+ft_set hbox visibility=hidden
 _ft_focus_skippable inbtn && s=yes || s=no
 check "visibility=hidden ancestor: also skipped" "$s" "yes"
 
@@ -154,13 +154,13 @@ ft-form name=appv width=40 height=10
 end_ft_form
 ft_layout appv
 xb=${FT_ABSOLUTE_X[vB]}
-ft-modify vA visibility=hidden
+ft_set vA visibility=hidden
 ft_layout appv
 check "hidden box keeps its size"       "${FT_MEASURED_WIDTH[vA]}" "4"
 check "sibling did not move"            "${FT_ABSOLUTE_X[vB]}" "$xb"
 _ft_focus_skippable vA && s=yes || s=no
 check "hidden is unfocusable"           "$s" "yes"
-ft-modify vA display=none
+ft_set vA display=none
 ft_layout appv
 check "display=none DOES collapse the space" "$(( ${FT_ABSOLUTE_X[vB]} < xb ))" "1"
 
@@ -171,7 +171,7 @@ check "line 1 intact" "${FT_WRAP_LINES[0]}" "short"
 ft_wrap $'one two three four five six\nz' 10
 check "long line soft-wraps, hard break survives" "${FT_WRAP_LINES[-1]}" "z"
 
-note "ft-modify of an explicit width really re-lays (the slider case)"
+note "ft_set of an explicit width really re-lays (the slider case)"
 ft-form name=appw width=60 height=10
     ft-div name=wrow display=flex width=40 height=2
         ft-div name=wl flexGrow=1
@@ -182,17 +182,17 @@ ft-form name=appw width=60 height=10
 end_ft_form
 ft_layout appw
 check "before: halves of 40" "${FT_MEASURED_WIDTH[wl]},${FT_MEASURED_WIDTH[wr]}" "20,20"
-ft-modify wrow width=30
-check "after ft-modify width=30: halves of 30" "${FT_MEASURED_WIDTH[wl]},${FT_MEASURED_WIDTH[wr]}" "15,15"
+ft_set wrow width=30
+check "after ft_set width=30: halves of 30" "${FT_MEASURED_WIDTH[wl]},${FT_MEASURED_WIDTH[wr]}" "15,15"
 
 note "bare last argument is the element's content (HTML-style)"
-ft-label name=bare "Hello, terminal!"
+ft-label name=bare text="Hello, terminal!"
 ft_get bare text; check "label bare arg -> text"  "$FT_RET" "Hello, terminal!"
-ft-frame name=barefr " My Title "
+ft-frame name=barefr title=" My Title "
 end_ft_frame
 ft_get barefr title; check "frame bare arg -> title" "$FT_RET" " My Title "
-ft-modify bare "New content"
-ft_get bare text; check "ft-modify bare arg too"  "$FT_RET" "New content"
+ft_set bare text="New content"
+ft_get bare text; check "ft_set bare arg too"  "$FT_RET" "New content"
 
 note "available height: auto boxes never exceed their context"
 ft-form name=app5 width=40 height=10
@@ -220,7 +220,8 @@ ft_layout numapp; FT_ROOT=numapp
 _numerr=$(mktemp); trap 'rm -f "$_numerr"' EXIT
 _numtry() {                     # spec → sets _NUM_STORED / _NUM_REFUSED
     : > "$_numerr"
-    ft-modify numf "$1" 2>"$_numerr"      # NB a file, not $( ): a subshell would lose the write
+    ft_set numf "$1" 2>"$_numerr"   # $1 is a PROPERTY SPEC ("width=20"), not content
+                                    # NB a file, not $( ): a subshell would lose the write
     _ft_get_raw numf "${1%%=*}"; _NUM_STORED=$FT_RET
     _NUM_REFUSED=no; [[ -s "$_numerr" ]] && _NUM_REFUSED=yes
 }
@@ -250,7 +251,7 @@ done
 
 note "…and a length CSS types [0,∞] is dropped when it is negative"
 # A negative length does not stay inside the control that asked for it. Measured on a flex row
-# of three labels: `ft-modify b width=-6` moved the THIRD one from column 10 back to column 0,
+# of three labels: `ft_set b width=-6` moved the THIRD one from column 10 back to column 0,
 # on top of the first, because the row summed a negative into its running offset. The control
 # that asked for it vanishes too — every draw begins `(( rows < 1 || cols < 1 )) && return` —
 # silently, while ft_get went on answering -6.
@@ -286,7 +287,7 @@ ft-form name=negrow width=60 height=10 display=flex flexDirection=row gap=1
 end_ft_form
 ft_layout negrow
 _negwas="${FT_ABSOLUTE_X[negA]},${FT_ABSOLUTE_X[negB]},${FT_ABSOLUTE_X[negC]}"
-ft-modify negB width=-6 2>/dev/null
+ft_set negB width=-6 2>/dev/null
 ft_layout negrow
 check "a refused width moves nobody (it used to put the third label on the first)" \
       "${FT_ABSOLUTE_X[negA]},${FT_ABSOLUTE_X[negB]},${FT_ABSOLUTE_X[negC]}" "$_negwas"
@@ -306,10 +307,10 @@ note "a radio declared WITHOUT group= is its own group, not an error"
 # simply grouped with nothing, so its own name is its group — a group of one.
 ft_remove rgap 2>/dev/null
 ft-form name=rgap width=60 height=10
-    ft-radio name=solo   "Solo"
-    ft-radio name=solo2  "Also solo"
-    ft-radio name=teamA  "A" group=team
-    ft-radio name=teamB  "B" group=team
+    ft-radio name=solo text="Solo"
+    ft-radio name=solo2 text="Also solo"
+    ft-radio name=teamA text="A" group=team
+    ft-radio name=teamB text="B" group=team
 end_ft_form
 ft_layout rgap; FT_ROOT=rgap
 _rerr=$( { ft_radio_is_selected solo; } 2>&1 >/dev/null )
@@ -339,9 +340,9 @@ note "a radio written without value= HAS one, and it is the same one the group r
 # materialises a midpoint, so there is one answer and a save carries it.
 ft_remove rval 2>/dev/null
 ft-form name=rval width=60 height=10
-    ft-radio name=vNone  group=h "None"
-    ft-radio name=vSet   group=h value=beta "Beta"
-    ft-radio name=vEmpty group=h value="" "Placeholder"
+    ft-radio name=vNone group=h text="None"
+    ft-radio name=vSet group=h value=beta text="Beta"
+    ft-radio name=vEmpty group=h value="" text="Placeholder"
 end_ft_form
 ft_layout rval; FT_ROOT=rval
 ft_get vNone value;  check "no value= → its own name"        "$FT_RET" "vNone"

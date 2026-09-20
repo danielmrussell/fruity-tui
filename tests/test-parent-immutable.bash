@@ -24,7 +24,7 @@ FT_COLS=60; FT_ROWS=16
 
 ft-form name=app width=60 height=16
     ft-div name=boxA width=20 height=6
-        ft-button name=btn "Move me"
+        ft-button name=btn text="Move me"
     end_ft_div
     ft-div name=boxB width=20 height=6
     end_ft_div
@@ -45,13 +45,13 @@ check "boxA owns the button" "$(_kidsof boxA)"     "btn"
 check "boxB owns nothing"    "$(_kidsof boxB)"     "<no children>"
 
 note "a runtime parent= is refused, and refused LOUDLY"
-# IT MUST RUN IN THIS SHELL. `_err=$(ft-modify …)` is a command substitution, so ft-modify would
+# IT MUST RUN IN THIS SHELL. `_err=$(ft_set …)` is a command substitution, so ft_set would
 # run in a SUBSHELL and every write it makes — including the bad one this file exists to catch —
 # would be discarded on return. Written that way the divergence assertions below PASS on the
-# broken engine, which is exactly what the teeth check caught. Same trap as `ft-modify … | sed`.
+# broken engine, which is exactly what the teeth check caught. Same trap as `ft_set … | sed`.
 # So: redirect stderr to a file, and read the file afterwards.
 _errfile=$(mktemp); trap 'rm -f "$_errfile"' EXIT
-ft-modify btn parent=boxB 2>"$_errfile"
+ft_set btn parent=boxB 2>"$_errfile"
 _err=$(cat "$_errfile")
 check "…it says so on stderr"        "$([[ "$_err" == *"not settable"* ]] && echo 1 || echo 0)" 1
 check "…and names the verb to use"   "$([[ "$_err" == *"ft_append"* ]]    && echo 1 || echo 0)" 1

@@ -10,8 +10,8 @@
 #
 #      ft-checkbox name=cbBeep text="Beep on submit" accessKey=P checked=false
 #      ...
-#      cbBeep_on_activate()   { ft-modify rSingle disabled=false; }
-#      cbBeep_on_deactivate() { ft-modify rSingle disabled=true; }
+#      cbBeep_on_activate()   { ft_set rSingle disabled=false; }
+#      cbBeep_on_deactivate() { ft_set rSingle disabled=true; }
 #
 #  Depends on ft-core.bash, ft-forms.bash, controls/ft-multitoggle.bash.
 # ─────────────────────────────────────────────────────────────────────────────
@@ -51,7 +51,7 @@ ft_prototype_checkbox() {
 # asked why, and at runtime it was worse:
 #
 #     ft-checkbox name=cb "Unicode" checkmarkVariant=unicode   painted ☑   ft_get <unset>
-#     ft-modify cb checkmarkVariant=unicode                    painted [x] ft_get unicode
+#     ft_set cb checkmarkVariant=unicode                    painted [x] ft_get unicode
 #
 # The name stored and the glyphs untouched, which is this sweep's shape exactly. One function
 # turns the variant into the two glyphs now, and both routes in call it: the reconciler below
@@ -79,8 +79,8 @@ _ft_checkbox_apply_variant() {  # name — write the variant's glyphs onto the t
     for k in ${FT_KIDS[$name]:-}; do
         _ft_get_raw "$k" value
         case $FT_RET in
-            false) ft-modify "$k" glyph="$off" ;;
-            true)  ft-modify "$k" glyph="$on"  ;;
+            false) ft_set "$k" glyph="$off" ;;
+            true)  ft_set "$k" glyph="$on"  ;;
         esac
     done
     return 0
@@ -128,7 +128,7 @@ ft-checkbox() {                          # name=... text=... [checked=true|false
     ft_new checkbox "${rest[@]}" "${idxarg[@]}" && FT_NEST_STACK+=("$FT_RET")
         ft-option value=false
         ft-option value=true
-    ft-end checkbox                      # …which applies the variant's glyphs to both of them
+    ft_end checkbox                      # …which applies the variant's glyphs to both of them
 }
 
 ft_checkbox_toggle()     { ft_multitoggle_cycle "$1"; }

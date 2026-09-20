@@ -31,7 +31,7 @@ export FT_NO_WTFIX=1
 # Sourced from INSIDE the tree: the demo derives its own root from BASH_SOURCE, so a copy in
 # /tmp resolves `here` to / and silently loads nothing.
 noloop="$here/demo/.css-demo-callout.bash"
-sed '/^ft-run app/d' "$here/demo/css-demo.bash" > "$noloop"
+sed '/^ft_run app/d' "$here/demo/css-demo.bash" > "$noloop"
 trap 'rm -f "$noloop"' EXIT
 source "$noloop"
 exec {FT_TTY}>/dev/null
@@ -138,13 +138,13 @@ for size in "${_sizes[@]}"; do
     # which is precisely the defect the sweep existed to catch. `_resize` is the demo's own
     # SIGWINCH handler, so this resizes exactly as a real terminal resize does.
     _resize >/dev/null 2>&1
-    settle >/dev/null 2>&1   # ft-run settles the burst; a gate must too
+    settle >/dev/null 2>&1   # ft_run settles the burst; a gate must too
     note "at ${cols}×${rows}"
     for PAGE in 1 2 3 4 5 6 7 8 9 10; do
         _page_annotations; nsteps=${#PA_TARGET[@]}
         for (( STEP=1; STEP<=nsteps; STEP++ )); do
             _show_page >/dev/null 2>&1
-            settle >/dev/null 2>&1   # ft-run settles the burst; a gate must too
+            settle >/dev/null 2>&1   # ft_run settles the burst; a gate must too
             FT_OUT=""; _ft_redraw_walk app >/dev/null 2>&1; _ft_composite_overlays >/dev/null 2>&1
             poly=${FT_BEACON_LEADER[stepcallout]:-}
             box=${FT_BEACON_BOX[stepcallout]:-}

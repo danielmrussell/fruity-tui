@@ -38,7 +38,7 @@ FT_COLS=100; FT_ROWS=30
 
 # A host with a target that has room on every side, so a placement question has a real answer.
 ft-form name=root width=100 height=30
-    ft-button name=btn "Target"
+    ft-button name=btn text="Target"
 end_ft_form
 ft_layout root
 FT_ROOT=root
@@ -88,7 +88,7 @@ ft-beacon name=ga variant=bigarrow target=btn
 FT_PARENT[ga]=root
 for _sm in eighths halves solid; do
     for _pl in left right above below; do
-        ft-modify ga smoothing="$_sm" place="$_pl"
+        ft_set ga smoothing="$_sm" place="$_pl"
         ok "art is one-column: smoothing=$_sm place=$_pl" _art_glyphs_ok ga
     done
 done
@@ -119,7 +119,7 @@ for _sub in 8 2 1; do
         done
     done
 done
-ft-modify ga smoothing=eighths place=auto
+ft_set ga smoothing=eighths place=auto
 
 # ═══ 2. the easing ═══════════════════════════════════════════════════════════
 note "animation-timing-function, spelled the way CSS spells it"
@@ -174,39 +174,39 @@ _rung_index() {                 # size name -> FT_RET = its place on the ladder,
 }
 for _case in "left right" "right left" "above down" "below up"; do
     set -- $_case
-    ft-modify ga place="$1"
+    ft_set ga place="$1"
     if _geo; then check "place=$1 makes it point $2" "$FT_BIGARROW_DIRECTION" "$2"
     else          check "place=$1 makes it point $2" "suppressed" "$2"; fi
 done
-ft-modify ga place=auto
+ft_set ga place=auto
 _geo
 check "auto picks a horizontal axis on a wide screen" \
       "$(case $FT_BIGARROW_DIRECTION in left|right) echo yes ;; *) echo no ;; esac)" "yes"
 
 # THE TIP LANDS ONE arrowGap CLEAR OF THE TARGET, and the body never touches it. An arrow drawn
 # ON the thing it points at is the one failure that cannot be argued as a matter of taste.
-ft-modify ga place=left arrowGap=1
+ft_set ga place=left arrowGap=1
 _geo
 _tip=$(( FT_BIGARROW_LEFT + FT_BIGARROW_COLUMNS - 1 ))
 check "pointing right: the tip is 1 clear of the target" "$(( FT_BEACON_RECT_LEFT - _tip ))" "2"
 check "…and the whole arrow is left of the target"       "$(( _tip < FT_BEACON_RECT_LEFT ))" "1"
-ft-modify ga arrowGap=3; _geo
+ft_set ga arrowGap=3; _geo
 _tip=$(( FT_BIGARROW_LEFT + FT_BIGARROW_COLUMNS - 1 ))
 check "arrowGap=3 opens the gap"                         "$(( FT_BEACON_RECT_LEFT - _tip ))" "4"
-ft-modify ga arrowGap=1
+ft_set ga arrowGap=1
 
-ft-modify ga place=above; _geo
+ft_set ga place=above; _geo
 check "pointing down: the tip is 1 clear above"          "$(( FT_BEACON_RECT_TOP - (FT_BIGARROW_TOP + FT_BIGARROW_ROWS - 1) ))" "2"
-ft-modify ga place=below; _geo
+ft_set ga place=below; _geo
 check "pointing up: the tip is 1 clear below"            "$(( FT_BIGARROW_TOP - FT_BEACON_RECT_BOTTOM ))" "2"
-ft-modify ga place=auto
+ft_set ga place=auto
 
 note "it takes the largest AUTHORED size that fits, and refuses to draw when none does"
 # THE SHAPE IS NOT FITTED TO THE ROOM ANY MORE, and this is the assertion that says so. It used
 # to solve a shape per length — a different arrow in every window, which is the whole reason the
 # sprite sheet exists — so what is checked now is that a placement lands on a RUNG of the ladder
 # and that the drawn footprint is that rung's authored footprint to the cell.
-ft-modify ga place=left
+ft_set ga place=left
 _target_at 46 14 8 3; _geo; _wide=$FT_BIGARROW_SIZE
 # 34, not 20: at 20 there is no room for the SMALLEST rung either, and "suppressed" is a
 # different lesson (the one two assertions down). 34 leaves 32 columns — medium fits, large
@@ -219,16 +219,16 @@ _target_at  3 14 8 3
 if _geo; then check "…and no room at all suppresses that side" "drew $FT_BIGARROW_SIZE dir=$FT_BIGARROW_DIRECTION" "suppressed"
 else         check "…and no room at all suppresses that side" "suppressed" "suppressed"; fi
 _target_at 46 14 8 3
-ft-modify ga place=auto
+ft_set ga place=auto
 _geo; check "the chosen size is a rung of the ladder" \
       "$(case " ${_FT_BIGARROW_SIZES[*]} " in *" $FT_BIGARROW_SIZE "*) echo yes ;; *) echo no ;; esac)" "yes"
 
 note "size names a shape, and the shape is EXACTLY as authored"
 # The footprint the placer publishes must be the sprite's own, cell for cell — if the drawn size
 # and the authored size can ever disagree, something is fitting again.
-ft-modify ga place=left
+ft_set ga place=left
 for _sz in small medium large; do
-    ft-modify ga size="$_sz"
+    ft_set ga size="$_sz"
     _ft_bigarrow_span "$_sz" right 8; _span=$FT_RET
     if _geo; then
         check "size=$_sz draws its authored footprint" \
@@ -240,13 +240,13 @@ for _sz in small medium large; do
 done
 # …and a named size that does NOT fit is SUPPRESSED rather than quietly swapped for a smaller
 # one. Substituting is the behaviour that produced "a different arrow in every window".
-ft-modify ga size=x-large
+ft_set ga size=x-large
 _target_at 34 14 8 3
 if _geo; then check "a named size that does not fit is suppressed, not substituted" "drew $FT_BIGARROW_SIZE" "suppressed"
 else         check "a named size that does not fit is suppressed, not substituted" "suppressed" "suppressed"; fi
 _target_at 46 14 8 3
 # …while UNSET keeps the ladder, so the same screen still gets an arrow.
-ft_remove_attribute ga size
+ft_unset ga size
 _target_at 34 14 8 3
 if _geo; then check "…but unset falls down the ladder instead" "drew" "drew"
 else         check "…but unset falls down the ladder instead" "suppressed" "drew"; fi
@@ -256,11 +256,11 @@ _target_at 46 14 8 3
 # not a keyword at all falls back to fitting rather than to a guess.
 for _pair in "xx-small small" "x-small small" "medium medium" "xx-large x-large" "wobble "; do
     set -- $_pair
-    ft-modify ga size="$1"
+    ft_set ga size="$1"
     _ft_bigarrow_size ga
     check "size=$1 → ${2:-fit}" "$FT_RET" "${2:-}"
 done
-ft_remove_attribute ga size
+ft_unset ga size
 _ft_bigarrow_size ga; check "unset means fit-the-largest" "$FT_RET" ""
 # …and it is NOT a prototype default, or `beacon { size: large }` could never win.
 check "size is not baked into the class" \
@@ -269,7 +269,7 @@ check "size is not baked into the class" \
 ft_stylesheet name=ft-test-arrowsize style="beacon { size: large }"
 _ft_bigarrow_size ga; check "…so a stylesheet rule reaches it" "$FT_RET" "large"
 ft_stylesheet name=ft-test-arrowsize style=""
-ft-modify ga place=left
+ft_set ga place=left
 
 note "the authored sprites are exact: symmetric, and one size on both axes"
 # A hand-drawn sprite is a hand-TYPED sprite. Left/right and up/down are mirrors of one authored
@@ -506,18 +506,26 @@ note "a geometry property that is not a number never reaches (( ))"
 # if a subscript ran, it exists.
 _canary="$XDG_STATE_HOME/bigarrow-canary"
 mkdir -p "$XDG_STATE_HOME"; rm -f "$_canary"
-ft-modify ga place=left
+ft_set ga place=left
+# `$(:>FILE)` rather than `$(touch FILE)`: the payload must contain NO WHITESPACE, or the DSL
+# never treats it as an assignment at all — an unregistered name with a spaced value is refused
+# as loose content now, which is a different and shallower door than the one under test here.
 for _p in arrowGap bounceTravel; do
-    ft-modify ga "$_p"='a[$(touch '"$_canary"')]'
+    ft_set ga "$_p"='a[$(:>'"$_canary"')]'
     if _geo -1; then check "$_p= garbage still draws (default taken)" "$(( FT_BIGARROW_LENGTH > 0 ))" "1"
     else            check "$_p= garbage still draws (default taken)" "suppressed" "1"; fi
-    ft_remove_attribute ga "$_p"
+    ft_unset ga "$_p"
 done
 check "…and nothing was executed" "$([[ -e "$_canary" ]] && echo EXECUTED || echo clean)" "clean"
-ft-modify ga arrowGap=1 bounceTravel=auto
+# The shallower door, now that loose content is refused rather than quietly becoming text.
+_err=$(ft_set ga "arrowGap=a[\$(touch $_canary)]" 2>&1)
+check "…and the spaced form is refused, not stored as text" \
+      "$(case "$_err" in *"is not a property"*) echo refused ;; *) echo "${_err:-silent}" ;; esac)" "refused"
+check "…still nothing executed"   "$([[ -e "$_canary" ]] && echo EXECUTED || echo clean)" "clean"
+ft_set ga arrowGap=1 bounceTravel=auto
 
 note "the bounce runs along the arrow's own axis"
-ft-modify ga place=left
+ft_set ga place=left
 _geo -1;                 _landed=$FT_BIGARROW_LEFT
 _geo 0;                  _launch=$FT_BIGARROW_LEFT
 check "at phase 0 it is retracted, back along its axis" "$(( _launch < _landed ))" "1"
@@ -529,19 +537,19 @@ _past=0
 for (( _p=0; _p<20; _p++ )); do _geo "$_p"; (( FT_BIGARROW_LEFT > _landed )) && _past=1; done
 check "it overshoots past the landing spot"             "$_past" "1"
 # the control: with a non-overshooting curve it must never pass the landing spot
-ft-modify ga animationTimingFunction=ease-out
+ft_set ga animationTimingFunction=ease-out
 _ft_bigarrow_arm ga
 _past=0
 for (( _p=0; _p<20; _p++ )); do _geo "$_p"; (( FT_BIGARROW_LEFT > _landed )) && _past=1; done
 check "…and with ease-out it never does"                "$_past" "0"
-ft-modify ga animationTimingFunction=ease-out-back
+ft_set ga animationTimingFunction=ease-out-back
 _ft_bigarrow_arm ga
 
 note "the timing function resolves through the CASCADE, not just the call site"
 check "it is NOT a class default (or a stylesheet could never win)" \
       "$(case " ${FT_PROTO_DEFAULTS[beacon]} " in *" animationTimingFunction="*) echo "baked in" ;; *) echo free ;; esac)" \
       "free"
-ft_remove_attribute ga animationTimingFunction
+ft_unset ga animationTimingFunction
 _ft_bigarrow_styled ga animationTimingFunction "$FT_BIGARROW_EASING"
 check "…and unset, it falls back to the code constant" "$FT_RET" "$FT_BIGARROW_EASING"
 
@@ -569,30 +577,30 @@ _has_fg() {                     # bytes colour → 0 if that colour is one of th
     ft_color_sgr "$2" 38; local want=$FT_RET
     [[ "$1" == *"$want"* ]]
 }
-ft-modify ga place=left size=medium
+ft_set ga place=left size=medium
 _paint_bytes; _plain=$FT_RET
 check "a paint emits something"                 "$(( ${#_plain} > 100 ))" "1"
 # the theme's ramp — the same --beacon-N / --locator-N triple every other variant reads — is
 # what `color` resolves to when NOTHING declares one, which is why an unstyled arrow is
 # unchanged by all of this.
-ft-modify ga --beacon-1=196; _paint_bytes; _c1=$FT_RET
-ft-modify ga --beacon-1=46;  _paint_bytes; _c2=$FT_RET
+ft_set ga --beacon-1=196; _paint_bytes; _c1=$FT_RET
+ft_set ga --beacon-1=46;  _paint_bytes; _c2=$FT_RET
 check "--beacon-1 changes what is painted" \
       "$(case "$_c1" in "$_c2") echo same ;; *) echo different ;; esac)" "different"
-ft_remove_attribute ga --beacon-1
+ft_unset ga --beacon-1
 
 # ── the six ways a user would actually spell it ─────────────────────────────
-ft-modify ga color=196
+ft_set ga color=196
 _paint_bytes; ok  "color= as a property reaches the ink"        _has_fg "$FT_RET" 196
-ft_remove_attribute ga color
+ft_unset ga color
 ft_stylesheet name=ft-test-arrowcss style='#ga { color: 82 }'
 _paint_bytes; ok  "#id { color } reaches the ink"               _has_fg "$FT_RET" 82
 ft_stylesheet name=ft-test-arrowcss style=''
-ft-modify ga class=loud
+ft_set ga class=loud
 ft_stylesheet name=ft-test-arrowcss style='.loud { color: 201 }'
 _paint_bytes; ok  ".class { color } reaches the ink"            _has_fg "$FT_RET" 201
 ft_stylesheet name=ft-test-arrowcss style=''
-ft-modify ga class=
+ft_set ga class=
 ft_stylesheet name=ft-test-arrowcss style='#ga { color: crimson }'
 _paint_bytes; ok  "a CSS colour NAME resolves"                  _has_fg "$FT_RET" crimson
 ft_stylesheet name=ft-test-arrowcss style=''
@@ -613,10 +621,10 @@ check "background-color still reaches the cells" \
 ft_stylesheet name=ft-test-arrowcss style=''
 # …and the ramp is a DEFAULT, not an override of one: a declared colour holds on every frame of
 # the flight too, rather than the pulse cycling over the top of it for the first 560ms.
-ft-modify ga color=196 effect=pulse
+ft_set ga color=196 effect=pulse
 FT_OUT=""; ft_clip_reset; _ft_beacon_rect ga; _ft_beacon_paint_bigarrow ga 3
 ok "a declared colour holds while the arrow is still flying" _has_fg "$FT_OUT" 196
-ft_remove_attribute ga color
+ft_unset ga color
 
 # …and `animation:` came along with the cascade, which brought a collision with it. The CSS
 # colour engine arms its OWN loop on the same control, and a landed arrow read those ticks as
@@ -648,9 +656,9 @@ note "an arrow that costs more than it is worth is not drawn"
 # on a dense stage that is an arrow lying across a control. The old placer could always shrink
 # its way out, which is the deforming the sprite sheet replaced, so this floor arrived with it.
 # Bury the whole left side of the screen under a control and demand it refuses that side.
-ft-modify ga place=left size=small
+ft_set ga place=left size=small
 _geo; check "with the side clear it draws"     "$(( FT_BIGARROW_COLUMNS > 0 ))" "1"
-ft-button name=blocker "x" parent=root
+ft-button name=blocker text="x" parent=root
 # BOTH RECTS ARE FAKED AFTER THE CONSTRUCTION, and that ordering is the whole trick: adding or
 # removing a control reflows, and a reflow recomputes btn's absolutes — which is what every
 # _target_at in this file is pretending to control.
@@ -662,17 +670,17 @@ if _geo; then check "…and buried under a control it does not" "drew at $FT_BIG
 else        check "…and buried under a control it does not" "suppressed" "suppressed"; fi
 ft_remove blocker
 _target_at 46 14 8 3; FT_BIGARROW_PKEY[ga]=""
-ft_remove_attribute ga size
+ft_unset ga size
 
 # The REVERSED cells are how the arrow gets an anchor Unicode never shipped — they must
 # actually be emitted, or every arrow is silently half-resolution.
 _paint_bytes
 check "reversed cells are emitted (the missing eighth family)" \
       "$(case "$FT_RET" in *$'\e[7m'*) echo yes ;; *) echo no ;; esac)" "yes"
-ft-modify ga smoothing=solid; _paint_bytes
+ft_set ga smoothing=solid; _paint_bytes
 check "…and solid, having no partial cells, emits none" \
       "$(case "$FT_RET" in *$'\e[7m'*) echo yes ;; *) echo no ;; esac)" "no"
-ft-modify ga smoothing=eighths
+ft_set ga smoothing=eighths
 
 note "the silhouette border, and the CSS that drives it"
 # THE ARROW HAS AN OUTLINE BY DEFAULT, and it is CSS's own initial value doing it: border-color
@@ -683,9 +691,9 @@ note "the silhouette border, and the CSS that drives it"
 # Every assertion here is BYTE IDENTITY against the same arrow with the border removed, which
 # also pins the other half of the promise: a removed border is not a border painted in the
 # fill's colour, it is the bytes an arrow drew before this feature existed.
-ft-modify ga place=left size=medium color=196
-ft-modify ga borderWidth=0; _paint_bytes; _bare=$FT_RET
-ft-modify ga borderWidth=thin; _paint_bytes; _outlined=$FT_RET
+ft_set ga place=left size=medium color=196
+ft_set ga borderWidth=0; _paint_bytes; _bare=$FT_RET
+ft_set ga borderWidth=thin; _paint_bytes; _outlined=$FT_RET
 check "an outline is drawn by DEFAULT" \
       "$(case "$_outlined" in "$_bare") echo none ;; *) echo outlined ;; esac)" "outlined"
 _ft_effective_bg ga; _ground=$FT_RET
@@ -700,28 +708,28 @@ _paint_bytes; ok "#id { border-color } paints the outline"      _has_fg "$FT_RET
 ft_stylesheet name=ft-test-arrowcss style='beacon { border-color: dodgerblue }'
 _paint_bytes; ok "…by type selector, and by colour NAME"        _has_fg "$FT_RET" dodgerblue
 ft_stylesheet name=ft-test-arrowcss style=''
-ft-modify ga borderColor=51
+ft_set ga borderColor=51
 _paint_bytes; ok "…and as an inline property"                   _has_fg "$FT_RET" 51
 # …and CSS's own ways of saying "no border" each put the bytes back exactly as they were.
 _same_as_bare() { _paint_bytes; [[ "$FT_RET" == "$_bare" ]]; }
-ft-modify ga borderColor=transparent
+ft_set ga borderColor=transparent
 ok "border-color: transparent removes the outline"  _same_as_bare
-ft-modify ga borderColor=none
+ft_set ga borderColor=none
 ok "border-color: none removes it too"              _same_as_bare
-ft-modify ga borderColor=51 borderWidth=0
+ft_set ga borderColor=51 borderWidth=0
 ok "border-width: 0 removes it"                     _same_as_bare
-ft-modify ga borderWidth=thin borderStyle=none
+ft_set ga borderWidth=thin borderStyle=none
 ok "border-style: none removes it"                  _same_as_bare
-ft-modify ga borderStyle=solid
-ft_remove_attribute ga borderColor
-ft_remove_attribute ga color
+ft_set ga borderStyle=solid
+ft_unset ga borderColor
+ft_unset ga color
 # THE OUTLINE IS THE SHAPE'S OWN, not a box around it: it may only ever repaint cells the arrow
 # already drew, so the footprint must not move by a single cell when the border is styled.
-ft-modify ga borderWidth=0; _geo -1; _noborder_span="$FT_BIGARROW_COLUMNS $FT_BIGARROW_ROWS"
-ft-modify ga borderWidth=thin borderColor=226; _geo -1
+ft_set ga borderWidth=0; _geo -1; _noborder_span="$FT_BIGARROW_COLUMNS $FT_BIGARROW_ROWS"
+ft_set ga borderWidth=thin borderColor=226; _geo -1
 check "a border never grows the arrow's footprint" \
       "$FT_BIGARROW_COLUMNS $FT_BIGARROW_ROWS" "$_noborder_span"
-ft_remove_attribute ga borderColor
+ft_unset ga borderColor
 # …and it FADES with the arrow rather than hanging over the page as a bright wireframe once the
 # fill has dissolved. exit=fade lerps the ink toward the ground; the rim has to travel with it.
 ft_remove ga2 2>/dev/null
@@ -744,11 +752,11 @@ check "a declared rim starts at the colour it was given" "$_rim0" "$FT_RET"
 check "…and fades with the arrow rather than lingering" \
       "$(case "$_rim9" in "$_rim0") echo frozen ;; *) echo faded ;; esac)" "faded"
 ft_remove ga2
-ft-modify ga place=left
+ft_set ga place=left
 
 # ═══ the erase record ════════════════════════════════════════════════════════
 note "a move damages the strip it vacated, never a bounding box"
-ft-modify ga place=left animationTimingFunction=ease-out-back
+ft_set ga place=left animationTimingFunction=ease-out-back
 FT_OUT=""; ft_clip_reset; _ft_beacon_rect ga; _ft_beacon_paint_bigarrow ga -1
 check "a paint records where it painted" "$(( ${#FT_BIGARROW_AT[ga]} > 0 ))" "1"
 _geo -1
@@ -791,7 +799,7 @@ check "…with its curve precomputed"      "$(( ${#FT_BIGARROW_EASE[ga2]} > 0 ))
 # The FLY is its own animation now, whatever the lifetime — the hold and the exit are two more,
 # armed in turn (see the stage machine). It used to be one animation of frames*(1+cycles), which
 # is where a two-and-a-half-second hold cost ~85 no-op repaints.
-ft-modify ga2 lifetime=oneshot; _ft_bigarrow_arm ga2
+ft_set ga2 lifetime=oneshot; _ft_bigarrow_arm ga2
 check "oneshot's FLY is still just the flight" "${FT_ANIM_LENGTH[ga2]}" "$(( FT_BIGARROW_FRAMES + 1 ))"
 FT_OUT=""; ft_clip_reset; _ft_beacon_rect ga2; _ft_beacon_paint_bigarrow ga2 -1
 ft_remove ga2
@@ -847,7 +855,7 @@ ft_remove gx
 note "the two exits do what they say"
 _t_walk() {                     # exit= → _T_OFFS (left per exit frame) and _T_ALPHAS
     ft_remove gx 2>/dev/null
-    ft-beacon name=gx variant=bigarrow target=btn exit="$1" "${@:2}"
+    ft-beacon name=gx variant=bigarrow target=btn exit="$1" text="${@:2}"
     ft_clip_reset; _ft_beacon_rect gx; _ft_bigarrow_geometry gx -1
     _T_HOME=$FT_BIGARROW_LEFT
     FT_BIGARROW_STAGE[gx]=exit

@@ -33,13 +33,13 @@ ft_prototype_radio() {
 # radio and deselects the group, and reading it says whether this one is on.
 #
 # It used to do NEITHER. `ft-radio name=r1 group=g checked=true` stored a property nothing read
-# and drew an EMPTY circle; `ft-modify r1 checked=true` did the same at runtime. The selection
+# and drew an EMPTY circle; `ft_set r1 checked=true` did the same at runtime. The selection
 # lived only in FT_RADIO_SELECTED, a table with no property route in at all — the shape
 # CONTRIBUTING §1 lists three other instances of, in its purest form: not a route that was
 # forgotten, a route that was never built.
 #
-# Reconciling through setProp covers CONSTRUCTION as well as ft-modify, which matters because a
-# radio has no `ft-end` and therefore no children-complete hook to apply `checked=` at.
+# Reconciling through setProp covers CONSTRUCTION as well as ft_set, which matters because a
+# radio has no `ft_end` and therefore no children-complete hook to apply `checked=` at.
 #
 # `group` is on the list because the selection is INDEXED by it: a radio that changes group has
 # to release the old group's index and claim the new one, and _ft_setprop stores before it
@@ -153,7 +153,7 @@ ft_radio_select() {                      # name — selects it, deselects group 
     # NORMALISE FIRST, THEN DECIDE WHETHER ANYTHING MOVED. The early return used to come before
     # the stamp, so a truthy spelling other than the literal `true`, written to a radio that was
     # ALREADY selected, was stored verbatim and never canonicalised. Measured:
-    # `ft-modify r1 checked=1` on the selected r1 left the raw property `1`, and
+    # `ft_set r1 checked=1` on the selected r1 left the raw property `1`, and
     # ft_radio_is_selected — which tests `== true` — then said NO, so the radio painted ○ while
     # FT_RADIO_SELECTED still named it. Three answers to one question, and the same write on an
     # UNselected radio worked, which is what kept it hidden.

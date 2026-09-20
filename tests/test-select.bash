@@ -11,9 +11,9 @@ exec {FT_TTY}>/dev/null
 
 ft-form name=app width=40 height=6
     ft-select name=s size=1
-        ft-option value=1 A; ft-option value=2 B; ft-option value=3 C; ft-option value=4 D
-        ft-option value=5 E; ft-option value=6 F; ft-option value=7 G; ft-option value=8 H
-        ft-option value=9 I; ft-option value=10 J; ft-option value=11 K; ft-option value=12 L
+        ft-option value=1 text=A; ft-option value=2 text=B; ft-option value=3 text=C; ft-option value=4 text=D
+        ft-option value=5 text=E; ft-option value=6 text=F; ft-option value=7 text=G; ft-option value=8 text=H
+        ft-option value=9 text=I; ft-option value=10 text=J; ft-option value=11 text=K; ft-option value=12 text=L
     end_ft_select
 end_ft_form
 FT_ROWS=14                       # a short screen: 12 options can't all fit
@@ -29,7 +29,7 @@ check "visible rows are capped to the fit" "$_SEL_VIS" "11"   # 14-2-1 rows belo
 (( _SEL_VIS < 12 )) && check "…which is fewer than all 12 options" 1 1 || check "…which is fewer than all 12 options" 0 1
 
 note "the cursor stays in view: scrolling follows it, clamped to the ends"
-FT_ROWS=8; FT_ABSOLUTE_Y[s]=1; ft-modify s open=true    # below = 8-1-1 = 6 → opens DOWN, vis=6
+FT_ROWS=8; FT_ABSOLUTE_Y[s]=1; ft_set s open=true    # below = 8-1-1 = 6 → opens DOWN, vis=6
 _ft_select_cursor_to s 0
 ft_resolved_prop s scroll 0; check "cursor at top → no scroll" "$FT_RET" "0"
 _ft_select_cursor_to s 11                 # jump to the last option
@@ -50,7 +50,7 @@ note "scrollbars are OPT-IN (default off) — the ⋯ affordance is the default"
 ft_get s scrollbar; check "scrollbar defaults to false" "$FT_RET" "false"
 
 note "a CLOSED dropdown does not open on an arrow — it declines so focus can move"
-ft-modify s open=false
+ft_set s open=false
 FT_KEY_BUBBLE=0; ft_select_key_down s
 check "Down on a closed dropdown does NOT open it" "$(ft_resolved_prop s open false; echo "$FT_RET")" "false"
 check "…and it declines (bubbles to focus nav)"    "$FT_KEY_BUBBLE" "1"
@@ -70,7 +70,7 @@ FT_KEY_BUBBLE=0; ft_select_key_up s          # now closed → declines so focus 
 check "the next Up (now closed) bubbles to focus nav" "$FT_KEY_BUBBLE" "1"
 
 note "Down inside an open dropdown still moves the cursor (does not collapse)"
-ft-modify s open=true; _ft_select_cursor_to s 0
+ft_set s open=true; _ft_select_cursor_to s 0
 ft_select_key_down s; ft_resolved_prop s cursor 0; check "Down advances the cursor" "$FT_RET" "1"
 
 summary

@@ -4,7 +4,7 @@
 # is repaint-only, by classification); layout properties reflow but stop the
 # moment the control's own size comes out unchanged; genuine size changes
 # re-lay only the nearest fixed-size ancestor's subtree. All driven
-# automatically by ft-modify — no manual relayout calls anywhere.
+# automatically by ft_set — no manual relayout calls anywhere.
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 source "$here/tests/_harness.bash"
 source "$here/fruity-tui.bash"
@@ -35,24 +35,24 @@ ft_layout app
 FT_DIRTY=()
 
 note "scrolling is repaint-only: ONE control dirty, nothing measured"
-ft-modify msg scrollTop=3
+ft_set msg scrollTop=3
 check "only msg is dirty" "${!FT_DIRTY[*]}" "msg"
 check "msg size untouched" "${FT_MEASURED_WIDTH[msg]}x${FT_MEASURED_HEIGHT[msg]}" "2x4"
 FT_DIRTY=()
 
 note "re-setting the identical value is a complete no-op"
-ft-modify msg scrollTop=3
+ft_set msg scrollTop=3
 check "nothing dirty at all" "${#FT_DIRTY[@]}" "0"
 
 note "a layout change whose size comes out UNCHANGED stops at the control"
-ft-modify msg text=$'x1\nx2\nx3\nx4\nx5\nx6\nx7\nx8'   # same 2x4 box
+ft_set msg text=$'x1\nx2\nx3\nx4\nx5\nx6\nx7\nx8'   # same 2x4 box
 check "size identical"       "${FT_MEASURED_WIDTH[msg]}x${FT_MEASURED_HEIGHT[msg]}" "2x4"
 check "only msg dirtied"     "${!FT_DIRTY[*]}" "msg"
 check "cousin never touched" "${FT_DIRTY[cousin]+set}" ""
 FT_DIRTY=()
 
 note "a genuine size change re-lays the nearest fixed-size ancestor only"
-ft-modify msg text=$'wider line of text here\nsecond'
+ft_set msg text=$'wider line of text here\nsecond'
 check "msg got wider"  "$(( ${FT_MEASURED_WIDTH[msg]} > 2 ))" "1"
 check "win's subtree repainted (win dirty)"     "${FT_DIRTY[win]+set}"     "set"
 check "sibling repositioned/repainted"          "${FT_DIRTY[sibling]+set}" "set"
@@ -68,7 +68,7 @@ ft-form name=mv width=80 height=24
 end_ft_form
 ft_layout mv
 FT_DIRTY=()
-ft-modify mvWin left=20 top=5
+ft_set mvWin left=20 top=5
 check "moved to the new spot" "${FT_ABSOLUTE_X[mvWin]},${FT_ABSOLUTE_Y[mvWin]}" "20,5"
 check "parent repainted (vacated cells)" "${FT_DIRTY[mv]+set}" "set"
 FT_DIRTY=()
@@ -82,10 +82,10 @@ ft-form name=tg width=80 height=24
 end_ft_form
 ft_layout tg
 check "B beside A initially" "${FT_ABSOLUTE_X[tgB]}" "5"
-ft-modify tgA display=none
+ft_set tgA display=none
 check "B reflowed to the start" "${FT_ABSOLUTE_X[tgB]}" "0"
 check "hidden box has no size"  "${FT_MEASURED_WIDTH[tgA]}" "0"
-ft-modify tgA display=inline-block
+ft_set tgA display=inline-block
 check "B back beside A"         "${FT_ABSOLUTE_X[tgB]}" "5"
 FT_DIRTY=()
 
@@ -118,7 +118,7 @@ _coal_geom() { printf '%s|%s|%s|%s' "${FT_ABSOLUTE_X[cz3]}" "${FT_ABSOLUTE_Y[cz3
 _coal_burst() {                 # 10 "keystrokes", each rewriting all three labels
     local i
     for (( i=0; i<10; i++ )); do
-        ft-modify cz1 text="one $i"; ft-modify cz2 text="two $i"; ft-modify cz3 text="three $i"
+        ft_set cz1 text="one $i"; ft_set cz2 text="two $i"; ft_set cz3 text="three $i"
     done
 }
 _coal_build; FT_REFLOW_COUNT=0
@@ -135,7 +135,7 @@ check "…and the geometry is identical"       "$(_coal_geom)" "$_plaingeom"
 ft_get cz3 text; check "…and so is the content" "$FT_RET" "three 9"
 check "nothing left pending after the flush" "${#FT_REFLOW_PENDING[@]}" "0"
 # A control removed mid-burst must not be reflowed after the fact.
-FT_COALESCING=1; ft-modify cz2 text="gone soon"; ft_remove cz2; FT_COALESCING=0
+FT_COALESCING=1; ft_set cz2 text="gone soon"; ft_remove cz2; FT_COALESCING=0
 FT_REFLOW_COUNT=0
 ok "flushing after a removal is safe" ft_reflow_flush
 ft_remove cz

@@ -70,13 +70,13 @@ export FT_NO_WTFIX=1
 # Sourced from INSIDE the tree: the demo derives its own root from BASH_SOURCE, so a copy in
 # /tmp resolves `here` to / and silently loads nothing.
 noloop="$here/demo/.callout-demo-noloop.bash"
-sed '/^ft-run app/d' "$here/demo/callout-demo.bash" > "$noloop"
+sed '/^ft_run app/d' "$here/demo/callout-demo.bash" > "$noloop"
 trap 'rm -f "$noloop"' EXIT
 source "$noloop"
 exec {FT_TTY}>/dev/null
 FT_COLOR_MODE=256
 FT_USE_UTF8=1
-# ft-run sets FT_ROOT; headless it has to be set by hand or ft_refresh returns without ever
+# ft_run sets FT_ROOT; headless it has to be set by hand or ft_refresh returns without ever
 # laying the rebuilt tree out, and every geometry assertion below reads an empty rect.
 FT_ROOT=app
 
@@ -182,7 +182,7 @@ _t_collect() {                  # → 0 iff a callout was placed and its target 
 _t_probe() {                    # page step → 0 iff a callout was placed
     PAGE=$1; STEP=$2
     _show_page >/dev/null 2>&1
-    settle >/dev/null 2>&1   # ft-run settles the burst; a gate must too
+    settle >/dev/null 2>&1   # ft_run settles the burst; a gate must too
     FT_OUT=""; _ft_redraw_walk app >/dev/null 2>&1; _ft_composite_overlays >/dev/null 2>&1
     _t_collect
 }
@@ -485,7 +485,7 @@ for _size in "${_t_sizes[@]}"; do
     for PAGE in 1 2 3 4 5 6 7 8; do
         STEP=1
         _resize >/dev/null 2>&1     # the demo's own SIGWINCH path — NOT just the globals,
-        settle >/dev/null 2>&1   # ft-run settles the burst; a gate must too
+        settle >/dev/null 2>&1   # ft_run settles the burst; a gate must too
                                     # or every "size" re-tests the same layout
         _page_annotations; n=${#PA_TARGET[@]}
         # The frame must still fit the screen: a layout that overflows is how css-demo ends up
@@ -494,7 +494,7 @@ for _size in "${_t_sizes[@]}"; do
         (( ${FT_MEASURED_HEIGHT[win]:-9999} <= FT_ROWS )) || _t_fail_fit[$_t_key]+=" p$PAGE:h"
         for (( STEP=1; STEP<=n; STEP++ )); do
             _goto_step >/dev/null 2>&1
-            settle >/dev/null 2>&1   # ft-run settles the burst; a gate must too
+            settle >/dev/null 2>&1   # ft_run settles the burst; a gate must too
             a=${PA_ANCHOR[$((STEP-1))]}; pl=${PA_PLACE[$((STEP-1))]}
             _t_id="p$PAGE.s$STEP"
             if ! _t_collect; then _t_fail_missing[$_t_key]+=" $_t_id"; continue; fi
@@ -587,13 +587,13 @@ for _size in "56 38" "62 40"; do
     set -- $_size; FT_COLS=$1; FT_ROWS=$2; _t_key="$1×$2"
     PAGE=3; STEP=1
     _resize >/dev/null 2>&1
-    settle >/dev/null 2>&1   # ft-run settles the burst; a gate must too
+    settle >/dev/null 2>&1   # ft_run settles the burst; a gate must too
     _page_annotations
     for STEP in 2 3 4 5; do
         _goto_step >/dev/null 2>&1
-        settle >/dev/null 2>&1   # ft-run settles the burst; a gate must too
+        settle >/dev/null 2>&1   # ft_run settles the burst; a gate must too
         # RECONCILE NEEDS A PLACEMENT, AND PLACEMENT HAPPENS AT PAINT. _goto_step calls
-        # _p3_reconcile inline, where the placement it wants does not exist yet — under ft-run
+        # _p3_reconcile inline, where the placement it wants does not exist yet — under ft_run
         # that inline call reads the PREVIOUS step's placement and the trailing ft_redraw_dirty
         # the demo used to carry was a no-op inside a burst, so it never helped. The gate does
         # what the app's next frame does: settle, reconcile against the real placement, settle.
@@ -656,14 +656,14 @@ for _size in "56 38" "62 40" "70 40" "84 34"; do
     set -- $_size; FT_COLS=$1; FT_ROWS=$2; _t_key="$1×$2"
     PAGE=3; STEP=1
     _resize >/dev/null 2>&1
-    settle >/dev/null 2>&1   # ft-run settles the burst; a gate must too
+    settle >/dev/null 2>&1   # ft_run settles the burst; a gate must too
     _t_conv=""
     for STEP in 2 3 4 5; do
         _goto_step >/dev/null 2>&1
-        settle >/dev/null 2>&1   # ft-run settles the burst; a gate must too
+        settle >/dev/null 2>&1   # ft_run settles the burst; a gate must too
         _t_first="${FT_BEACON_PC[stepcallout]:-}|${FT_BEACON_LEADER[stepcallout]:-}"
         _goto_step >/dev/null 2>&1
-        settle >/dev/null 2>&1   # ft-run settles the burst; a gate must too
+        settle >/dev/null 2>&1   # ft_run settles the burst; a gate must too
         _t_second="${FT_BEACON_PC[stepcallout]:-}|${FT_BEACON_LEADER[stepcallout]:-}"
         [[ "$_t_second" == "$_t_first" ]] \
             || _t_conv+=" s$STEP(1st=$_t_first 2nd=$_t_second)"
@@ -682,10 +682,10 @@ for _size in "56 38" "62 40" "84 34"; do
     set -- $_size; FT_COLS=$1; FT_ROWS=$2; _t_key="$1×$2"
     PAGE=7; STEP=1
     _resize >/dev/null 2>&1
-    settle >/dev/null 2>&1   # ft-run settles the burst; a gate must too
+    settle >/dev/null 2>&1   # ft_run settles the burst; a gate must too
     _page_annotations
     STEP=5; _goto_step >/dev/null 2>&1
-    settle >/dev/null 2>&1   # ft-run settles the burst; a gate must too
+    settle >/dev/null 2>&1   # ft_run settles the burst; a gate must too
     _t_id="p7.s5"; _t_drag=""
     if _t_collect; then
         (( T_LEN >= 3 )) || _t_drag+=" leader=${T_LEN}cells(want ≥3)"
@@ -717,7 +717,7 @@ done
 # ═════════════════════════════════════════════════════════════════════════════
 # THE DEEP PASS — one size, fresh page builds, for everything that is not geometry.
 FT_COLS=120; FT_ROWS=40; _resize >/dev/null 2>&1
-settle >/dev/null 2>&1   # ft-run settles the burst; a gate must too
+settle >/dev/null 2>&1   # ft_run settles the burst; a gate must too
 _t_wrongtype=""; _t_wrongtarget=""; _t_nonext=""; _t_extranext=""
 _t_cc_row=0; _t_cc_col=0
 _t_lastnextcell=""; _t_firstnextcell=""
@@ -809,7 +809,7 @@ note "the code pane shows the call that drew the box currently on screen"
 _t_call_text() { if [[ "${FT_TYPE[call]:-}" == label ]]; then ft_resolved_prop call text ""
                  else ft_resolved_prop call value ""; fi; }
 FT_COLS=120; FT_ROWS=40; _resize >/dev/null 2>&1
-settle >/dev/null 2>&1   # ft-run settles the burst; a gate must too
+settle >/dev/null 2>&1   # ft_run settles the burst; a gate must too
 _t_probe 2 5 >/dev/null; _t_call_text; _t_p2s5_call=$FT_RET
 case "$_t_p2s5_call" in *"target=compass"*)    check "the pane names the live target" 1 1 ;;
                         *)                     check "the pane names the live target" 0 1 ;; esac
@@ -820,7 +820,7 @@ case "$_t_p2s5_call" in *"number=5"*)          check "…and the live step numbe
 # Stepping must update it WITHOUT rebuilding the page — _goto_step is the cheap path the
 # arrows use, and a pane it forgot to refresh would describe the previous step's box.
 PAGE=2; STEP=5; _show_page >/dev/null 2>&1
-settle >/dev/null 2>&1   # ft-run settles the burst; a gate must too
+settle >/dev/null 2>&1   # ft_run settles the burst; a gate must too
 btnStepNext_on_activate >/dev/null 2>&1
 _t_call_text
 case "$FT_RET" in *"anchor=centerRight"*) check "◀▶ refresh the pane without a page rebuild" 1 1 ;;
@@ -837,7 +837,7 @@ btnBack_on_activate;       check "Back returns to the previous PAGE at step 1" "
 
 note "E cycles the callout's own effect through the four the beacon implements"
 PAGE=1; STEP=1; _show_page >/dev/null 2>&1
-settle >/dev/null 2>&1   # ft-run settles the burst; a gate must too
+settle >/dev/null 2>&1   # ft_run settles the burst; a gate must too
 check "the callout is static by default (an idle event loop)" "$CALLOUT_EFFECT" none
 for _want in pulse blink bob none; do
     _cycle_effect >/dev/null 2>&1
@@ -852,7 +852,7 @@ note "R sends a dragged callout home"
 # as arithmetic to 0, and store it there; the demo's R key unset the same slot and the check
 # went green. Both halves were talking about a table the framework had deleted, and the feature
 # the key advertises has been inert ever since. Ask the engine instead.
-ft-modify stepcallout parkedTop=4 parkedLeft=9
+ft_set stepcallout parkedTop=4 parkedLeft=9
 ok  "…parked first, or 'forgotten' means nothing" _ft_beacon_park stepcallout
 _reset_drag >/dev/null 2>&1
 no  "R forgets the parked position"               _ft_beacon_park stepcallout
@@ -863,7 +863,7 @@ note "no accessKey on any page promises a shortcut that cannot fire"
 _t_conflicts=""
 for PAGE in 1 2 3 4 5 6 7 8; do
     STEP=1; _show_page >/dev/null 2>&1
-    settle >/dev/null 2>&1   # ft-run settles the burst; a gate must too
+    settle >/dev/null 2>&1   # ft_run settles the burst; a gate must too
     ft_accesskey_conflicts
     [[ -n "$FT_RET" ]] && _t_conflicts+=" p$PAGE:$FT_RET"
 done
@@ -879,11 +879,11 @@ _t8_missing=""; _t8_wrongside=""; _t8_onchip=""; _t8_persist=""; _t8_compared=0;
 for _t8size in "80 30" "84 34" "120 40" "171 45"; do
     set -- $_t8size
     FT_COLS=$1; FT_ROWS=$2
-    ft-modify app width="$FT_COLS" height="$FT_ROWS"
+    ft_set app width="$FT_COLS" height="$FT_ROWS"
     PAGE=8
     for STEP in 1 2 3 4 5 6 7; do
         _show_page >/dev/null 2>&1
-        settle >/dev/null 2>&1   # ft-run settles the burst; a gate must too
+        settle >/dev/null 2>&1   # ft_run settles the burst; a gate must too
         if [[ -z "${FT_TYPE[specArrow]:-}" ]]; then _t8_missing+=" ${1}x${2}:s$STEP"; continue; fi
         # lifetime: the two steps ABOUT leaving must be oneshot. They are 5 and 6 since the page
         # grew the two rungs of the size ladder — read the step's own annotation row rather than

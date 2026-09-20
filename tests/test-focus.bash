@@ -47,7 +47,7 @@ ft-div name=grp
     ft-button name=btnGrow text=" Grow "
 end_ft_div
 ft-button name=btnOk text=" OK "
-ft-end form >/dev/null 2>&1   # pop app + fire the form hook
+ft_end form >/dev/null 2>&1   # pop app + fire the form hook
 check "same name → still focused after the rebuild" "$FT_FOCUS" "btnGrow"
 
 note "a vanished name falls back to the first focusable"
@@ -57,23 +57,23 @@ for k in $old; do ft_remove "$k"; done
 FT_NEST_STACK=(app)
 ft-button name=btnNew text=" New "
 ft-button name=btnEnd text=" End "
-ft-end form >/dev/null 2>&1
+ft_end form >/dev/null 2>&1
 check "fell back to the first entry" "$FT_FOCUS" "btnNew"
 
 note "display=none controls are skipped when moving focus"
-ft-modify btnEnd display=none
+ft_set btnEnd display=none
 ft_focus btnNew
 ft_focus_move 1
 check "skipped the hidden control (wrapped around)" "$FT_FOCUS" "btnNew"
-ft-modify btnEnd display=inline-block
+ft_set btnEnd display=inline-block
 ft_focus_move 1
 check "visible again → reachable again" "$FT_FOCUS" "btnEnd"
 
 note "autofocus=true wins the initial focus over name-persistence"
 ft-form name=af width=40 height=10
-    ft-button name=afA A
-    ft-button name=afB B autofocus=true
-    ft-button name=afC C
+    ft-button name=afA text=A
+    ft-button name=afB text=B autofocus=true
+    ft-button name=afC text=C
 end_ft_form
 check "autofocus control gets initial focus" "$FT_FOCUS" "afB"
 
@@ -84,13 +84,13 @@ check "focus_first -> first control" "$FT_FOCUS" "afA"
 
 note "disabling the FOCUSED control moves focus off it (not stranded)"
 ft_focus afB
-ft-modify afB disabled=true          # focused control becomes unfocusable
+ft_set afB disabled=true          # focused control becomes unfocusable
 check "focus left the now-disabled control" "$([[ "$FT_FOCUS" != afB ]] && echo moved)" "moved"
 check "focus landed on a focusable neighbour" "$(_ft_focus_skippable "$FT_FOCUS" && echo bad || echo ok)" "ok"
 note "hiding the focused control also moves focus"
-ft-modify afB disabled=false
+ft_set afB disabled=false
 ft_focus afC
-ft-modify afC visibility=hidden
+ft_set afC visibility=hidden
 check "focus left the hidden control" "$([[ "$FT_FOCUS" != afC ]] && echo moved)" "moved"
 
 summary

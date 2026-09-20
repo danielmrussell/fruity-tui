@@ -17,11 +17,11 @@ here=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 source "$here/tests/_harness.bash"
 export FT_NO_WTFIX=1
 noloop="$here/demo/.css-demo-residue.bash"
-sed '/^ft-run app/d' "$here/demo/css-demo.bash" > "$noloop"
+sed '/^ft_run app/d' "$here/demo/css-demo.bash" > "$noloop"
 tmp=$(mktemp -d); trap 'rm -rf "$tmp" "$noloop"' EXIT
 source "$noloop"
 FT_COLOR_MODE=256; FT_USE_UTF8=1
-FT_ROOT=app                      # ft-run sets this in the real app; the damage repair needs it
+FT_ROOT=app                      # ft_run sets this in the real app; the damage repair needs it
 
 # The default two sizes bound the run at ~90s; the four-size sweep is opt-in like test-callout's:
 #     FT_RESIDUE_SIZES="80 30|95 34|120 40|170 50" bash tests/test-residue.bash
@@ -33,12 +33,12 @@ for size in "${_sizes[@]}"; do
     for PAGE in 1 2 3 4 5 6 7 8 9 10; do
         exec {FT_TTY}>"$tmp/stream"
         _resize >/dev/null 2>&1                    # full frame for STEP=1
-        settle >/dev/null 2>&1   # ft-run settles the burst; a gate must too
+        settle >/dev/null 2>&1   # ft_run settles the burst; a gate must too
         _page_annotations; nsteps=${#PA_TARGET[@]}
         (( nsteps >= 2 )) || thin_pages+=" p$PAGE($nsteps)"
         for (( s=2; s<=nsteps; s++ )); do
             STEP=$s; _goto_step                    # the app's own incremental path
-            settle >/dev/null 2>&1   # ft-run settles the burst; a gate must too
+            settle >/dev/null 2>&1   # ft_run settles the burst; a gate must too
             (( steps_driven++ ))
         done
         exec {FT_TTY}>&-; exec {FT_TTY}>/dev/null

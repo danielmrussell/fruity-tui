@@ -111,7 +111,7 @@ declare -A FT_BEACON_BOX=()     # name → "top left bottom right" of just the C
 #
 # parkedTop / parkedLeft: both unset = never parked, place me automatically. They are ordinary
 # numeric properties, so ft-state saves them with everything else and restores them with the
-# user's other state, ft-modify can move a chip from app code, and a stylesheet or a probe can
+# user's other state, ft_set can move a chip from app code, and a stylesheet or a probe can
 # read where a chip sits without knowing this file's private tables.
 _ft_beacon_park() {             # name → FT_RET = "top left", or "" (status 1) if auto-placed
     ft_get "$1" parkedTop
@@ -132,8 +132,8 @@ _ft_beacon_park() {             # name → FT_RET = "top left", or "" (status 1)
 # was inert, and three separate places in that demo told the reader it worked.
 ft_beacon_unpark() {            # name
     [[ -n "${FT_TYPE[$1]:-}" ]] || return 1
-    ft_remove_attribute "$1" parkedTop
-    ft_remove_attribute "$1" parkedLeft
+    ft_unset "$1" parkedTop
+    ft_unset "$1" parkedLeft
     ft_dirty "$1"
     return 0
 }
@@ -214,7 +214,7 @@ ft-beacon() {                   # ft-beacon name=… [target=… | left/top/widt
     local bn=$FT_RET
     FT_OVERLAY[$bn]=1
     # (The z-tier is derived in _ft_beacon_arm, below — the one place BOTH routes into a
-    # variant pass. Deriving it here made `ft-modify b variant=callout` a callout at z=0.)
+    # variant pass. Deriving it here made `ft_set b variant=callout` a callout at z=0.)
     ft_resolved_prop "$bn" variant frame; local _bv=$FT_RET
     # A BIGARROW RETIRES UNLESS YOU SAY OTHERWISE. `lifetime` is a prototype default shared with
     # every other variant, and a prototype default is APPLIED AS AN INLINE PROPERTY — so by the time
@@ -226,7 +226,7 @@ ft-beacon() {                   # ft-beacon name=… [target=… | left/top/widt
     if [[ "$_bv" == bigarrow ]]; then
         local _a _said=0
         for _a in "$@"; do [[ "$_a" == lifetime=* ]] && { _said=1; break; }; done
-        (( _said )) || ft-modify "$bn" lifetime=oneshot
+        (( _said )) || ft_set "$bn" lifetime=oneshot
     fi
     _ft_beacon_arm "$bn"
 }
@@ -340,7 +340,7 @@ ft_beacon_place() {             # name
     (( FT_BEACON_RECT_OK ))
 }
 # ft_beacon_drain_placements — pay every placement search the last frame put off, and repaint
-# the beacons that were waiting on one. Called by ft-run right after the frame reaches the
+# the beacons that were waiting on one. Called by ft_run right after the frame reaches the
 # screen, so the cost lands where nobody is watching a half-drawn page.
 #
 # A BURST LEAVES ONE DEBT PER BEACON, NOT ONE PER PRESS. The table is keyed by name, so holding
@@ -475,7 +475,7 @@ _ft_beacon_grab_at() {          # x y → 0 if a drag was started
     FT_DAMAGE_NARROW=1
     # …and the :dragging state, so the ghost resolves its border through the cascade and any
     # `beacon:dragging { … }` rules apply while the grab lives.
-    ft-modify "$n" dragging=true
+    ft_set "$n" dragging=true
     return 0
 }
 _ft_beacon_mouse_drag() {       # x y → 0 if handled
@@ -499,7 +499,7 @@ _ft_beacon_mouse_drag() {       # x y → 0 if handled
     # (a same-cell no-op above leaves it armed).
     local _first=${_FT_BEACON_GESTURE_NEW:-0}; _FT_BEACON_GESTURE_NEW=0
     local _vacated=${FT_BEACON_EXTENT[$n]:-}
-    ft-modify "$n" parkedTop="$nt" parkedLeft="$nl"
+    ft_set "$n" parkedTop="$nt" parkedLeft="$nl"
     # A DRAG IS A MOVE, NOT A NEW FRAME. `ft_refresh` re-lays the tree, CLEARS THE SCREEN and
     # repaints every control on the page — measured at 233ms and 26 controls for a box that moved
     # one cell, which is the whole of why dragging reads as unusable. Nothing about the LAYOUT
@@ -604,7 +604,7 @@ _ft_beacon_mouse_drag() {       # x y → 0 if handled
 _ft_beacon_mouse_release() { [[ -z "$_FT_BEACON_GRAB" ]] && return 1
                              local _rn=${_FT_BEACON_GRAB%% *}; _FT_BEACON_GRAB=""
                              if [[ -n "${FT_TYPE[$_rn]:-}" ]]; then
-                                 ft_remove_attribute "$_rn" dragging
+                                 ft_unset "$_rn" dragging
                                  # the parked box replaces the ghost ring cell-for-cell; the
                                  # leader's new cells are the overlay's own ink. The one region
                                  # that can be stale is the ghost's ring if the final placement
@@ -2222,7 +2222,7 @@ _ft_beacon_paint_callout() {    # name phase
     local boxL boxT boxB boxR _searched=0 drag=$FT_RET
     # ANCHOR BELONGS IN THE KEY. It is an INPUT to the search — a named anchor fixes which side
     # the leader leaves by, so it changes which box is best — and the end-of-paint leader recomputes
-    # the head from the current anchor regardless. Left out, `ft-modify c anchor=topRight` moved
+    # the head from the current anchor regardless. Left out, `ft_set c anchor=topRight` moved
     # the arrow while the box stayed where it was chosen for the OLD anchor. Only a callout that
     # changed its text at the same time hid this.
     local pkey="${place}|${anchor}|${apad}|${FT_BEACON_RECT_TOP}_${FT_BEACON_RECT_LEFT}_${FT_BEACON_RECT_RIGHT}_${FT_BEACON_RECT_BOTTOM}|${drag}|${FT_COLS}x${FT_ROWS}|${maxw}|${text}"
@@ -2238,7 +2238,7 @@ _ft_beacon_paint_callout() {    # name phase
         # frame over and let the run loop place the callout the moment it is on the screen.
         #
         # ONLY INSIDE A RUNNING APP, and that predicate is the whole reason this is safe: a
-        # deferral needs a pump, and ft-run's loop is the pump. Headless — every test in
+        # deferral needs a pump, and ft_run's loop is the pump. Headless — every test in
         # tests/, ft_beacon_place, any app driving paints itself — FT_RUN_ACTIVE is 0 and the
         # search happens right here, synchronously, exactly as it always did. A drag is
         # excluded because it has no search to do (the box is where the user left it) and
@@ -3080,9 +3080,9 @@ _ft_beacon_judge_finalists
 # oneshot runs `cycles` laps then the frame routine destroys it. Called by the
 # ft-beacon constructor, and re-callable to restart.
 # Properties that decide whether this beacon animates at all, and therefore need it re-armed
-# rather than merely repainted. Registered in FT_PROTO_REPROP so ft-modify tells us; nothing in
+# rather than merely repainted. Registered in FT_PROTO_REPROP so ft_set tells us; nothing in
 # the engine knows what `effect` means. demo/callout-demo.bash used to call _ft_beacon_arm
-# itself after every `ft-modify … effect=…`, which is the app doing the prototype's job.
+# itself after every `ft_set … effect=…`, which is the app doing the prototype's job.
 _ft_beacon_reprop() {           # name "key key …"
     # ANY WRITE MAY MOVE ALL OF IT. A beacon finds its placement by searching during the draw —
     # a longer text, another number, a different variant each land the box and leader somewhere
@@ -3090,7 +3090,7 @@ _ft_beacon_reprop() {           # name "key key …"
     # footprint it last inked; the settle refills it and repaints what was underneath, and the
     # beacon composites on top.
     #
-    # EXCEPT WHILE A DRAG HOLDS IT. The drag writes parkedTop/parkedLeft through ft-modify on
+    # EXCEPT WHILE A DRAG HOLDS IT. The drag writes parkedTop/parkedLeft through ft_set on
     # every move and then damages exactly the cells it vacated — a bounding box per move is what
     # once cost 1862ms of a 2100ms drag — so for the gesture's lifetime the drag owns this
     # beacon's damage. Measured before this guard existed (tools/bench-drag.bash, four runs):
@@ -3110,7 +3110,7 @@ _ft_beacon_arm() {              # name
     # so callouts get z=10 and everything else z=0, and the two-pass composite paints callouts
     # LAST. Changing `variant` at runtime is a supported route (that is what FT_PROTO_REPROP is
     # for, and it lists `variant`), but the tier was derived in the CONSTRUCTOR alone: after
-    # `ft-modify b variant=callout` the property said callout and the cached tier still said 0,
+    # `ft_set b variant=callout` the property said callout and the cached tier still said 0,
     # so a runtime-made callout was painted in the tier-0 pass and any frame beacon could paint
     # over it — the contract above, broken by the sibling route. Both routes call this function;
     # the derivation belongs to it, not to one of its callers. (Nothing here re-reads FT_RET,
@@ -4173,7 +4173,7 @@ FT_BIGARROW_OUTLINE_MIX=55      # % of the way from the ground to the ink for th
 #   · thin/medium/thick all draw ONE cell, which is the framework's existing border deviation
 #     (a TUI border is always exactly one cell) applied unchanged.
 #   · `border-width: 0` and `border-style: none` are CSS's own removal spellings and both work
-#     — but only from INLINE (a constructor argument or ft-modify), because ft_control makes
+#     — but only from INLINE (a constructor argument or ft_set), because ft_control makes
 #     both of them prototype defaults and a prototype default is applied as an inline property,
 #     which is cascade level 1. `border-color: transparent` is the spelling a STYLESHEET can
 #     reach, because borderColor is the one border property no prototype defaults.

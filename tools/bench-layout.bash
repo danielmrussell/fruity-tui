@@ -12,7 +12,7 @@
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 export FT_NO_WTFIX=1
 without_run_loop="$here/demo/.bench-layout-demo.bash"
-sed '/^ft-run app/d' "$here/demo/css-demo.bash" > "$without_run_loop"
+sed '/^ft_run app/d' "$here/demo/css-demo.bash" > "$without_run_loop"
 source "$without_run_loop"
 rm -f "$without_run_loop"
 exec {FT_TTY}>/dev/null

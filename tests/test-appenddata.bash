@@ -2,7 +2,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 #  ft_append_data — the DOM's CharacterData.appendData(), and the reason it exists.
 #
-#  Handing the whole text back on every append (`ft-modify log text="$all"`) re-measures
+#  Handing the whole text back on every append (`ft_set log text="$all"`) re-measures
 #  and re-wraps everything each time: 543ms to add ONE line to a 1000-line log, O(n²) to
 #  fill it. Appending cannot change what came before, so this measures and wraps only the
 #  new chunk and folds it into the caches.
@@ -29,7 +29,7 @@ for l in "${lines[@]}"; do
     ft_append_data inc "$l"
     all+="${all:+$'\n'}$l"
 done
-ft-modify whole text="$all"
+ft_set whole text="$all"
 ft_get inc text; inc_text=$FT_RET
 check "the text matches exactly" "$inc_text" "$all"
 
@@ -82,7 +82,7 @@ for l in "alpha" "beta gamma delta epsilon zeta" "eta"; do
     ft_append_data g1 "$l"
     built+="${built:+$'\n'}$l"
 done
-ft-modify g2 text="$built"
+ft_set g2 text="$built"
 ft_layout app2
 check "appended label has the same height as the set one" "${FT_MEASURED_HEIGHT[g1]}" "${FT_MEASURED_HEIGHT[g2]}"
 check "…and the same width"                               "${FT_MEASURED_WIDTH[g1]}" "${FT_MEASURED_WIDTH[g2]}"
@@ -103,7 +103,7 @@ ft-form name=capp width=60 height=24
     ft-label name=cd text="" width=40
 end_ft_form
 oracle=""
-set_both() { oracle=$1; ft-modify cd text="$1"; }
+set_both() { oracle=$1; ft_set cd text="$1"; }
 expect()   { ft_get cd text; check "$1" "$FT_RET" "$oracle"; }
 
 set_both "hello world"

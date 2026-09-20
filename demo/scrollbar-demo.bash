@@ -57,7 +57,7 @@ _build() {
     _aspect_config "$ASPECT"
     _current_text
 
-    ft-empty app
+    ft_empty app
         ft-frame name=win title="$TITLE" \
                  display=flex flexDirection=column gap=1 alignItems=center
             ft-label name=desc text="$DESC" color=brightcyan margin=1
@@ -66,9 +66,9 @@ _build() {
                 ft-scrollbar name=sb for=msg width=4 indicator=percentage
             end_ft_div
             ft-div name=btnrow display=flex gap=2 justifyContent=center
-                ft-button name=btnGrow "Grow Text" accessKey=G onActivate=btnGrow_on_activate
-                ft-button name=btnOk   OK          accessKey=K onActivate=btnOk_on_activate
-                ft-button name=btnQuit Quit        accessKey=Q onActivate=btnQuit_on_activate
+                ft-button name=btnGrow text="Grow Text" accessKey=G onActivate=btnGrow_on_activate
+                ft-button name=btnOk text=OK accessKey=K onActivate=btnOk_on_activate
+                ft-button name=btnQuit text=Quit accessKey=Q onActivate=btnQuit_on_activate
             end_ft_div
         end_ft_frame
     end_ft_form
@@ -85,4 +85,4 @@ ft-form name=app width="$FT_COLS" height="$FT_ROWS" \
         display=flex justifyContent=center alignItems=center \
         key='[Qq]' onKey=ft_quit
 end_ft_form
-ft-run app _setup
+ft_run app _setup

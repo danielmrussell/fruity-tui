@@ -8,7 +8,7 @@
 #   · the borderless branch returned before the title was ever painted, so `border=false` took
 #     the title away while the property went on reporting it;
 #   · an empty title fell back to `text`, so a frame painted a title ft_get did not report —
-#     and `ft-modify f title=""`, the way you take a title off, painted the old `text` instead.
+#     and `ft_set f title=""`, the way you take a title off, painted the old `text` instead.
 #
 # tests/test-border.bash covers the border itself; this file covers what is written over it.
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
@@ -32,7 +32,7 @@ _has() {                        # name needle → FT_RET = 1 when the paint cont
 
 note "a bare DSL argument IS the title (textProp=title), not text"
 ft-form name=app width=60 height=30 display=flex flexDirection=column
-    ft-frame name=bare width=24 height=4 " My Window "
+    ft-frame name=bare width=24 height=4 title=" My Window "
     end_ft_frame
 end_ft_form
 ft_layout app
@@ -57,9 +57,9 @@ _has tNone  Styled; check "borderStyle=none paints its title too"      "$FT_RET"
 ft_get tPlain title; check "border=false still reports it"      "$FT_RET" "Ghost"
 ft_get tNone  title; check "borderStyle=none still reports it"  "$FT_RET" "Styled"
 # Live, through the route an app actually takes.
-ft-modify tBord border=false; ft_layout app2
-_has tBord Kept;    check "ft-modify border=false keeps the title" "$FT_RET" "1"
-ft-modify tBord border=true;  ft_layout app2
+ft_set tBord border=false; ft_layout app2
+_has tBord Kept;    check "ft_set border=false keeps the title" "$FT_RET" "1"
+ft_set tBord border=true;  ft_layout app2
 _has tBord Kept;    check "…and putting the border back keeps it"  "$FT_RET" "1"
 
 note "the title's row is RESERVED — the border row when there is one, its own row when not"
@@ -95,7 +95,7 @@ case "$_k" in *Top*) FT_RET=1 ;; *) FT_RET=0 ;; esac
 check "…because the child never reaches its row" "$FT_RET" "0"
 # Taking the border off a titled frame must not move its content vertically.
 _ft_inset4 rBord; _was=$FT_INSET_TOP
-ft-modify rBord border=false; ft_layout app2b
+ft_set rBord border=false; ft_layout app2b
 _ft_inset4 rBord
 check "toggling the border on a titled frame does not move its content" "$FT_INSET_TOP" "$_was"
 
@@ -125,14 +125,14 @@ _has fText Legacy;  check "…so nothing is painted for it" "$FT_RET" "0"
 _has fBoth New;     check "title wins where both are set" "$FT_RET" "1"
 _has fBoth Old;     check "…and text is not drawn at all" "$FT_RET" "0"
 # The one that bit: clearing a title used to UNCOVER the text under it.
-ft-modify fBoth title=""
+ft_set fBoth title=""
 ft_get fBoth title; check "title=\"\" clears it"                 "$FT_RET" ""
 _has fBoth Old;     check "…and does not fall back to text"      "$FT_RET" "0"
 _has fBoth New;     check "…and the old title is gone from the paint" "$FT_RET" "0"
 
 note "a title still never changes the frame's size"
 oldw=${FT_MEASURED_WIDTH[fBoth]}; oldh=${FT_MEASURED_HEIGHT[fBoth]}
-ft-modify fBoth title="a very much longer title than the frame is wide"
+ft_set fBoth title="a very much longer title than the frame is wide"
 ft_layout app4
 check "geometry untouched by a title" \
       "${FT_MEASURED_WIDTH[fBoth]},${FT_MEASURED_HEIGHT[fBoth]}" "$oldw,$oldh"

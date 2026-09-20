@@ -34,9 +34,9 @@ ft-form name=app width="$FT_COLS" height="$FT_ROWS" display=flex flexDirection=c
         ft-heading name=adv text="Actions"
 
         ft-div name=bar display=flex flexDirection=row gap=2
-            ft-button name=ok   OK   accessKey=K
-            ft-button name=help Help accessKey=H
-            ft-button name=quit Quit accessKey=Q
+            ft-button name=ok text=OK accessKey=K
+            ft-button name=help text=Help accessKey=H
+            ft-button name=quit text=Quit accessKey=Q
         end_ft_div
     end_ft_frame
 

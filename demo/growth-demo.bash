@@ -55,19 +55,19 @@ _build_stage() {                    # stage
            msgargs+=(text="Back to short again.") ;;
     esac
 
-    ft-empty app
+    ft_empty app
         ft-frame name=win title="$title" \
                  display=flex flexDirection=column gap=1 alignItems=center
             ft-label name=desc text="$desc" color=brightcyan margin=1
             ft-div name=content display=flex gap=1 alignItems=start
-                ft-label "${msgargs[@]}"
+                ft-label text="${msgargs[@]}"
                 if (( needSb )); then
                     ft-scrollbar name=sb for=msg width=4 indicator=percentage
                 fi
             end_ft_div
             ft-div name=btnrow display=flex gap=2 justifyContent=center
-                ft-button name=btnOk   OK   accessKey=K onActivate=btnOk_on_activate
-                ft-button name=btnQuit Quit accessKey=Q onActivate=btnQuit_on_activate
+                ft-button name=btnOk text=OK accessKey=K onActivate=btnOk_on_activate
+                ft-button name=btnQuit text=Quit accessKey=Q onActivate=btnQuit_on_activate
             end_ft_div
         end_ft_frame
     end_ft_form
@@ -83,8 +83,8 @@ _toggle_sb() {
     [[ -z "${FT_TYPE[sb]:-}" ]] && return 0
     ft_get sb display
     if [[ "$FT_RET" == none ]]
-    then ft-modify sb display=inline-block
-    else ft-modify sb display=none; fi
+    then ft_set sb display=inline-block
+    else ft_set sb display=none; fi
 }
 
 _setup() { _build_stage 1; }
@@ -93,4 +93,4 @@ ft-form name=app width="$FT_COLS" height="$FT_ROWS" \
         display=flex justifyContent=center alignItems=center \
         key='[Qq]' onKey=ft_quit key='[Hh]' onKey=_toggle_sb
 end_ft_form
-ft-run app _setup
+ft_run app _setup

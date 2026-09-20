@@ -184,7 +184,7 @@ FT_OUT=""; ft_redraw_all a3
 for (( i=0; i<12; i++ )); do ft_append_data l3 "appended line $i, long enough to wrap around"; done
 ft_layout a3
 warm_equals_cold "appending lines" a3
-ft-modify l3 scrollTop=4; warm_equals_cold "…then scrolling it" a3
+ft_set l3 scrollTop=4; warm_equals_cold "…then scrolling it" a3
 
 note "restyling at runtime (the cascade + SGR caches)"
 ft-form name=a4 width=60 height=10
@@ -193,11 +193,11 @@ ft-form name=a4 width=60 height=10
 end_ft_form
 ft_layout a4; FT_ROOT=a4
 FT_OUT=""; ft_redraw_all a4
-ft-modify l4 color=201; warm_equals_cold "a colour change on a label" a4
-ft-modify t4 backgroundColor=57; warm_equals_cold "a background change on a field" a4
-ft_classlist_add l4 loud 2>/dev/null || ft-modify l4 class=loud
+ft_set l4 color=201; warm_equals_cold "a colour change on a label" a4
+ft_set t4 backgroundColor=57; warm_equals_cold "a background change on a field" a4
+ft_classlist_add l4 loud 2>/dev/null || ft_set l4 class=loud
 warm_equals_cold "a class change" a4
-ft-modify t4 disabled=true; warm_equals_cold "disabling a control" a4
+ft_set t4 disabled=true; warm_equals_cold "disabling a control" a4
 
 note "tabs: switching the active tab"
 ft-form name=a5 width=60 height=16
@@ -215,34 +215,34 @@ ft-form name=a5 width=60 height=16
 end_ft_form
 ft_layout a5; FT_ROOT=a5; FT_FOCUS=tb5
 FT_OUT=""; _ft_redraw_walk a5
-ft-modify tb5 selectedIndex=1; ft_layout a5
+ft_set tb5 selectedIndex=1; ft_layout a5
 warm_equals_cold "after selecting the second tab" a5
-ft-modify tb5 selectedIndex=2; ft_layout a5
+ft_set tb5 selectedIndex=2; ft_layout a5
 warm_equals_cold "…and the third" a5
 
 note "tree: moving the cursor and collapsing a branch"
 ft-form name=a6 width=60 height=16
     ft-tree name=tr6 rows=6
-        ft-tree-node "src"      id=src  depth=0 expanded=true
-        ft-tree-node "core"     id=core depth=1
-        ft-tree-node "controls" id=ctl  depth=1 expanded=true
-        ft-tree-node "tree"     id=tree depth=2
-        ft-tree-node "README"   id=rd   depth=0
+        ft-tree-node text="src" id=src depth=0 expanded=true
+        ft-tree-node text="core" id=core depth=1
+        ft-tree-node text="controls" id=ctl depth=1 expanded=true
+        ft-tree-node text="tree" id=tree depth=2
+        ft-tree-node text="README" id=rd depth=0
     end_ft_tree
 end_ft_form
 ft_layout a6; FT_ROOT=a6; FT_FOCUS=tr6
 FT_OUT=""; _ft_redraw_walk a6
 ft_tree_key_down tr6; ft_tree_key_down tr6
 warm_equals_cold "after moving the cursor" a6
-ft_tree_key_left tr6 2>/dev/null || ft-modify tr6 cursor=2
+ft_tree_key_left tr6 2>/dev/null || ft_set tr6 cursor=2
 ft_layout a6
 warm_equals_cold "after collapsing a branch" a6
 
 note "table: selecting and scrolling"
 ft-form name=a7 width=70 height=16
     ft-table name=tb7 variant=grid rows=4
-        ft-table-header "Key" width=16
-        ft-table-header "Action"
+        ft-table-header text="Key" width=16
+        ft-table-header text="Action"
         ft-table-row "Ctrl+A" "Move to start"
         ft-table-row "Ctrl+E" "Move to end"
         ft-table-row "Ctrl+W" "Delete word"
@@ -252,7 +252,7 @@ ft-form name=a7 width=70 height=16
 end_ft_form
 ft_layout a7; FT_ROOT=a7; FT_FOCUS=tb7
 FT_OUT=""; _ft_redraw_walk a7
-ft-modify tb7 selectedIndex=3; ft_layout a7
+ft_set tb7 selectedIndex=3; ft_layout a7
 warm_equals_cold "after selecting a row further down" a7
 
 # A table with an explicit width= fits its columns to the box and CACHES that, keyed by the
@@ -260,8 +260,8 @@ warm_equals_cold "after selecting a row further down" a7
 # stay the width they were computed at while the border is redrawn to the new one.
 ft-form name=a7b width=70 height=16
     ft-table name=tb7b variant=grid width=52
-        ft-table-header "Key" width=16
-        ft-table-header "Action"
+        ft-table-header text="Key" width=16
+        ft-table-header text="Action"
         ft-table-row "Ctrl+A" "Move to the very start of the line"
         ft-table-row "Ctrl+W" "Delete the word before the cursor"
     end_ft_table
@@ -269,20 +269,20 @@ end_ft_form
 ft_layout a7b; FT_ROOT=a7b; FT_FOCUS=tb7b
 FT_OUT=""; _ft_redraw_walk a7b
 warm_equals_cold "a table fitted to an explicit width" a7b
-ft-modify tb7b width=34; ft_layout a7b
+ft_set tb7b width=34; ft_layout a7b
 warm_equals_cold "…and after that width changes under it" a7b
-ft-modify tb7b width=64; ft_layout a7b
+ft_set tb7b width=64; ft_layout a7b
 warm_equals_cold "…and after it grows again" a7b
 
 note "select: opening the dropdown and choosing"
 ft-form name=a8 width=40 height=14
     ft-select name=s8 size=1
-        ft-option value=1 Alpha; ft-option value=2 Beta; ft-option value=3 Gamma
+        ft-option value=1 text=Alpha; ft-option value=2 text=Beta; ft-option value=3 text=Gamma
     end_ft_select
 end_ft_form
 ft_layout a8; FT_ROOT=a8; FT_FOCUS=s8
 FT_OUT=""; _ft_redraw_walk a8
-ft-modify s8 selectedIndex=2; ft_layout a8
+ft_set s8 selectedIndex=2; ft_layout a8
 warm_equals_cold "after choosing a different option" a8
 
 note "focus moving between controls"
@@ -304,7 +304,7 @@ ft-form name=aa width=60 height=10
 end_ft_form
 ft_layout aa; FT_ROOT=aa
 FT_OUT=""; _ft_redraw_walk aa
-ft-modify k1 text="first, rewritten longer"; ft_layout aa
+ft_set k1 text="first, rewritten longer"; ft_layout aa
 warm_equals_cold "after rewriting a label's text" aa
 ft_remove k2; ft_layout aa
 warm_equals_cold "after removing a sibling" aa
@@ -316,23 +316,23 @@ note "state the FRAMEWORK renders from, which CSS knows nothing about"
 ft-form name=ab width=60 height=12
     ft-textfield name=r1 size=16 value="editable"
     ft-label     name=r2 text="a label" width=20
-    ft-button    name=r3 Press
+    ft-button name=r3 text=Press
 end_ft_form
 ft_layout ab; FT_ROOT=ab; ft_focus r1
 FT_OUT=""; _ft_redraw_walk ab
-ft-modify r1 readOnly=true;  warm_equals_cold "a field turned read-only" ab
-ft-modify r1 readOnly=false; warm_equals_cold "…and editable again" ab
-ft-modify r2 disabled=true;  warm_equals_cold "a label disabled" ab
-ft-modify r3 disabled=true;  warm_equals_cold "a button disabled" ab
-ft-modify ab disabled=true;  warm_equals_cold "the whole FORM disabled (inherits down)" ab
-ft-modify ab disabled=false; warm_equals_cold "…and enabled again" ab
+ft_set r1 readOnly=true;  warm_equals_cold "a field turned read-only" ab
+ft_set r1 readOnly=false; warm_equals_cold "…and editable again" ab
+ft_set r2 disabled=true;  warm_equals_cold "a label disabled" ab
+ft_set r3 disabled=true;  warm_equals_cold "a button disabled" ab
+ft_set ab disabled=true;  warm_equals_cold "the whole FORM disabled (inherits down)" ab
+ft_set ab disabled=false; warm_equals_cold "…and enabled again" ab
 
 note "no control paints a hole through to the terminal background"
 ft-form name=ad width=60 height=16
     ft-textfield name=w1 size=20 rows=4 wrap=true readOnly=true value=$'read-only\nviewer text'
     ft-textfield name=w2 size=20 value="editable"
     ft-label     name=w3 text="a label" width=20
-    ft-button    name=w4 Press
+    ft-button name=w4 text=Press
 end_ft_form
 ft_layout ad; FT_ROOT=ad
 no_bare_cells "a page of controls" ad
@@ -368,12 +368,12 @@ _wellbg 3; _edit3=$BGV
 # relative to its neighbours, so measure it inside the engaged frame: turning the
 # highlight off gives the untouched engaged well to compare both rows against.
 check "editing: the caret's row lifted"        "$([[ "$_edit2" != "$_edit3" ]] && echo yes)" yes
-ft-modify al currentLineHighlight=false; ft_layout ae
+ft_set al currentLineHighlight=false; ft_layout ae
 _wellbg 2; _plain2=$BGV
 _wellbg 3; _plain3=$BGV
 check "currentLineHighlight=false turns it off" "$_plain2" "$_plain3"
 check "editing: the OTHER row did not"         "$_edit3" "$_plain3"
-ft-modify al currentLineHighlight=true
+ft_set al currentLineHighlight=true
 
 note "DOUBLE-WIDTH text keeps a control inside its box"
 # A CJK or emoji character is ONE character and TWO terminal columns. While ft_display_width
@@ -385,7 +385,7 @@ ft-form name=af width=40 height=10
 end_ft_form
 ft_layout af; FT_ROOT=af
 _bordercol() {                  # → BCOL: the column of the field's right border on row 1
-    ft-modify wf value="$1"; _paint af; printf '%s' "$FT_OUT" > "$tmp/wide"
+    ft_set wf value="$1"; _paint af; printf '%s' "$FT_OUT" > "$tmp/wide"
     BCOL=$(_cells "$tmp/wide" | awk -F'\t' '$2 == "│" { split($1,p,","); if (p[1]+0 == 1) print p[2]+0 }' | tail -1)
 }
 _bordercol "abcdef";        _ascii=$BCOL
@@ -402,14 +402,14 @@ _bordercol "日本語テキストです"; check "text that must WRAP neither" "$
 ft-label name=wlab text="漢字漢字漢字漢字" parent=af
 ft_layout af
 check "an auto-sized label measures 8 CJK as 16 columns" "${FT_MEASURED_WIDTH[wlab]}" "16"
-ft-modify wlab text="abcdefgh"; ft_layout af
+ft_set wlab text="abcdefgh"; ft_layout af
 check "…and 8 ASCII as 8"                                "${FT_MEASURED_WIDTH[wlab]}" "8"
 ft_remove wlab; ft_layout af
 
 # Wrapping decides how much goes on a row; the draw truncates what will not fit. Measure those
 # two differently and the difference is text that silently never appears at all.
 for _v in "漢字漢字漢字漢字" "日本語のテキストです" "ab漢cd漢ef漢gh"; do
-    ft-modify wf value="$_v"; ft_layout af; _paint af
+    ft_set wf value="$_v"; ft_layout af; _paint af
     printf '%s' "$FT_OUT" > "$tmp/wrap"
     _seen=$(_cells "$tmp/wrap" | awk -F'\t' '{printf "%s", $2}')
     _miss=""
@@ -418,8 +418,8 @@ for _v in "漢字漢字漢字漢字" "日本語のテキストです" "ab漢cd�
     done
     check "wrapping '$_v' loses no glyph" "$_miss" ""
 done
-ft-modify wf value="abcdef"; ft_layout af
-ft-modify wf value="abcdef"
+ft_set wf value="abcdef"; ft_layout af
+ft_set wf value="abcdef"
 
 note "the ASCII fallback glyphs must not collide with what they are drawn on"
 # A scrollbar thumb sits IN the border it scrolls. The ASCII fallback for the vertical thumb
@@ -444,7 +444,7 @@ ft-form name=ac width=60 height=8
 end_ft_form
 ft_layout ac; FT_ROOT=ac
 FT_OUT=""; _ft_redraw_walk ac
-ft-modify v1 --accent=45; warm_equals_cold "after changing a custom property" ac
+ft_set v1 --accent=45; warm_equals_cold "after changing a custom property" ac
 
 # ═══ THE TEETH ═══════════════════════════════════════════════════════════════
 note "the gate's own teeth: a poisoned cache must come back RED"
@@ -530,7 +530,7 @@ check "a frozen border ring holding the wrong glyph is caught" "$WARM_COLD_VERDI
 
 # An empty frame. This is not an exotic sabotage: hiding the root is an ordinary thing an app
 # does, and until now it read as a pass in every warm/cold and bare-cell verdict in the file.
-ft-modify ag display=none; ft_layout ag
+ft_set ag display=none; ft_layout ag
 _warm_vs_cold ag
 check "a scene that renders nothing is NOT 'unchanged'" "$WARM_COLD_VERDICT" "blank"
 # no_bare_cells reaches the same conclusion through the same door — assert the door rather than

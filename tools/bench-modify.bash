@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # ─────────────────────────────────────────────────────────────────────────────
-#  What ft-modify and ft_remove cost, on the paths that are actually hot.
+#  What ft_set and ft_remove cost, on the paths that are actually hot.
 #
-#  ft-modify is on every keystroke, every step change and every property write in the
+#  ft_set is on every keystroke, every step change and every property write in the
 #  framework, so making it do MORE (mark dirty by property kind) has to be measured, not
 #  assumed. ft_remove is on every overlay teardown. Run before and after a change to either.
 #
@@ -28,8 +28,8 @@ ft-form name=app width="$FT_COLS" height="$FT_ROWS"
             ft-label name=b3 text="Valid users: @staff, @archivists, mago-svc"
         end_ft_div
         ft-div name=row display=flex gap=2
-            ft-button name=bOk OK
-            ft-button name=bNo Cancel
+            ft-button name=bOk text=OK
+            ft-button name=bNo text=Cancel
         end_ft_div
     end_ft_frame
 end_ft_form
@@ -52,14 +52,14 @@ timeit() {                      # label iterations command...
 
 N=200
 echo
-echo "── ft-modify, by property kind ──────────────────────────────────────────"
+echo "── ft_set, by property kind ──────────────────────────────────────────"
 i=0
-paint_change()  { (( i++ )); ft-modify b1 color=$(( 200 + i % 50 )); }
-layout_change() { (( i++ )); ft-modify b1 text="row $i"; }
-noop_change()   { ft-modify b1 color=203; }
-inherit_change(){ (( i++ )); ft-modify box color=$(( 200 + i % 50 )); }
+paint_change()  { (( i++ )); ft_set b1 color=$(( 200 + i % 50 )); }
+layout_change() { (( i++ )); ft_set b1 text="row $i"; }
+noop_change()   { ft_set b1 color=203; }
+inherit_change(){ (( i++ )); ft_set box color=$(( 200 + i % 50 )); }
 
-ft-modify b1 color=203 >/dev/null 2>&1
+ft_set b1 color=203 >/dev/null 2>&1
 timeit "paint property (color) on a leaf"        "$N" paint_change
 timeit "…the same value again (must stay a no-op)" "$N" noop_change
 timeit "inherited property on a container"        "$N" inherit_change
@@ -84,7 +84,7 @@ report "keystroke into a focused text field" $(( FT_RET - t0 )) "${#CHARS[@]}"
 # A STEP CHANGE is the heaviest ordinary interaction in this project: it re-lays a page,
 # removes and re-places an overlay, and repairs what it left. css-demo's own _goto_step.
 noloop="$here/demo/.css-demo-bench.bash"
-sed '/^ft-run app/d' "$here/demo/css-demo.bash" > "$noloop"
+sed '/^ft_run app/d' "$here/demo/css-demo.bash" > "$noloop"
 trap 'rm -f "$noloop"' EXIT
 (
     source "$noloop" >/dev/null 2>&1
@@ -95,8 +95,8 @@ trap 'rm -f "$noloop"' EXIT
     steps=${#PA_TARGET[@]}
     ft_now_ms; a=$FT_RET
     # SETTLE LIKE THE RUN LOOP, or this measures nothing: the demo's handlers no longer paint
-    # (their trailing ft_redraw_dirty calls were no-ops under ft-run and are gone), so a bench
-    # that drives _goto_step directly must do what ft-run's burst-end settle does — the first
+    # (their trailing ft_redraw_dirty calls were no-ops under ft_run and are gone), so a bench
+    # that drives _goto_step directly must do what ft_run's burst-end settle does — the first
     # version of this loop dropped from 765ms to 40ms/step and the 40 was the cost of NOT
     # painting.
     for (( s=2; s<=steps; s++ )); do

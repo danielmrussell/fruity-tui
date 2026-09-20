@@ -60,7 +60,7 @@ _build_dialog() {                # step
     local step=$1
     _step_config "$step"
 
-    ft-empty app
+    ft_empty app
     ft-frame name=win \
              width="$WIDTH" height="$HEIGHT" title="$TITLE" \
              display=flex flexDirection=column gap=1 \
@@ -94,7 +94,7 @@ _build_dialog() {                # step
 
         ft-div name=btnrow display=flex gap=2 justifyContent=center
             if (( step > 1 )); then
-                ft-button name=btnBack Back accessKey=B onActivate=btnBack_on_activate
+                ft-button name=btnBack text=Back accessKey=B onActivate=btnBack_on_activate
             fi
             local oklabel=OK
             (( step == LAST_STEP )) && oklabel=Finish
@@ -126,4 +126,4 @@ ft-form name=app width="$FT_COLS" height="$FT_ROWS" \
         display=flex justifyContent=center alignItems=center \
         key='[Qq]' onKey=ft_quit
 end_ft_form
-ft-run app _setup
+ft_run app _setup

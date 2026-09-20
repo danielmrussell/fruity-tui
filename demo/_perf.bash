@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 cd "$(dirname "${BASH_SOURCE[0]}")/.." || exit 1
 export FT_NO_WTFIX=1
-noloop="demo/.css-demo-noloop.bash"; sed '/^ft-run app/d' demo/css-demo.bash > "$noloop"; source "$noloop"; rm -f "$noloop"
+noloop="demo/.css-demo-noloop.bash"; sed '/^ft_run app/d' demo/css-demo.bash > "$noloop"; source "$noloop"; rm -f "$noloop"
 exec {FT_TTY}>/dev/null
 FT_COLOR_MODE=256; FT_ROWS=40; FT_COLS=118
 ms() { ft_now_ms; echo "$FT_RET"; }

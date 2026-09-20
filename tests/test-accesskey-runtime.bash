@@ -4,7 +4,7 @@
 #
 #  `accessKey` has a registry behind it — FT_ACCEL_LIST plus a binding on the enclosing form's
 #  keymap — while the UNDERLINE a control draws comes from the property. It was registered at
-#  construction and nowhere else, so `ft-modify btn accessKey=K` moved the underline and left
+#  construction and nowhere else, so `ft_set btn accessKey=K` moved the underline and left
 #  the key bound to S: an underlined letter that did nothing, and an un-underlined one that
 #  still fired. In a framework whose rule is "an underlined letter is a promise", that is the
 #  promise broken.
@@ -28,9 +28,9 @@ hit_share()  { FIRED="share"; }
 hit_second() { FIRED="second"; }
 
 ft-form name=app width=60 height=14
-    ft-button name=save   "Save"   accessKey=S onActivate=hit_save
-    ft-button name=shareA "Share"  accessKey=H onActivate=hit_share
-    ft-button name=shareB "Hide"   accessKey=H onActivate=hit_second
+    ft-button name=save text="Save" accessKey=S onActivate=hit_save
+    ft-button name=shareA text="Share" accessKey=H onActivate=hit_share
+    ft-button name=shareB text="Hide" accessKey=H onActivate=hit_second
 end_ft_form
 ft_layout app
 FT_ROOT=app
@@ -51,7 +51,7 @@ check "K is registered to nobody" "$(_registered K)" "-"
 check "…and K fires nothing"      "$(_press K)"      "none"
 
 note "changing it at runtime moves the accelerator, not just the underline"
-ft-modify save accessKey=K
+ft_set save accessKey=K
 check "the property changed"      "$(_ft_get_raw save accessKey; printf %s "$FT_RET")" "K"
 check "K is registered now"       "$(_registered K)" "save"
 check "…and K fires it"           "$(_press K)"      "save"
@@ -63,7 +63,7 @@ note "a letter SHARED by two controls survives one of them changing"
 # bound and working for shareB. A fix that simply unbinds the key would pass everything above
 # and break this.
 check "H is registered to both"   "$(_registered H)" "shareA shareB"
-ft-modify shareA accessKey=Z
+ft_set shareA accessKey=Z
 check "…H now belongs to shareB alone" "$(_registered H)" "shareB"
 check "…and H still fires"             "$(_press H)"      "second"
 check "…while Z reaches shareA"        "$(_press Z)"      "share"

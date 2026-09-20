@@ -25,7 +25,7 @@
 #
 #  ── Reflow vs repaint (the CSS performance model) ───────────────────────────
 #  Every property is engine-classified as layout or paint (FT_PROP_KIND — one
-#  table, like a browser; never per-prototype annotations). ft-modify consults
+#  table, like a browser; never per-prototype annotations). ft_set consults
 #  it: paint-only changes repaint that one control and touch NOTHING else — so
 #  scrolling (scrollTop) costs one repaint, by definition. Layout changes
 #  reflow: recompute the control's own size; unchanged → repaint just it;
@@ -162,7 +162,7 @@ _ft_clip_inval() { (( _FT_CLIP_GEN++ )); }
 # AND EVERY ROUTE THAT CAN CHANGE ONE. This enumeration is what the cache lives or dies on, so
 # each route is driven by tests/test-resolvememo.bash and fails there if its bump is removed:
 #
-#   · a property is written or removed — _ft_setprop, ft_remove_attribute, and _ft_setprop's two
+#   · a property is written or removed — _ft_setprop, ft_unset, and _ft_setprop's two
 #     early exits (the `onX=` listener plist and the inline `style` string). The pair goes; if the
 #     property INHERITS, this node's whole SUBTREE goes, because everything under it may have been
 #     reading that value through the ancestor walk. A custom property needs neither: it is never
@@ -196,7 +196,7 @@ _ft_resolve_inval() {           # name — this node, and everything that inheri
     # A LEAF IS THE COMMON CASE AND MUST NOT PAY FOR THE WALK. Every inheriting write comes
     # through here, and an animation stepping `color` does it every frame. So: one bump and a
     # test, with the loop set up only when there is something to walk. Measured on
-    # tools/bench-modify.bash, `ft-modify b1 color=…` on a leaf — the array form cost ~65µs of a
+    # tools/bench-modify.bash, `ft_set b1 color=…` on a leaf — the array form cost ~65µs of a
     # ~300µs write; this one costs ~15µs (medians of five alternating runs, 295µs → 310µs).
     local kids=${FT_KIDS[$1]:-}
     (( ${#kids} )) || return 0
@@ -227,7 +227,7 @@ _ft_resolve_forget() {          # name prop — only this pair's answer can have
 # assumed one. A stamp only ever happens inside a reconciler, which only ever runs from
 # _ft_setprop — so the write that TRIGGERED it has already run the full cascade invalidation on
 # that node in the same breath, and a later read re-resolves. Verified: with a sheet carrying
-# `slider[value="4"]`, `ft-modify sl max=4` (which sanitizes `value` through this function)
+# `slider[value="4"]`, `ft_set sl max=4` (which sanitizes `value` through this function)
 # resolves to the attribute rule's colour, not the previous frame's.
 #
 # The hole in that argument is a reconciler stamping onto a DIFFERENT control, whose cascade
@@ -274,7 +274,7 @@ _ft_stamp_prop() {              # name prop value
 # its next value from this one counter, never from its own old value plus one. A cache keyed on
 # "name + generation" is only sound if a value, once used, is never used again, and a per-control
 # counter broke that the moment a control was removed: ft_remove unsets the counter, the control
-# rebuilt under the same name — which is the documented rebuild idiom, `ft-empty` then the same
+# rebuilt under the same name — which is the documented rebuild idiom, `ft_empty` then the same
 # stable names — counted up from zero again, and after one write each its key equalled the dead
 # control's. A text area on page two then drew page one's lines, while `ft_get … value` answered
 # page two (the textfield layout memo, _FT_TEXTFIELD_LINES_CACHE_KEY, is the one that showed it).
@@ -283,7 +283,7 @@ _ft_stamp_prop() {              # name prop value
 _FT_GENERATION_CLOCK=0
 _ft_setprop() {                 # name prop value
     local name=$1 prop val=$3
-    # onEvent=fn SUGAR: `onActivate=fn` (constructor or ft-modify) registers fn as an event
+    # onEvent=fn SUGAR: `onActivate=fn` (constructor or ft_set) registers fn as an event
     # LISTENER — it appends to the `eventListeners` plist ("activate=fn change=g …"), so several
     # listeners per event coexist and repeated onActivate= args in ONE call all accumulate.
     # An EMPTY value clears that event's listeners (like el.onactivate = null). Explicit runtime
@@ -458,8 +458,8 @@ _ft_setprop() {                 # name prop value
     # Measured on a 1200-line textfield, whose wrap memo keys on the generation:
     #
     #     repaint, nothing changed                      8 ms
-    #     repaint after `ft-modify f runlevel=editing` 199 ms
-    #     repaint after `ft-modify f runlevel=poised`  145 ms
+    #     repaint after `ft_set f runlevel=editing` 199 ms
+    #     repaint after `ft_set f runlevel=poised`  145 ms
     #
     # Every Enter INTO the field and every Esc OUT of it re-wrapped a document that had not
     # changed — on the keystone interaction of the whole framework. And it never had to:
@@ -534,8 +534,8 @@ _ft_setprop() {                 # name prop value
     # animations registered for the life of the process.
     #
     # It is asked HERE, at the property write, because that is the one path into the state.
-    # The two routes that hide things do not share anything above this: ft-modify has its own
-    # `display` branch, and _ft_tabs_show_only deliberately bypasses ft-modify (see the comment
+    # The two routes that hide things do not share anything above this: ft_set has its own
+    # `display` branch, and _ft_tabs_show_only deliberately bypasses ft_set (see the comment
     # at controls/ft-tabs.bash — routing it through would drag in a full reflow per switch).
     # A guard on one route and not its siblings is this codebase's most frequently logged root
     # cause, and the sibling here was already written and already exempt.
@@ -581,10 +581,10 @@ _ft_setprop() {                 # name prop value
     fi
     # A PROTOTYPE MAY KEEP ITS REAL STATE SOMEWHERE ELSE. A checkbox is a two-option multitoggle
     # whose truth is `selectedIndex`; `checked=` was translated to it by the ft-checkbox
-    # CONSTRUCTOR and nowhere else, so `ft-modify cb checked=true` was a silent no-op, while
-    # `ft-modify cb value=true` set a shadow value the drawing never saw — the control then
+    # CONSTRUCTOR and nowhere else, so `ft_set cb checked=true` was a silent no-op, while
+    # `ft_set cb value=true` set a shadow value the drawing never saw — the control then
     # reported CHECKED to the app and drew UNCHECKED to the user, at the same time. Give
-    # the prototype one place to reconcile, on every route in (ft-modify, the DSL, a state restore).
+    # the prototype one place to reconcile, on every route in (ft_set, the DSL, a state restore).
     #
     # THE PROPERTY NAMES USED TO BE LISTED HERE, and the list was wrong four times in one
     # sitting: `checked|value|selectedIndex` did not cover a slider's min/max/step, then not a
@@ -599,7 +599,7 @@ _ft_setprop() {                 # name prop value
     #
     # LAST, not first, and that placement is load-bearing: a reconciler READS the property that
     # just changed, and until the lines above have run, ft_resolved_prop still answers out of the
-    # memo with the OLD value. Reconciling first, `ft-modify sl max=4` sanitized 5 against a max
+    # memo with the OLD value. Reconciling first, `ft_set sl max=4` sanitized 5 against a max
     # of 100 and left it at 5 — the very bug the reconciler was added to fix.
     #
     # (`_recon` and `_prev` were read above, just before the write — the type guard lives there
@@ -612,7 +612,7 @@ _ft_setprop() {                 # name prop value
 # el.removeAttribute — truly UNSET a property (distinct from setting ""), so the control falls
 # back to its prototype default / the stylesheet. Handles subscripted props and custom properties
 # (--x) via _ft_propkey, and invalidates the cascade when the property could affect a style.
-ft_remove_attribute() {         # NAME PROP
+ft_unset() {         # NAME PROP
     local name=$1
     _ft_propkey "$2"; local pk=$FT_RET
     local _rpv="_ftp_${name}_${pk}" _rprev; _rprev=${!_rpv-}   # what the reconciler is replacing
@@ -656,7 +656,7 @@ ft_remove_attribute() {         # NAME PROP
     # AND THE PROTOTYPE RECONCILER, which this route did not call — the sixth "same predicate, one
     # route" in this function's own list, inside the mechanism built to end them.
     #
-    # Measured: on a checked checkbox, `ft_remove_attribute cb selectedIndex` repainted it
+    # Measured: on a checked checkbox, `ft_unset cb selectedIndex` repainted it
     # UNCHECKED while `ft_get cb checked` and `ft_get cb value` both still answered true. That is
     # verbatim the "reported CHECKED to the app and drew UNCHECKED to the user, at the same time"
     # that _ft_setprop's reconciler comment describes, reached through the one door the fix left
@@ -676,12 +676,12 @@ ft_remove_attribute() {         # NAME PROP
         fi
     fi
     # REMOVING A PROPERTY IS SETTING IT, so the same repaint is owed — and it is owed by the SAME
-    # function ft-modify pays through (_ft_prop_owed, above ft-modify). This route used to carry
+    # function ft_set pays through (_ft_prop_owed, above ft_set). This route used to carry
     # its own copy: acting on the kind, then a display/visibility/disabled arm for damage and
     # focus. Dropping an explicit `width` once left the old geometry on screen, dropping a
     # container's `color` left the inheriting labels in the old colour, and dropping `position`
     # left a sibling where the absolute control had let it slide — each a repair to the copy.
-    # Called AFTER the reconciler, as ft-modify's is (_ft_setprop reconciles before returning).
+    # Called AFTER the reconciler, as ft_set's is (_ft_setprop reconciles before returning).
     local _ft_owed="" _ft_owed_keys="" rejected=0
     _ft_prop_owed "$name" "$pk" || rejected=1       # `parent` is refused on this route too
     _ft_prop_owed_pay "$name"
@@ -731,7 +731,7 @@ _ft_has_prop() { _ft_propkey "$2"; case " ${FT_PROPS[$1]:-} " in *" $FT_RET "*) 
 # _ft_truthy VALUE → 0 if it means yes. ONE predicate, because there were two and they
 # disagreed: _ft_multitoggle_setprop accepted true|1|yes|on while ft-checkbox's constructor
 # tested only `true` and `1`, so `ft-checkbox name=c checked=yes` built an UNCHECKED box that
-# `ft-modify c checked=yes` then checked. The same spelling, two routes, two answers — which is
+# `ft_set c checked=yes` then checked. The same spelling, two routes, two answers — which is
 # the second half of the FT_FOCUSABLE bug CONTRIBUTING §1 writes out in full ("the value was not
 # normalised on the construction route either"). A control's own state must not depend on which
 # door the author came through.
@@ -952,7 +952,7 @@ ft_state :visible ft_state_is_visible display visibility
 # `unfocused` (the universal zero — every control has it, so `:not(:unfocused)` means "engaged"
 # everywhere) plus whatever else the prototype declares. Making it a PROPERTY is the whole trick:
 #   • the cascade invalidates on it automatically, because states declare what they read
-#   • `ft-modify field runlevel=editing` works — from a sibling, a parent, or the engine
+#   • `ft_set field runlevel=editing` works — from a sibling, a parent, or the engine
 #   • ft_get reads it, a stylesheet matches it, a state serialiser can save it
 # Values are NOT globally ordered — a select's `open` and a textfield's `editing` are not
 # comparable depths — so they are keywords, never numbers.
@@ -1374,7 +1374,7 @@ _ft_pk layout display width height minWidth maxWidth minHeight maxHeight \
        size accessKey overflow overflowX \
        text states class
 # THE LAST FOUR ARE INPUTS TO A MEASUREMENT, and were classified paint. Each was demonstrated,
-# by writing it through ft-modify and watching the box not move:
+# by writing it through ft_set and watching the box not move:
 #
 #   size       12 → 12   it IS the textfield's intrinsic width (_ft_preferred_width_textfield)
 #                        and the select's height (_ft_height_select)
@@ -1392,7 +1392,7 @@ _ft_pk layout display width height minWidth maxWidth minHeight maxHeight \
 # changes how wide the control wants to be. It was paint-only, which is why the width did not
 # follow when it changed.
 # `class` is layout-kind (conservative: a class rule can change layout props, e.g. .hidden{display:none})
-# AND registering it lets the DSL accept a multi-class value with spaces — `ft-modify x class="a b"`.
+# AND registering it lets the DSL accept a multi-class value with spaces — `ft_set x class="a b"`.
 _ft_pk paint color backgroundColor borderColor overflowY \
        scrollTop scrollLeft scrollHeight scrollWidth clientHeight clientWidth \
        selectedIndex group keymap draw focusable name parent for \
@@ -1475,11 +1475,11 @@ ft_prop_kind_set() { [[ -z "$1" ]] && return 1
 #       just work.
 # Everything else is CONTENT. This closes the real ambiguity: a value passed
 # positionally is one shell word, so free text with spaces —
-#     ft-modify status "compression=high beep=on"
+#     ft_set status "compression=high beep=on"
 # — is NOT a property named `compression`; it has spaces and `compression` is no
 # property, so the whole phrase is text. When you want a SINGLE-word =-bearing
 # string as content (the one residual ambiguity), be explicit with text=:
-#     ft-modify status text="compression=high"   ← text= wins, value keeps its =
+#     ft_set status text="compression=high"   ← text= wins, value keeps its =
 # ── Accelerator label rendering (shared by button/radio/checkbox) ────────────
 # An accelerator letter is shown by underlining it in the label. When the letter
 # is NOT present in the label (nothing to underline), it is appended in
@@ -1510,7 +1510,27 @@ _ft_accel_markup() {            # text accessKey sgr → FT_RET
     fi
 }
 
+# A LABEL IS SET BY A PROPERTY, NOT BY POSITION.
+#
+# `ft-label name=hi "Hello"` used to work, mirroring text between HTML tags, and it is gone: the
+# author's verdict on reading it back was that raw label text does not belong loose in an
+# argument list. `text="Hello"` — a frame's is `title=` — names the property being set and reads
+# like every other attribute on the line.
+#
+# REFUSED, not ignored: the failure mode of ignoring it is a control that draws nothing and says
+# nothing about why. The message names the property to write instead — and it is what found the
+# calls a static sweep kept missing, which were never the ones a person would think of: a loop
+# body after `do`, a fixture after a `case` label, a one-line function body behind its `{`.
+#
+# Two positional forms survive and were never content: ft-table-row / ft-table-column take a
+# row's CELLS, and ft_end takes the type it expects to close.
 _FT_TEXTPROP=text
+_ft_bare_content() {            # name arg
+    local _ty=${FT_TYPE[$1]:-} prop=$_FT_TEXTPROP
+    [[ -n "$_ty" ]] && prop=${FT_PROTO_TEXTPROP[$_ty]:-text}
+    printf 'ft: %s: "%s" is not a property — write %s="%s"\n' "$1" "$2" "$prop" "$2" >&2
+    return 1
+}
 _ft_is_assignment() {           # 0 iff "$1" is a property assignment, not content
     [[ "$1" =~ ^(--[A-Za-z][A-Za-z0-9-]*|[A-Za-z_][A-Za-z0-9_]*(\[[A-Za-z0-9_]+\])?)= ]] || return 1
     local k=${1%%=*}
@@ -1531,7 +1551,7 @@ _ft_apply_args() {              # name args...
         if _ft_is_assignment "$arg"; then
             _ft_setprop "$name" "${arg%%=*}" "${arg#*=}"
         else
-            _ft_setprop "$name" "$_FT_TEXTPROP" "$arg"    # bare content, like text between HTML tags
+            _ft_bare_content "$name" "$arg"
         fi
     done
     (( ${#_kf[@]} )) && { _ft_keymap_of "$name"; _ft_keyfields "$FT_RET" "${_kf[@]}"; }
@@ -1547,12 +1567,12 @@ declare -A FT_PROTO_READY=() FT_PROTO_DRAW=() FT_PROTO_PREFERRED_WIDTH=() FT_PRO
            FT_PROTO_REPROP=()
 # FT_PROTO_REPROP[type]=fn — SOME PROPERTIES NEED THE PROTOTYPE TO DO SOMETHING, not just repaint.
 # A beacon's `effect` decides whether it runs an animation loop at all, so changing it has to
-# re-arm; ft-modify cannot know that and must not learn it. The prototype registers a function and
-# ft-modify calls it with the control and the keys that actually changed:
+# re-arm; ft_set cannot know that and must not learn it. The prototype registers a function and
+# ft_set calls it with the control and the keys that actually changed:
 #     FT_PROTO_REPROP[beacon]=_ft_beacon_reprop     # fn NAME "effect lifetime …"
 # Same shape as _ft_destroy_<type> and _ft_ink_<type>: the engine asks, the prototype answers.
 # demo/callout-demo.bash used to call _ft_beacon_arm itself after every effect change.
-# Cost: one array read per ft-modify for a prototype that registers nothing, which is all but one.
+# Cost: one array read per ft_set for a prototype that registers nothing, which is all but one.
 
 # The prototype struct, as the AUTHORING key each entry is written with. This table is the only
 # place the two vocabularies meet: a control author writes `preferredWidth=`, the engine reads
@@ -1604,9 +1624,9 @@ declare -A _FT_PROTO_BOOLEAN_KEY=( [focusable]=1 [noHit]=1 [fillsBackground]=1 )
 # that mattered looked like it worked.
 #
 # One function, because there are two routes into this table — construction and a runtime
-# ft-modify — and a rule enforced on one route and not its sibling is this codebase's most
+# ft_set — and a rule enforced on one route and not its sibling is this codebase's most
 # frequently logged root cause. The runtime route did not enforce it at all: it wrote the
-# property and never touched the table, so `ft-modify x focusable=false` was inert.
+# property and never touched the table, so `ft_set x focusable=false` was inert.
 _ft_focusable_apply() {         # name type rawValue
     local name=$1 type=$2 raw=$3
     case "$raw" in
@@ -1953,7 +1973,7 @@ _ft_prototype_declares() {          # name prop → 0 if this control's prototyp
 # breaks it; here every one of them took a negative, and a negative length does not stay inside
 # the control that asked for it:
 #
-#     ft-modify b width=-6      a@0 b@5 c@10   →   a@0 b@5 c@0
+#     ft_set b width=-6      a@0 b@5 c@10   →   a@0 b@5 c@0
 #
 # One label's width moved its NEXT SIBLING back on top of the first — a flex row summing a
 # negative into its running offset. The control itself vanishes (every draw function starts
@@ -2051,7 +2071,7 @@ declare -A FT_PENDING_FOCUS=() FT_ACCEL_FORM=() FT_ACCEL_LIST=()
 # ── An accelerator is REGISTERED, not just declared ──────────────────────────
 # `accessKey` has a registry behind it — FT_ACCEL_LIST plus a binding on the enclosing form's
 # keymap — and the underline the control draws comes from the PROPERTY. Registering at
-# construction and nowhere else meant `ft-modify btn accessKey=K` moved the underline and left
+# construction and nowhere else meant `ft_set btn accessKey=K` moved the underline and left
 # the binding on S: an underlined letter that does nothing, and an un-underlined one that still
 # fires. In a framework where "an underlined letter is a promise", that is the promise broken.
 #
@@ -2141,7 +2161,7 @@ _ft_accel_dispatch() {          # form letter
 
 # A form ADVERTISES its accelerators. They are ordinary keymap bindings already, but carry no
 # keyCap — which is exactly why a focused button's accessKey never reached the bar. The label has to be read LIVE here rather than baked into
-# a static keycap: `ft-modify ok text="Save As"` must not leave a stale legend entry, and a
+# a static keycap: `ft_set ok text="Save As"` must not leave a stale legend entry, and a
 # control that has since been hidden or disabled must drop out of the bar entirely.
 # Importance is deliberately NORMAL: accelerators are always live, so at a higher tier a
 # six-button form would bury the focused control's own keys.
@@ -2330,7 +2350,7 @@ ft-frame() { ft_new frame "$@" && FT_NEST_STACK+=("$FT_RET"); }
 # selector matched nothing. Per docs/api-naming.md the DOM name wins: the type
 # is `div`, `div { … }` cascades, and ft-div/end_ft_div are gone.
 ft-div()     { ft_new div "$@" && FT_NEST_STACK+=("$FT_RET"); }
-end_ft_div() { ft-end div; }
+end_ft_div() { ft_end div; }
 
 # ft-option — a DATA element (HTML's <option>): value= is what the enclosing
 # control's `value` becomes when this option is current; glyph= (and/or
@@ -2393,11 +2413,11 @@ ft-control() {                  # TYPE args... — fully custom type, also nests
     ft_new "$@"
 }
 
-# ft-end TYPE — pop the innermost open container, verify its type, fire the
+# ft_end TYPE — pop the innermost open container, verify its type, fire the
 # "children fully known" hook. NOT a destructor: nothing is torn down; this is
 # where a parent finishes construction using complete knowledge of its
 # descendants (the form assembles its focus ring here).
-ft-end() {                      # expected-type
+ft_end() {                      # expected-type
     local expect=$1
     if (( ${#FT_NEST_STACK[@]} == 0 )); then
         printf 'ft: end_ft_%s with no open container\n' "$expect" >&2
@@ -2414,22 +2434,22 @@ ft-end() {                      # expected-type
     FT_RET=$name
     return 0
 }
-end_ft_form()  { ft-end form; }
-end_ft_frame() { ft-end frame; }
+end_ft_form()  { ft_end form; }
+end_ft_frame() { ft_end frame; }
 
 form_on_children_complete() { ft_focus_ring_build "$1"; }
 
-# ft-modify NAME prop=value ... — THE way to change properties after
+# ft_set NAME prop=value ... — THE way to change properties after
 # construction. Consults FT_PROP_KIND per property: paint-only changes just
 # dirty this control; any genuinely-changed layout property triggers a reflow
 # (see ft_reflow). Values identical to the current one are ignored entirely —
 # re-setting the same text costs nothing. A trailing `keymap k=a ...` section
 # updates the instance overlay as at construction.
 # ── What a changed property is owed ──────────────────────────────────────────
-# ONE ANSWER FOR EVERY ROUTE THAT CHANGES A PROPERTY. ft-modify and ft_remove_attribute each
-# carried their own copy of this case, and the copy in ft_remove_attribute is the one that kept
+# ONE ANSWER FOR EVERY ROUTE THAT CHANGES A PROPERTY. ft_set and ft_unset each
+# carried their own copy of this case, and the copy in ft_unset is the one that kept
 # drifting — its own comments counted six repairs, each "same predicate, same route". The
-# seventh was `position`: ft-modify knows that a control leaving or rejoining the flow MOVES
+# seventh was `position`: ft_set knows that a control leaving or rejoining the flow MOVES
 # its siblings and re-arranges the parent, while removing `position` ran the size-only reflow,
 # which found the control's own box unchanged and stopped — the sibling stayed wherever the
 # absolute control had let it slide until something else laid the page out. The same copy had
@@ -2439,7 +2459,7 @@ form_on_children_complete() { ft_focus_ring_build "$1"; }
 # _ft_prop_owed NAME KEY does what cannot wait for that one property (a registration, a hide's
 # damage) and RECORDS the rest in the CALLER's `_ft_owed`; _ft_prop_owed_pay NAME then pays it
 # once, so a write of five properties still reflows once. Caller-scoped rather than global on
-# purpose: a prototype reconciler may itself call ft-modify, and a nested write must not clear the
+# purpose: a prototype reconciler may itself call ft_set, and a nested write must not clear the
 # debts of the write it is nested in. The caller declares `local _ft_owed="" _ft_owed_keys=""`.
 _ft_prop_owed() {               # name key → 1 if the change is refused (the property is put back)
     local name=$1 key=$2
@@ -2449,14 +2469,14 @@ _ft_prop_owed() {               # name key → 1 if the change is refused (the p
         # A `keys=auto` legend is DERIVED from the focused control's keys, so changing which
         # keys it has must repaint it. _ft_legend_dirty was called on focus, runlevel and the
         # textfield's own state — every transition that existed when a binding could only be
-        # written before the app ran. Writing keys at RUNTIME is ordinary now (ft-modify takes
+        # written before the app ran. Writing keys at RUNTIME is ordinary now (ft_set takes
         # key fields, and defaultKeys can silence a prototype), and the legend went on
         # advertising keys the control no longer had until something else repainted it.
         keymap|defaultKeys) _ft_legend_dirty ;;
         draw) _ft_get_raw "$name" draw; FT_DRAW[$name]=$FT_RET; _ft_owed+=" paint" ;;
         # `focusable` has a TABLE behind it, exactly as `draw` does, and the ring is built
         # from that table rather than from the property. Writing only the property left
-        # `ft-modify x focusable=false` completely inert — the control stayed in the ring
+        # `ft_set x focusable=false` completely inert — the control stayed in the ring
         # and stayed focusable. Same normalisation as construction, because a rule enforced
         # on one route and not its sibling is how the two drift apart.
         # `parent` NAMES THE TREE, AND THE TREE IS NOT A PROPERTY. At construction it says
@@ -2549,14 +2569,14 @@ _ft_prop_owed() {               # name key → 1 if the change is refused (the p
             ;;
         *)
             # SETTING A PROPERTY IS ALL AN APPLICATION SHOULD HAVE TO DO. In CSS you change
-            # a value; you do not then tell the renderer to repaint. ft-modify already
+            # a value; you do not then tell the renderer to repaint. ft_set already
             # knows each property's KIND, so it acts on it: layout → reflow, paint → dirty.
             #
             # AN INHERITED PROPERTY CHANGES THE CHILDREN TOO, and that is the part apps
-            # were hand-rolling. `ft-modify inhbox color=X` repaints inhbox; every label
+            # were hand-rolling. `ft_set inhbox color=X` repaints inhbox; every label
             # inside it still shows the old colour, because it inherits one that just
             # changed. So demo/css-demo.bash carried
-            #     ft-modify inhbox color="$1"; ft_dirty_subtree inhbox
+            #     ft_set inhbox color="$1"; ft_dirty_subtree inhbox
             # on three separate handlers. FT_INHERITED_PROP already knows which properties
             # do this — including every --custom property, which inherits by definition —
             # so the engine can and now does.
@@ -2578,7 +2598,7 @@ _ft_prop_owed_pay() {           # name — settle what _ft_prop_owed recorded
     [[ "$owed" == *" moved "* ]] && moved=1
     # The prototype gets told what changed BEFORE the repaint is scheduled, so anything it does in
     # response (arming an animation, resizing an internal buffer) is part of the same frame.
-    # `-n "$_ty"` FIRST: ft-modify is reachable for a control that has no type (removed by an
+    # `-n "$_ty"` FIRST: ft_set is reachable for a control that has no type (removed by an
     # earlier handler in the same burst), and ${ASSOC[""]} is a bash error on stderr — which in
     # a TUI is the alt screen. tests/test-reach.bash exists to catch exactly this and did.
     if [[ -n "$keys" && -n "$_ty" && -n "${FT_PROTO_REPROP[$_ty]:-}" ]]; then
@@ -2599,7 +2619,7 @@ _ft_prop_owed_pay() {           # name — settle what _ft_prop_owed recorded
     return 0
 }
 
-ft-modify() {                   # name args...
+ft_set() {                   # name args...
     local name=$1; shift
     local arg key val rejected=0
     local -a _kf=()
@@ -2613,7 +2633,7 @@ ft-modify() {                   # name args...
         # holds one value per name — so they are collected here and folded into this
         # control's own keymap (its instance overlay) once the arguments are read.
         case $arg in key=*|keyCap=*|keyImp=*|onKey=*) _kf+=("$arg"); continue ;; esac
-        _ft_is_assignment "$arg" || arg="$textprop=$arg"   # bare arg = content
+        _ft_is_assignment "$arg" || { _ft_bare_content "$name" "$arg"; rejected=1; continue; }
         key="${arg%%=*}"; val="${arg#*=}"
         _ft_get_raw "$name" "$key"
         [[ "$FT_RET" == "$val" ]] && _ft_has_prop "$name" "$key" && continue
@@ -2629,16 +2649,16 @@ ft-modify() {                   # name args...
     return $rejected
 }
 
-# ft-empty NAME — destroy all of NAME's children (recursively) and REOPEN
+# ft_empty NAME — destroy all of NAME's children (recursively) and REOPEN
 # NAME as the current container, exactly as if you were back between its
 # constructor and its end_ statement. THE rebuild idiom, no parent= ever:
-#     ft-empty app
+#     ft_empty app
 #         ft-frame name=win ...           # same stable names as before
 #             ...
 #         end_ft_frame
 #     end_ft_form                          # close app again (rebuilds focus)
 #     ft_refresh
-ft-empty() {                     # name
+ft_empty() {                     # name
     local name=$1 kid
     for kid in ${FT_KIDS[$name]:-}; do ft_remove "$kid"; done
     FT_KIDS[$name]=""
@@ -2662,7 +2682,7 @@ ft-empty() {                     # name
 # only; call ft_refresh afterwards to relayout. (Create a fresh node with `ft-<type> name=x
 # parent=P`, which appends; these move/reorder/replace EXISTING nodes.)
 # A MOVED NODE INHERITS FROM SOMEWHERE ELSE NOW. Every other route into "this node's cascade
-# inputs changed" invalidates — a property write, ft_remove_attribute, a stylesheet
+# inputs changed" invalidates — a property write, ft_unset, a stylesheet
 # registration — but the DOM move mixins rewrote FT_PARENT/FT_KIDS and bumped nothing. The
 # style caches are keyed on the cascade epoch plus a per-node version, so the resolver went on
 # serving the OLD parent's inherited value from a warm entry, and the documented follow-up
@@ -3481,7 +3501,7 @@ _ft_text_extent_cached() {      # name text [gen] → sets FT_TEXT_WIDTH/FT_TEXT
 # rows, and everything downstream reads rows. Only a width change re-wraps, which is O(total)
 # under any storage scheme.
 #
-# Rebuild is O(n) and happens when the text changed underneath us (a plain ft-modify); an
+# Rebuild is O(n) and happens when the text changed underneath us (a plain ft_set); an
 # append is O(added) and touches nothing that came before.
 # LAZY-FETCH: the text is read only when a rebuild is actually needed. That matters because
 # the property may be STALE (the store is ahead of it), and asking for it would join the whole
@@ -3815,7 +3835,7 @@ _ft_lines_prepare() {           # name
 # ft_append_data NAME TEXT [PROP] — append to a control's text, the DOM's
 # CharacterData.appendData(). The point is not sugar, it is COST.
 #
-# `ft-modify log text="$whole_log"` re-measures and re-wraps the ENTIRE text every time,
+# `ft_set log text="$whole_log"` re-measures and re-wraps the ENTIRE text every time,
 # because both caches are keyed on the text and every append misses them. Measured on a
 # 1000-line log: _ft_text_extent 63ms + ft_wrap 74ms, several times per append — 543ms to
 # add ONE line, and O(n²) to fill the log.
@@ -4340,7 +4360,7 @@ _ft_pass_arrange() {            # name absX absY
     # scrollHeight. Reaching this path anyway, the container branch computed an extent from
     # children there are none of and published scrollHeight=0 over the label's answer. Latent
     # until scroll offsets were clamped against that pair: ft_has_scrollbar read 0 between a
-    # layout and the next paint, and then `ft-modify log scrollTop=99` clamped to 0 and the
+    # layout and the next paint, and then `ft_set log scrollTop=99` clamped to 0 and the
     # label jumped to the top. `ft-label overflow=scroll` is the ordinary way to write it —
     # _ft_label_metrics resolves the shorthand too — so both halves claimed the same word.
     (( scroll )) && [[ -z "${FT_KIDS[$name]:-}" ]] && scroll=0
@@ -4579,7 +4599,7 @@ ft_layout() {                   # root
 
 # ft_refresh [ROOT] — the one call after (re)building a screen: full layout,
 # clear, repaint, flush — and, when new focusable controls were registered
-# since the last ring build (a rebuild via ft-empty), resync the focus ring
+# since the last ring build (a rebuild via ft_empty), resync the focus ring
 # too (tab order is a living consequence of the tree, like a browser's).
 #
 # During INPUT COALESCING (the run loop draining a burst of held-key events),
@@ -4588,7 +4608,7 @@ ft_layout() {                   # root
 # holding a key that rebuilds the screen doesn't paint N screens back to back.
 FT_COALESCING=0
 FT_DEFER_ROOT=""
-# ft_invalidate — a handler calls this to request that ft-run's RENDER
+# ft_invalidate — a handler calls this to request that ft_run's RENDER
 # callback rebuild the screen once, after the current input burst drains.
 # This is the retained-mode pattern (mutate state + invalidate, render later):
 # holding a key that advances "pages" runs the cheap state change N times but
@@ -4608,7 +4628,7 @@ ft_refresh() {                  # [root]
     ft_repaint_all "$root"
 }
 
-# ── Reflow (layout-property changes, invoked by ft-modify) ───────────────────
+# ── Reflow (layout-property changes, invoked by ft_set) ───────────────────
 # The CSS invariant: recompute only as far as sizes actually change.
 #  • pure moves (left/top/position): re-arrange the parent's subtree — pure
 #    position arithmetic, no measuring — and repaint it (the parent must
@@ -4765,7 +4785,7 @@ _ft_reflow_now() {              # name [moved]
     _ft_pass_pref "$name"
 
     # An explicit width/height PROPERTY may itself have just changed (e.g. a
-    # slider driving ft-modify row width=…) — that's a size change by
+    # slider driving ft_set row width=…) — that's a size change by
     # definition; go straight to the bounded re-layout.
     ft_own_prop "$name" width; local expw=$FT_RET
     if [[ -n "$expw" ]]; then
@@ -4847,8 +4867,8 @@ declare -A FT_DIRTY=()
 # document and leaves the bar's column showing where the content used to be. Measured, with
 # writing the BAR's own offset as the control that proves the probe could see dirtiness at all:
 #
-#     ft-modify bar scrollTop=3    dirty=[doc bar]      ← the coupling, wired
-#     ft-modify doc scrollTop=8    dirty=[doc]          ← the same coupling, not wired
+#     ft_set bar scrollTop=3    dirty=[doc bar]      ← the coupling, wired
+#     ft_set doc scrollTop=8    dirty=[doc]          ← the same coupling, not wired
 #     ft_label_scroll_set doc 5    dirty=[doc]
 #     the target's content shrinks dirty=[doc]
 #
@@ -5008,9 +5028,9 @@ ft_clip_band_reset() { FT_CLIP_BAND_R0=0; FT_CLIP_BAND_R1=999999; }
 # place: the first line of ft_layout. Every other route that moves a clip rect leaves it alone.
 # Measured, not assumed — /tmp probe, reproduced in the commit message:
 #
-#     ft-modify win padding=3      clip (1,1)-(18,58) → (4,4)-(15,55)   epoch 1 → 1
+#     ft_set win padding=3      clip (1,1)-(18,58) → (4,4)-(15,55)   epoch 1 → 1
 #     …after ft_reflow_flush too   unchanged                            epoch 1 → 1
-#     ft-modify win overflow=visible   (4,4)-(15,55) → (0,0)-(29,99)    epoch 1 → 1
+#     ft_set win overflow=visible   (4,4)-(15,55) → (0,0)-(29,99)    epoch 1 → 1
 #
 # padding is layout-kind, so it reaches ft_reflow — but ft_reflow lands in _ft_reflow_now, which
 # re-runs the passes directly and never bumps. `overflow` is worse: it is registered PAINT-kind
@@ -5026,7 +5046,7 @@ ft_clip_band_reset() { FT_CLIP_BAND_R0=0; FT_CLIP_BAND_R1=999999; }
 # removed. The band, the terminal size and FT_LAYOUT_EPOCH ride along in the token as well —
 # the band because ft_clip_band changes the answer mid-paint with no property change at all
 # (the transition machinery narrows it around a nested paint), and the size because an app that
-# supplies its own resize callback to ft-run is under no obligation to call ft_layout.
+# supplies its own resize callback to ft_run is under no obligation to call ft_layout.
 declare -A _FT_CLIP_CACHE=()    # "/parent" → "TOKEN<US>R0 C0 R1 C1"
                                 # (_FT_CLIP_GEN and _ft_clip_inval: top of file)
 _ft_clip_for() {                # name
@@ -5426,7 +5446,7 @@ ft_redraw_all() {               # root — full walk, root first, flush once
     # than useless: the next incremental frame would refill and repaint regions described in
     # the PREVIOUS page's geometry, against controls that no longer exist there. That is a
     # stale repaint, and it is exactly what a page rebuild produces now that ft_remove damages
-    # — `ft-empty stage` removes ~100 controls, each raising a rect, and _show_page then ends
+    # — `ft_empty stage` removes ~100 controls, each raising a rect, and _show_page then ends
     # in a full ft_refresh. test-notrace caught it as a code pane still showing the old page.
     #
     # DAMAGE ONLY, deliberately: a control's draw is allowed to dirty another control (the
@@ -5439,7 +5459,7 @@ ft_redraw_all() {               # root — full walk, root first, flush once
 # ft_repaint_all [ROOT] — blank the screen and paint it again from nothing.
 #
 # THE ONE CALL, replacing fourteen copies of `FT_OUT+=clear; ft_redraw_all "$root"` in ft-help,
-# ft-settings, ft-filedialog, ft_refresh, ft-run's resize path and the test harness. CONTRIBUTING
+# ft-settings, ft-filedialog, ft_refresh, ft_run's resize path and the test harness. CONTRIBUTING
 # §1: a fix repeated per case is at the wrong layer, and this one had to become a single place
 # before the retained display list could exist at all — every copy is a point where the screen
 # goes blank and the list would not know.
@@ -6327,7 +6347,7 @@ _ft_damage_enlist() {           # node   (was _ft_damage_dirty_multi, which name
 # ft_dirty_subtree NAME — every control at or below NAME needs repainting.
 #
 # PUBLIC, and it has to be: an application that edits a STYLESHEET at runtime has changed how a
-# branch resolves without touching any property, so ft-modify never sees it and cannot repaint
+# branch resolves without touching any property, so ft_set never sees it and cannot repaint
 # for it. Repainting the whole app instead is the sledgehammer demo/css-demo.bash measured at
 # ~0.3s per checkbox, so narrowing to the branch that actually changed is a legitimate choice
 # an app is entitled to make — with a public name, not by reaching for an underscore.
@@ -6674,7 +6694,7 @@ ft_focus_first() {
 # visibility INHERITS, so a child that re-shows itself under a hidden container overrides it,
 # which is CSS's rule, what ft_state_is_hidden answers for `:hidden`, and what ft_draw_one
 # paints by. The disagreement was reachable through the codebase's own re-show idiom
-# (`ft-modify X visibility=visible`): the control appeared on screen and matched
+# (`ft_set X visibility=visible`): the control appeared on screen and matched
 # `button:visible`, while focus refused to land on it and its accessKey did nothing.
 _ft_hidden_anywhere() { ft_state_is_hidden "$1"; }
 _ft_focus_skippable() {         # name
@@ -8317,17 +8337,17 @@ _ft_dispatch_mouse() {
 # The handler's ARGUMENTS are the control's VALUE(s): $1 for a single value, or
 # "$@" for a multi-value control. The name is never an argument — it is $this.
 #     ft-textfield name=rowW  onChange=rowW_changed      # WIRED, or it never runs
-#     rowW_changed()  { ft-modify row width=$1; }        # $1 = new value
+#     rowW_changed()  { ft_set row width=$1; }        # $1 = new value
 #     ft-select name=perms multiple=true onChange=perms_changed
 #     perms_changed() { local -a values=("$@"); ... }    # multi-select
 # `${this}_<prop>` is also the backing shell variable, and ft_get "$this" <prop>
-# / ft-modify "$this" ... all work. A hook may `return` nonzero to CANCEL the
+# / ft_set "$this" ... all work. A hook may `return` nonzero to CANCEL the
 # change (slider/select honour it).
 this=""
 # ── Event dispatch ────────────────────────────────────────────────────────────
 # A control event runs every listener registered on the control's `eventListeners` plist for that
 # event (tokens `event=fn`, in registration order) — added via `onActivate=fn` at construction/
-# ft-modify, or ft_add_listener. Listeners are ALWAYS explicit; there is no name-convention magic
+# ft_set, or ft_add_listener. Listeners are ALWAYS explicit; there is no name-convention magic
 # (a function named <name>_on_<event> is just a function — wire it, or it never runs).
 # The handler contract (the "event object", bash-style): $this = the control, $FT_EVENT_TYPE = the
 # event name, "$@" = the value(s)/detail; input events also see FT_MOUSE_* / FT_EVENT_CHAR.
@@ -8448,7 +8468,7 @@ ft_quit() { FT_RUN_ACTIVE=0; return 0; }
 # modal's own loop). It never "shoots off into space" or opens a menu. Help is on h.
 ft_esc_action() { return 0; }
 
-# ft-run ROOT [setup] [resize] [fallback] [render]
+# ft_run ROOT [setup] [resize] [fallback] [render]
 #  setup    — runs after the tty is entered, before the first paint (build
 #             your screen here; it may draw/flush itself).
 #  resize   — SIGWINCH handler; default refits ROOT to the terminal.
@@ -8463,7 +8483,7 @@ ft_esc_action() { return 0; }
 # A SHORTCUT THAT CANNOT FIRE IS INVISIBLE: the control keeps drawing its underlined letter and
 # the key goes on doing something plausible instead. ft_accesskey_conflicts answers the question;
 # this is what asks it, once, at startup — BEFORE the alt screen is entered, because stderr in a
-# TUI is the screen the user is looking at. That places it before ft-run's `setup` callback runs,
+# TUI is the screen the user is looking at. That places it before ft_run's `setup` callback runs,
 # so a control built inside setup rather than at file scope is not covered; the tree an app
 # declares is.
 # Behind FT_DEBUG_KEYS=1 rather than always on: sharing a letter is a deliberate feature, so this
@@ -8482,7 +8502,7 @@ _ft_report_key_conflicts() {
     return 1
 }
 
-ft-run() {
+ft_run() {
     local root=$1 setup=${2:-} resize=${3:-} fallback=${4:-} render=${5:-}
     FT_ROOT=$root
     _ft_report_key_conflicts

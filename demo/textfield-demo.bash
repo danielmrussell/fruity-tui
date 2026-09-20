@@ -19,9 +19,9 @@ _echo() {                       # mirror both field values + the login line
     local user host
     ft_get fUser value user
     ft_get fHost value host
-    ft-modify vUser text="user = \"$user\""
-    ft-modify vHost text="host = \"$host\""
-    ft-modify preview text="login: $user@$host"
+    ft_set vUser text="user = \"$user\""
+    ft_set vHost text="host = \"$host\""
+    ft_set preview text="login: $user@$host"
 }
 fUser_on_change() { _echo; }
 fHost_on_change() { _echo; }
@@ -32,16 +32,16 @@ fHost_on_activate() { ft_focus_next; }
 btnSave_on_activate() {
     local user host
     ft_get fUser value user; ft_get fHost value host
-    ft-modify status text="saved:  $user @ $host"
+    ft_set status text="saved:  $user @ $host"
 }
 btnClear_on_activate() {
-    ft-modify fUser value=""; ft-modify fHost value=""
+    ft_set fUser value=""; ft_set fHost value=""
     FT_TEXTFIELD_CARET[fUser]=0; FT_TEXTFIELD_CARET[fHost]=0
-    _echo; ft-modify status text="(cleared)"
+    _echo; ft_set status text="(cleared)"
 }
 
 _build() {
-    ft-empty app
+    ft_empty app
         ft-frame name=win title="ft-textfield — readline text input" \
                  display=flex flexDirection=column gap=1 padding=1 alignItems=start \
                  borderStyle=double
@@ -81,9 +81,9 @@ Up/Down walk the wrapped lines. Tab moves between fields." width=66
             ft-label name=status text="(nothing saved yet)" width=48 color=notice
 
             ft-div name=btnrow display=flex gap=2 justifyContent=center
-                ft-button name=btnSave  Save  accessKey=S onActivate=btnSave_on_activate
-                ft-button name=btnClear Clear accessKey=C onActivate=btnClear_on_activate
-                ft-button name=btnQuit  Quit  accessKey=Q onActivate=btnQuit_on_activate
+                ft-button name=btnSave text=Save accessKey=S onActivate=btnSave_on_activate
+                ft-button name=btnClear text=Clear accessKey=C onActivate=btnClear_on_activate
+                ft-button name=btnQuit text=Quit accessKey=Q onActivate=btnQuit_on_activate
             end_ft_div
         end_ft_frame
     end_ft_form
@@ -96,4 +96,4 @@ btnQuit_on_activate() { ft_quit; }
 ft-form name=app width="$FT_COLS" height="$FT_ROWS" \
         display=flex justifyContent=center alignItems=center
 end_ft_form
-ft-run app _build
+ft_run app _build

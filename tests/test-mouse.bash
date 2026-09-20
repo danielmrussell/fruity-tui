@@ -23,7 +23,7 @@ FT_COLS=60; FT_ROWS=16
 ft-form name=app width=60 height=16 display=flex flexDirection=column gap=1
   ft-textfield name=f1 size=20 value="hello world foo"
   ft-textfield name=f2 size=20 value="second"
-  ft-button    name=b1 OK onActivate=b1_on_activate
+  ft-button name=b1 text=OK onActivate=b1_on_activate
 end_ft_form
 ft_layout app; FT_ROOT=app; FT_FOCUS=f2
 fx=${FT_ABSOLUTE_X[f1]}; fy=${FT_ABSOLUTE_Y[f1]}
@@ -62,11 +62,11 @@ _click 0 m "$bx" "$by"                          # release → activate
 check "release activated the button" "$CLICKED" "1"
 
 note "tree: click a row selects it; click the glyph column toggles the branch"
-ft-empty app
+ft_empty app
 ft-tree name=tr rows=8
-  ft-tree-node "root"  id=root depth=0 expanded=true
-  ft-tree-node "child" id=ch   depth=1
-  ft-tree-node "leaf"  id=lf   depth=0
+  ft-tree-node text="root" id=root depth=0 expanded=true
+  ft-tree-node text="child" id=ch depth=1
+  ft-tree-node text="leaf" id=lf depth=0
 end_ft_tree
 end_ft_form
 ft_layout app; FT_FOCUS=tr
@@ -78,9 +78,9 @@ _click 0 M "$tx" "$ty"                          # row 0, glyph column (depth 0 �
 _ft_tree_gather tr; check "clicking the glyph collapsed root" "${FT_TREE_NODE_EXPANDED[0]}" "0"
 
 note "scroll wheel routes Up/Down to the control under the cursor"
-ft-empty app
+ft_empty app
 ft-tree name=tr2 rows=3
-  for _i in 1 2 3 4 5 6; do ft-tree-node "n$_i" id="k$_i" depth=0; done
+  for _i in 1 2 3 4 5 6; do ft-tree-node text="n$_i" id="k$_i" depth=0; done
 end_ft_tree
 end_ft_form
 ft_layout app; FT_FOCUS=tr2
@@ -92,9 +92,9 @@ ft_resolved_prop tr2 cursor 0; check "wheel down moved the tree cursor" "$FT_RET
 note "a dropdown OPENS on click, and clicking an option in the overlay SELECTS it"
 ft-form name=app2 width=40 height=14 display=flex flexDirection=column
   ft-select name=dd size=1
-    ft-option value=red   "Red"
-    ft-option value=green "Green"
-    ft-option value=blue  "Blue"
+    ft-option value=red text="Red"
+    ft-option value=green text="Green"
+    ft-option value=blue text="Blue"
   end_ft_select
 end_ft_form
 ft_layout app2; FT_ROOT=app2; FT_FOCUS=dd
@@ -136,7 +136,7 @@ note "grabbing a scrollbar DIRECTLY steps into the field — the arrows then scr
 # field `poised`, and the next arrow walked focus off to a neighbour.
 ft_remove app3
 ft-form name=app4 width=40 height=12 display=flex flexDirection=column alignItems=start
-  ft-button    name=g4other "Other"
+  ft-button name=g4other text="Other"
   ft-textfield name=g4ta rows=3 size=20 value=$'l1\nl2\nl3\nl4\nl5\nl6\nl7\nl8'
   ft-textfield name=g4wide rows=2 size=10 wrap=false value="a line far wider than its ten-column box"
 end_ft_form
@@ -175,9 +175,9 @@ note "a LABEL's scrollbar can be grabbed too — and grabbing it steps in the sa
 # A label paints its bar in its own last column, outside any reserved gutter, and nothing handled a
 # press there: pressing the thumb only focused the label, and dragging did nothing at all.
 ft-form name=app5 width=40 height=12 display=flex flexDirection=column alignItems=start
-  ft-button name=g5other "Other"
+  ft-button name=g5other text="Other"
   ft-label  name=g5lab width=20 height=4 text=$'l1\nl2\nl3\nl4\nl5\nl6\nl7\nl8\nl9\nl10\nl11\nl12'
-  ft-label  name=g5fits width=20 "short"
+  ft-label name=g5fits width=20 text="short"
 end_ft_form
 ft_layout app5; FT_ROOT=app5; FT_OUT=""; _ft_redraw_walk app5; FT_OUT=""; ft_focus g5other
 _g5x=$(( ${FT_ABSOLUTE_X[g5lab]} + ${FT_MEASURED_WIDTH[g5lab]} - 1 )); _g5y=${FT_ABSOLUTE_Y[g5lab]}
@@ -248,8 +248,8 @@ note "an INERT control never claims a click it is merely standing in front of"
 # this looked fine — the damage was that the wheel stopped chaining past them and a callout
 # could not be dragged off any cell they covered.
 ft-form name=inert width=40 height=10
-    ft-button    name=inBtn "OK"
-    ft-heading   name=inHd  "Section"
+    ft-button name=inBtn text="OK"
+    ft-heading name=inHd text="Section"
     ft-statusbar name=inSb
     ft-keylegend name=inKl
 end_ft_form
@@ -276,7 +276,7 @@ _wheel_chains() {               # node → yes/no, exactly as the wheel router d
 }
 ft-form name=whl width=50 height=12
     ft-div name=whlPane height=6 overflowY=auto
-        ft-heading name=whlHd "Section"
+        ft-heading name=whlHd text="Section"
         ft-label name=whlBig   width=20 height=3 text=$'l1\nl2\nl3\nl4\nl5\nl6\nl7\nl8'
         ft-label name=whlSmall width=20 height=3 text="fits"
     end_ft_div

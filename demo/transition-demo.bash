@@ -11,8 +11,8 @@
 #
 #  THE ENTIRE APPLICATION SURFACE IS THIS:
 #
-#      ft-modify notice display=block      # it transitions in
-#      ft-modify notice display=none       # it goes away, and the ground repairs itself
+#      ft_set notice display=block      # it transitions in
+#      ft_set notice display=none       # it goes away, and the ground repairs itself
 #
 #  Nothing in this file arms a transition, times one, cancels one, or repairs a cell. A
 #  stylesheet says a control transitions, and changing `display` makes it happen — which is
@@ -67,7 +67,7 @@ ft_stylesheet name=transition-demo style='
 
 ft-form name=app width="$FT_COLS" height="$FT_ROWS" \
         key='[Qq]' onKey=ft_quit key='[Rr]' onKey=replay_all key='[Ss]' onKey=switch_schedule \
-               1=replay_one 2=replay_two 3=replay_three 4=replay_four
+        key=1 onKey=replay_one key=2 onKey=replay_two key=3 onKey=replay_three key=4 onKey=replay_four
     ft-frame name=page position=absolute left=1 top=0 \
              width=$(( FT_COLS - 2 )) height=$(( FT_ROWS - 3 )) \
              title='Share \\mago\archive' display=flex flexDirection=column gap=1
@@ -103,14 +103,14 @@ ft-form name=app width="$FT_COLS" height="$FT_ROWS" \
 end_ft_form
 
 
-# SHOWING AND HIDING IS THE WHOLE OF IT. Two ft-modify calls: one puts the notices back, one
+# SHOWING AND HIDING IS THE WHOLE OF IT. Two ft_set calls: one puts the notices back, one
 # takes them away. Nothing here arms a transition, times one, cancels one, or repairs a cell —
 # the stylesheet said `transition:`, so changing `display` is the entire application surface,
 # exactly as it is in a browser.
 _replay() {                     # names…
     local n
-    for n in "$@"; do ft-modify "$n" display=none;  done
-    for n in "$@"; do ft-modify "$n" display=block; done
+    for n in "$@"; do ft_set "$n" display=none;  done
+    for n in "$@"; do ft_set "$n" display=block; done
 }
 
 replay_all()   { _replay early snappy slow punch; }
@@ -130,7 +130,7 @@ switch_schedule() {
 _status() {
     local depth=truecolor
     ft_transition_supported || depth="256 — expect BANDING, not a melt"
-    ft-modify bar status="schedule: $SCHEDULE · $depth · R replay · 1 2 3 4 one · S schedule · T type · Q quit"
+    ft_set bar status="schedule: $SCHEDULE · $depth · R replay · 1 2 3 4 one · S schedule · T type · Q quit"
 }
 
 app_on_type() { ft_focus entry; ft_dispatch_event Enter; }
@@ -142,4 +142,4 @@ _fallback() {
         t|T) app_on_type ;;
     esac
 }
-ft-run app _setup "" _fallback
+ft_run app _setup "" _fallback

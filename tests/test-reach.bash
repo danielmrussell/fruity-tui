@@ -28,11 +28,11 @@ on_last()   { FIRED+="last ";   }
 
 build() {
     ft-form name=ap width=70 height=12
-        ft-button name=first  "First"  accessKey=F onActivate=on_first
-        ft-button name=off    "Off"    accessKey=O onActivate=on_off    disabled=true
-        ft-button name=gone   "Gone"   accessKey=G onActivate=on_gone   display=none
-        ft-button name=unseen "Unseen" accessKey=U onActivate=on_unseen visibility=hidden
-        ft-button name=last   "Last"   accessKey=L onActivate=on_last
+        ft-button name=first text="First" accessKey=F onActivate=on_first
+        ft-button name=off text="Off" accessKey=O onActivate=on_off disabled=true
+        ft-button name=gone text="Gone" accessKey=G onActivate=on_gone display=none
+        ft-button name=unseen text="Unseen" accessKey=U onActivate=on_unseen visibility=hidden
+        ft-button name=last text="Last" accessKey=L onActivate=on_last
     end_ft_form
     ft_layout ap; FT_ROOT=ap; ft_focus first
 }
@@ -87,7 +87,7 @@ note "taking the FOCUSED control out of service moves focus off it"
 for how in "display=none" "visibility=hidden" "disabled=true"; do
     ft_remove ap; build
     ft_focus first
-    ft-modify first $how
+    ft_set first $how
     ft_layout ap
     check "$how while focused → focus moved away" "$FT_FOCUS" "last"
     FIRED=""; ft_dispatch_event ENTER >/dev/null 2>&1
@@ -102,14 +102,14 @@ note "a control added AFTER the form was built joins the ring, in its tree posit
 # added into a container in the middle lands in the middle, not at the end.
 ft_remove ap 2>/dev/null
 ft-form name=rt width=70 height=12
-    ft-button name=alpha "Alpha" onActivate=on_first
+    ft-button name=alpha text="Alpha" onActivate=on_first
     ft-div    name=slot
     end_ft_div
-    ft-button name=omega "Omega" onActivate=on_last
+    ft-button name=omega text="Omega" onActivate=on_last
 end_ft_form
 ft_layout rt; FT_ROOT=rt; ft_focus alpha
 check "the ring starts with the declared two" "${FT_FOCUS_RING[*]}" "alpha omega"
-ft-button name=middle "Middle" accessKey=M onActivate=on_gone parent=slot
+ft-button name=middle text="Middle" accessKey=M onActivate=on_gone parent=slot
 ft_layout rt
 ft_refresh >/dev/null 2>&1
 check "the new control joined the ring"       "${FT_FOCUS_RING[*]}" "alpha middle omega"
@@ -135,7 +135,7 @@ _dead_build() {
     ft_remove dap 2>/dev/null
     ft-form name=dap width=70 height=12
         ft-textfield name=ghost size=20 value="x" border=true
-        ft-button    name=alive "Keep"
+        ft-button name=alive text="Keep"
     end_ft_form
     ft_layout dap; FT_ROOT=dap; ft_focus alive
     ft_remove ghost                      # `ghost` is now a name with no type
@@ -149,7 +149,7 @@ _dead_probe() {                 # label command…
 _dead_probe "_ft_setprop (a plain property)"  _ft_setprop ghost color 42
 _dead_probe "_ft_setprop runlevel"            _ft_setprop ghost runlevel active
 _dead_probe "_ft_setprop value"               _ft_setprop ghost value v
-_dead_probe "ft-modify"                       ft-modify ghost text=hi
+_dead_probe "ft_set"                       ft_set ghost text=hi
 _dead_probe "ft_draw_one"                     ft_draw_one ghost
 _dead_probe "_ft_resolve_draw"                _ft_resolve_draw ghost
 _dead_probe "ft_dirty"                        ft_dirty ghost
@@ -181,8 +181,8 @@ note "a control removed BETWEEN the press and the release"
 # array with "", which bash reports on stderr — the alt screen.
 ft_remove ap 2>/dev/null
 ft-form name=mp width=70 height=10
-    ft-button name=doomed  "Doomed" onActivate=on_gone
-    ft-button name=bystander "Other" onActivate=on_last
+    ft-button name=doomed text="Doomed" onActivate=on_gone
+    ft-button name=bystander text="Other" onActivate=on_last
 end_ft_form
 ft_layout mp; FT_ROOT=mp; ft_focus bystander
 FT_MOUSE_BUTTON=0; FT_MOUSE_X=$(( ${FT_ABSOLUTE_X[doomed]} + 1 )); FT_MOUSE_Y=$(( ${FT_ABSOLUTE_Y[doomed]} + 1 ))
@@ -234,15 +234,15 @@ _snap() { printf 'root=%s focus=%s idx=%s coal=%s ring=[%s]' \
 _mk_app() {
     ft_remove mapp 2>/dev/null
     ft-form name=mapp width=70 height=12
-        ft-button name=m1 "One"
-        ft-button name=m2 "Two"
-        ft-button name=m3 "Three"
+        ft-button name=m1 text="One"
+        ft-button name=m2 text="Two"
+        ft-button name=m3 text="Three"
     end_ft_form
     ft_layout mapp; FT_ROOT=mapp; ft_focus_ring_build mapp; ft_focus m2
 }
 _mk_dlg() {                     # name
     ft-form name="$1" width=40 height=6
-        ft-button name="${1}_ok" "OK"
+        ft-button name="${1}_ok" text="OK"
     end_ft_form
     ft_layout "$1"; FT_ROOT=$1; ft_focus_ring_build "$1"
 }
@@ -272,7 +272,7 @@ check "…and Tab never lands on it"          "$_r" "m2 m1 "
 
 _mk_app
 ft_modal_push; _mk_dlg md3
-ft-button name=m4 "Four" parent=mapp           # …and one it ADDED
+ft-button name=m4 text="Four" parent=mapp # …and one it ADDED
 ft_remove md3; ft_modal_pop
 ft_layout mapp
 check "a control the dialog ADDED is reachable" "${FT_FOCUS_RING[*]}" "m1 m2 m3 m4"

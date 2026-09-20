@@ -71,15 +71,15 @@ no() { # desc cmd args...
 }
 
 # settle — DO WHAT THE RUN LOOP DOES AT THE END OF A BURST, for a gate that drives an app's
-# handlers directly instead of through ft-run.
+# handlers directly instead of through ft_run.
 #
-# A demo handler does not paint: it changes properties, and `ft-run` settles the burst once
+# A demo handler does not paint: it changes properties, and `ft_run` settles the burst once
 # (ft_reflow_flush, then ft_redraw_dirty) when the input drains. A gate that calls `_goto_step`
 # by hand skips that, so nothing repaints and the gate reads a stale screen. Six demos used to
 # carry a trailing `ft_redraw_dirty` for this — app code existing to satisfy the harness, and
-# a NO-OP under ft-run at that, since ft_redraw_dirty returns immediately while FT_COALESCING
+# a NO-OP under ft_run at that, since ft_redraw_dirty returns immediately while FT_COALESCING
 # is set. The scaffolding belongs here, where the harness can ask for a paint, not in an app.
-# It mirrors ft-run's settle EXACTLY, including the deferred branch — `ft_refresh` does not
+# It mirrors ft_run's settle EXACTLY, including the deferred branch — `ft_refresh` does not
 # paint, it sets FT_DEFER_ROOT and lets the loop lay out and redraw once at the end of the
 # burst. A settle that only called ft_redraw_dirty would leave a demo that ends in ft_refresh
 # (every _show_page does) unpainted, which is a different stale screen for the same reason.

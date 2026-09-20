@@ -7,7 +7,7 @@
 #
 #      ft-statusbar name=bar status="Ready."
 #
-#  Update it live:  ft-modify bar status="Deleting report.txt…"
+#  Update it live:  ft_set bar status="Deleting report.txt…"
 #
 #  It used to be a TWO-row control that also drew the key legend. The legend is now
 #  its own control (controls/ft-keylegend.bash) so a handler updating the status can
