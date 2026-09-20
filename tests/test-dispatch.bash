@@ -209,16 +209,25 @@ rm -f "$marker" X
 check "a control named after a real command does not run it" \
       "$([[ -e "$XDG_STATE_HOME/X" ]] && echo RAN || echo no)" "no"
 
-note "…and a GLOB, which was expanded against the current directory"
-ft-keymap ka_glob; ft-keymap-set ka_glob X 'ka_args *'
-_ka_build ka_glob
+# An action is CODE now, so a glob IS a glob — the same bargain as an onclick= attribute,
+# and the opposite of the old rule (an action was a word list, so globbing was switched off
+# to keep `fn *` from handing a handler the caller's directory listing). The contract is
+# only honest if BOTH halves hold, so both are asserted: unquoted expands, quoted does not.
+note "a glob in an action is a glob, and quoting it makes it literal"
 mkdir -p "$XDG_STATE_HOME/globdir"; : > "$XDG_STATE_HOME/globdir/aaa"; : > "$XDG_STATE_HOME/globdir/bbb"
-( cd "$XDG_STATE_HOME/globdir" && ft_dispatch_event X >/dev/null 2>&1 )
-# Same directory, run again inside the test's own process so KA_ARGS survives.
+ft_keymap ka_glob; ft_keymap_set ka_glob key=X keyCode='ka_args * "$this" "$key"'
+_ka_build ka_glob
 pushd "$XDG_STATE_HOME/globdir" >/dev/null
 ft_dispatch_event X >/dev/null 2>&1
 popd >/dev/null
-check "the argument stays an asterisk, not the directory listing" "$KA_ARGS" "* kabtn X"
+check "unquoted, it expands where the handler runs" "$KA_ARGS" "aaa bbb kabtn X"
+
+ft_keymap ka_glob_q; ft_keymap_set ka_glob_q key=X keyCode='ka_args "*" "$this" "$key"'
+_ka_build ka_glob_q
+pushd "$XDG_STATE_HOME/globdir" >/dev/null
+ft_dispatch_event X >/dev/null 2>&1
+popd >/dev/null
+check "quoted, it stays one asterisk" "$KA_ARGS" "* kabtn X"
 
 note "…while ft-bindkeys catches the typo that made an empty action in the first place"
 err=$( ft-bindkeys ka_bk X 2>&1 )

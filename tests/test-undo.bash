@@ -73,9 +73,11 @@ _kt() { FT_KTOK=""; printf '%b' "$1" | { _ft_decode_key 0; printf '%s' "$FT_KTOK
 check "0x1f decodes to CTRL+/" "$(_kt '\x1f')" "CTRL+/"
 
 note "the edit + idle keymaps bind undo/redo"
+# An action is CODE, so this reads what the code CALLS — `ft_textfield_undo` and
+# `ft_textfield_undo $this` are the same answer to "what is Ctrl+/ bound to".
 _binding() { local -n L="_fti_${1}__list"; local e p a; for e in "${L[@]}"; do
     p=${e%%$'\t'*}; a=${e#*$'\t'}; a=${a%%$'\t'*}
-    [[ "$p" == "$2" ]] && { printf '%s' "$a"; return; }; done; }
+    [[ "$p" == "$2" ]] && { printf '%s' "${a%%[ 	]*}"; return; }; done; }
 check "edit keymap: Ctrl+/ → undo" "$(_binding ft_keymap_textfield 'CTRL+/')" "ft_textfield_undo"
 check "edit keymap: Ctrl+R → redo" "$(_binding ft_keymap_textfield 'CTRL+r')" "ft_textfield_redo"
 check "idle keymap: Ctrl+/ → undo" "$(_binding ft_keymap_textfield_idle 'CTRL+/')" "ft_textfield_undo"

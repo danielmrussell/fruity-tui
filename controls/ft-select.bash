@@ -339,9 +339,8 @@ ft_select_open() {
                                                           # cursor must START on the
                                                           # currently-selected option.
     ft-modify "$name" open=true cursor="$sel" scroll=0
-    local km="${FT_KEYMAP[$name]}"
-    [[ -z "$km" ]] && { km="${name}__km"; FT_KEYMAP[$name]="$km"; ft-keymap "$km"; }
-    ft-keymap-set "$km" ESC ft_select_close
+    _ft_keymap_of "$name"
+    ft-keymap-set "$FT_RET" ESC ft_select_close
     # The dropdown is an OVERLAY: mark one open and suspend the keycap pulse right away, so
     # the status bar's animation stops repainting over the list (which caused it to glitch).
     (( FT_OVERLAY_DEPTH++ )); declare -F _ft_kcpulse_disarm >/dev/null && _ft_kcpulse_disarm

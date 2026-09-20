@@ -1513,21 +1513,27 @@ _ft_is_assignment() {           # 0 iff "$1" is a property assignment, not conte
 _ft_apply_args() {              # name args...
     local name=$1; shift
     local inkeymap=0 arg key val
+    local -a _kf=()
     for arg in "$@"; do
         if [[ "$inkeymap" == 0 && "$arg" == keymap ]]; then inkeymap=1; continue; fi
         if (( inkeymap )); then
             key="${arg%%=*}"; val="${arg#*=}"
-            local km="${FT_KEYMAP[$name]}"
-            [[ -z "$km" ]] && { km="${name}__km"; FT_KEYMAP[$name]="$km"; ft-keymap "$km"; }
-            ft-keymap-set "$km" "$key" "$val"
+            _ft_keymap_of "$name"
+            ft-keymap-set "$FT_RET" "$key" "$val"
             continue
         fi
+        # KEY FIELDS are not properties — a control binds many keys and the property store
+        # holds one value per name — so they are collected here and folded into this
+        # control's own keymap (its instance overlay) once the arguments are read.
+        case $arg in key=*|keyCap=*|keyImp=*|keyCode=*) _kf+=("$arg"); continue ;; esac
         if _ft_is_assignment "$arg"; then
             _ft_setprop "$name" "${arg%%=*}" "${arg#*=}"
         else
             _ft_setprop "$name" "$_FT_TEXTPROP" "$arg"    # bare content, like text between HTML tags
         fi
     done
+    (( ${#_kf[@]} )) && { _ft_keymap_of "$name"; _ft_keyfields "$FT_RET" "${_kf[@]}"; }
+
 }
 
 # ── Prototype system ─────────────────────────────────────────────────────────
@@ -1732,7 +1738,7 @@ _ft_prototype_resolve_value() {     # key value → FT_RET
     # mattered — which keymap am I? — was buried under twenty binding lines.
     if [[ "$key" == keymap && -n "$val" ]]; then
         local definer=_ft_define_keymap_${val#ft_keymap_}
-        if declare -F "$definer" >/dev/null 2>&1 && ft_keymap_once "$val"; then "$definer"; fi
+        if declare -F "$definer" >/dev/null 2>&1 && _ft_keymap_declare_once "$val"; then "$definer"; fi
     fi
     return 0
 }
@@ -2022,6 +2028,14 @@ ft_prototype_init() {               # type
 
 # ── Nesting DSL ──────────────────────────────────────────────────────────────
 declare -a FT_NEST_STACK=()
+# _ft_keymap_of NAME → FT_RET: NAME's OWN keymap — its instance overlay, the highest-precedence
+# layer — created on first use. Four places built this by hand from the same three lines, which
+# is three chances for one of them to compose the storage name differently.
+_ft_keymap_of() {               # name → FT_RET (keymap name)
+    FT_RET=${FT_KEYMAP[$1]:-}
+    [[ -n "$FT_RET" ]] && return 0
+    FT_RET="${1}__km"; FT_KEYMAP[$1]=$FT_RET; _ft_keymap_declare "$FT_RET"
+}
 declare -A FT_PENDING_FOCUS=() FT_ACCEL_FORM=() FT_ACCEL_LIST=()
 
 # ── An accelerator is REGISTERED, not just declared ──────────────────────────
@@ -2067,13 +2081,16 @@ _ft_accel_register() {          # name — bind NAME's accelerators from its cur
     _ft_enclosing_form_of "$name"
     [[ -n "$FT_RET" ]] || return 0
     local form=$FT_RET
-    local km="${FT_KEYMAP[$form]}"
-    [[ -z "$km" ]] && { km="${form}__km"; FT_KEYMAP[$form]="$km"; ft-keymap "$km"; }
+    _ft_keymap_of "$form"; local km=$FT_RET
     for ac in $letters; do
         ac=${ac^^}
         local akey="${form}"$'\x1f'"${ac}"
         FT_ACCEL_LIST[$akey]="${FT_ACCEL_LIST[$akey]:-}${FT_ACCEL_LIST[$akey]:+ }$name"
-        ft-keymap-set "$km" "[${ac}${ac,,}]" "_ft_accel_dispatch $form $ac"
+        # Written in the key-field grammar, so the stored CODE is exactly the string the
+        # legend and ft_accesskey_conflicts compare against — they used to match a literal
+        # they each spelled out, and a change to how a binding is stored broke both readers
+        # at once while the accelerator itself went on working.
+        ft_keymap_set "$km" key="[${ac}${ac,,}]" keyCode="_ft_accel_dispatch $form $ac"
     done
     FT_ACCEL_FORM[$name]=$form
     return 0
@@ -2556,6 +2573,7 @@ _ft_prop_owed_pay() {           # name — settle what _ft_prop_owed recorded
 ft-modify() {                   # name args...
     local name=$1; shift
     local inkeymap=0 arg key val rejected=0
+    local -a _kf=()
     local _ft_owed="" _ft_owed_keys=""
     # A control removed by an earlier handler has NO TYPE, and ${ASSOC[""]} is a bash error
     # on stderr — the alt screen, in a TUI. Read the type first, subscript with it.
@@ -2565,11 +2583,14 @@ ft-modify() {                   # name args...
         if [[ "$inkeymap" == 0 && "$arg" == keymap ]]; then inkeymap=1; continue; fi
         if (( inkeymap )); then
             key="${arg%%=*}"; val="${arg#*=}"
-            local km="${FT_KEYMAP[$name]}"
-            [[ -z "$km" ]] && { km="${name}__km"; FT_KEYMAP[$name]="$km"; ft-keymap "$km"; }
-            ft-keymap-set "$km" "$key" "$val"
+            _ft_keymap_of "$name"
+            ft-keymap-set "$FT_RET" "$key" "$val"
             continue
         fi
+        # KEY FIELDS are not properties — a control binds many keys and the property store
+        # holds one value per name — so they are collected here and folded into this
+        # control's own keymap (its instance overlay) once the arguments are read.
+        case $arg in key=*|keyCap=*|keyImp=*|keyCode=*) _kf+=("$arg"); continue ;; esac
         _ft_is_assignment "$arg" || arg="$textprop=$arg"   # bare arg = content
         key="${arg%%=*}"; val="${arg#*=}"
         _ft_get_raw "$name" "$key"
@@ -2580,6 +2601,7 @@ ft-modify() {                   # name args...
         _ft_setprop "$name" "$key" "$val" || { rejected=1; continue; }
         _ft_prop_owed "$name" "$key" || rejected=1
     done
+    (( ${#_kf[@]} )) && { _ft_keymap_of "$name"; _ft_keyfields "$FT_RET" "${_kf[@]}"; }
     _ft_prop_owed_pay "$name"
     return $rejected
 }
@@ -7739,54 +7761,66 @@ _ft_keymap_layers() {           # name → FT_KEYMAP_LAYERS, in precedence order
     [[ -n "$runlevel" ]] && { _ft_runlevel_keymap_of "$name" "$runlevel"; _rlkm=$FT_RET; }
     # `${type:+…}` so the prototype-keyed subscripts are never evaluated when the type is
     # EMPTY — `FT_PROTO_KEYMAP[]` is a "bad array subscript", not an empty lookup.
-    FT_KEYMAP_LAYERS=("${FT_KEYMAP[$name]:-}" "$refkm"
-                      "$_rlkm"
-                      "${type:+${FT_PROTO_KEYMAP[$type]:-}}")
+    # `keymap=` is a LIST, like `class=`: `keymap="nav editing"`, LAST WINS, so the names are
+    # pushed in reverse. One shared map was never quite enough — a control that wants the app's
+    # navigation keys AND a screen's shortcuts had to have one map that mentioned both, which
+    # made the map about the control rather than about the behaviour.
+    FT_KEYMAP_LAYERS=("${FT_KEYMAP[$name]:-}")
+    local _r; for _r in $refkm; do FT_KEYMAP_LAYERS=("${FT_KEYMAP_LAYERS[0]}" "$_r" "${FT_KEYMAP_LAYERS[@]:1}"); done
+    FT_KEYMAP_LAYERS+=("$_rlkm" "${type:+${FT_PROTO_KEYMAP[$type]:-}}")
 }
 declare -a FT_KEYMAP_LAYERS=()
 
-# _ft_run_action ACTION NAME TOKEN — invoke ONE binding's action. Returns 0 if the key was
-# CLAIMED, 1 to keep it bubbling. Both dispatch paths go through here; they used to expand
-# and invoke the action inline, separately, and had four faults each:
+# _ft_run_action CODE NAME TOKEN — run ONE binding's action. Returns 0 if the key was
+# CLAIMED, 1 to keep it bubbling. Both dispatch paths go through here.
 #
-#   · The reserved words the keymap docs promise — `bubble` and `drop` — were not
-#     implemented at all. `ft-keymap-set map X bubble` wrote "bubble: command not found"
-#     onto the alt screen and then SWALLOWED the key, the exact opposite of what it says.
+# AN ACTION IS CODE, evaluated with `$this` (the control it was dispatched to) and `$key`
+# (the token) in scope — the bargain HTML's onclick= makes. It used to be a FUNCTION NAME,
+# invoked as `fn "$name" "$tok"` with those two arguments appended silently. The author's
+# objection to reading that back was exact: "A bare word should not be a function name.
+# Where are your arguments???" The convention also priced every key at one named function,
+# which is how this framework arrived at 341 public functions with 106 of them existing
+# only to be the right-hand side of a binding. `key=ENTER keyCode='ft_activate $this'` says
+# what happens and what it happens to, and a two-line action no longer needs a name at all.
+#
+# Four faults this function was written to fix, all still fixed:
+#   · `bubble` and `drop` — the reserved words the docs promise — were not implemented at
+#     all, so `bubble` wrote "bubble: command not found" onto the alt screen and then
+#     SWALLOWED the key, the exact opposite of what it says.
 #   · An action naming a function that does not exist (a typo, a handler removed by a
 #     rebuild) reached a command position, so bash announced it on the alt screen — and
 #     dispatch still returned "handled", so the key died there instead of bubbling.
-#   · An EMPTY action — `ft-keymap-set map X` with the argument left off, or `ft-bindkeys
-#     map X` with the `=` left out — left no words at all, and the invocation `"${words[@]}"
-#     "$name" "$tok"` then made the CONTROL'S OWN NAME the command. Names are identifiers,
-#     so a control called `rm` or `clear` ran rm or clear, with the key token as its
-#     argument. Both are now refused before anything runs.
-#   · The word split was unquoted, so an action was GLOBBED against the current directory:
-#     `fn *` passed the caller's file listing instead of an asterisk.
+#   · An EMPTY action left no words at all, and the invocation `"${words[@]}" "$name"
+#     "$tok"` then made the CONTROL'S OWN NAME the command. Names are identifiers, so a
+#     control called `rm` or `clear` ran rm or clear, with the key token as its argument.
+#   · The word split was unquoted, so an action was GLOBBED against the current directory.
+#     Under eval that one is no longer a fault but a feature of writing code: `fn *` is a
+#     glob because you wrote a glob.
 #
-# The predicate — an action must BE a defined function — is the one _ft_hook has always
-# applied to listeners. That path was correct; this one simply never borrowed it.
+# The unresolved-action guard survives the move to code, because a typo'd handler is still
+# the common failure and stderr in a TUI is the screen the user is looking at. It applies
+# where it can be applied honestly: when the code's FIRST WORD is a plain command word, it
+# must name something callable. Code that starts with an assignment, a keyword, a
+# subshell or an expansion is left to bash.
 FT_UNRESOLVED_ACTIONS=()        # deduped "control action" pairs — see ft_unresolved_actions
-_ft_run_action() {              # action name token
-    local act=$1 name=$2 tok=$3
-    case "$act" in
-        ''|-)   return 1 ;;                     # nothing bound here — keep looking
+_ft_run_action() {              # code name token
+    local _code=$1 _name=$2 _tok=$3
+    case "$_code" in
+        '')     return 1 ;;                     # legend-only cap — advertised, not bound
         bubble) return 1 ;;                     # documented: decline, let an ancestor have it
         drop)   return 0 ;;                     # documented: swallow it here
     esac
-    local -a words
-    local _glob=$-; set -f                      # an action is authored text, not a pattern
-    words=($act)
-    [[ "$_glob" == *f* ]] || set +f
-    if ! declare -F "${words[0]}" >/dev/null 2>&1; then
-        # Recorded rather than printed: stderr in a TUI is the screen the user is looking
-        # at, and this fires on every press of the key. ft_unresolved_actions reports them.
-        local _pair="$name ${words[0]}" _seen
+    local _first=${_code%%[ 	]*}
+    if [[ "$_first" =~ ^[A-Za-z_][A-Za-z0-9_-]*$ ]] && ! type -t "$_first" >/dev/null 2>&1; then
+        # Recorded rather than printed: this fires on every press of the key.
+        local _pair="$_name $_first" _seen
         for _seen in "${FT_UNRESOLVED_ACTIONS[@]}"; do [[ "$_seen" == "$_pair" ]] && return 1; done
         FT_UNRESOLVED_ACTIONS+=("$_pair")
         return 1                                # unhandled → bubble; never claim a key we dropped
     fi
     FT_KEY_BUBBLE=0
-    "${words[@]}" "$name" "$tok"
+    local this=$_name key=$_tok
+    eval "$_code"
     (( FT_KEY_BUBBLE )) && return 1             # handler declined → let it bubble to the parent
     return 0
 }
@@ -7972,7 +8006,11 @@ _ft_enter_reaches_delve() {     # name
     for km in "${FT_KEYMAP_LAYERS[@]}"; do
         [[ -n "$km" ]] || continue
         if _ft_keymap_lookup "$km" ENTER; then
-            [[ "$FT_RET" == ft_key_delve ]]; return
+            # An action is CODE, so ask what it CALLS rather than comparing the whole string:
+            # `ft_key_delve` and `ft_key_delve $this` are the same answer to "does Enter go
+            # deeper here?", and a legend that matched one literal spelling silently stopped
+            # saying Leave the moment the binding was written the other way.
+            [[ "${FT_RET%%[ 	]*}" == ft_key_delve ]]; return
         fi
     done
     return 1

@@ -66,15 +66,17 @@ vis=$(printf '%s' "$FT_OUT" | _vis | tr -s ' ')
 FT_MODE_HINT=""
 
 # ── Derived, importance-sorted legend ────────────────────────────────────────
-note "ft-keymap-cap carries importance+label but dispatch still resolves only the ACTION"
-ft-keymap kmt
-ft-keymap-cap kmt UP   act_up   200 "Scroll up"
-ft-keymap-cap kmt PGUP act_pgup 120 "Page up"
-ft-keymap-cap kmt TAB  -         90 "Next field"   # legend-only: shown but not a binding
-_ft_keymap_lookup kmt UP;  check "keycap dispatch reads the action" "$FT_RET" "act_up"
+note "a cap carries importance+label but dispatch still resolves only the CODE"
+ft_keymap kmt
+ft_keymap_set kmt key=UP   keyCap="Scroll up"  keyImp=200 keyCode='act_up $this' \
+                  key=PGUP keyCap="Page up"    keyImp=120 keyCode='act_pgup $this' \
+                  key=TAB  keyCap="Next field" keyImp=90
+                  # TAB is legend-only — a cap with no code: advertised here, handled by
+                  # whoever really owns it (engine Tab traversal), so it must not dispatch.
+_ft_keymap_lookup kmt UP;  check "keycap dispatch reads the action" "$FT_RET" 'act_up $this'
 FT_RET=SENTINEL
-_ft_keymap_lookup kmt TAB && check "a legend-only (-) cap does NOT match dispatch" 0 1 \
-                                || check "a legend-only (-) cap does NOT match dispatch" 1 1
+_ft_keymap_lookup kmt TAB && check "a legend-only cap does NOT match dispatch" 0 1 \
+                                || check "a legend-only cap does NOT match dispatch" 1 1
 check "...and leaves the lookup result untouched (bubbles)" "$FT_RET" "SENTINEL"
 
 note "_ft_caps_sort orders by importance DESC and is stable on ties"

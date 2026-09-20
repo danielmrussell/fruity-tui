@@ -41,7 +41,7 @@ end_ft_form
 ft_layout app; FT_ROOT=app; FT_FOCUS=tf
 
 note "Esc at the form level is a deliberate NO-OP (the command menu is gone)"
-if _ft_keymap_lookup ft_keymap_form ESC; then check "form still binds Esc → ft_esc_action" "$FT_RET" "ft_esc_action"
+if _ft_keymap_lookup ft_keymap_form ESC; then check "form still binds Esc → ft_esc_action" "${FT_RET%%[ 	]*}" "ft_esc_action"
 else check "form binds Esc" "missing" "ft_esc_action"; fi
 
 # The retired menu is GONE, not stubbed: if anything ever re-introduces a menu call on

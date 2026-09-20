@@ -80,12 +80,12 @@ check "…and creates no unprefixed global"       "${dup_rows+set}" ""
 note "the engine's per-control SIDE TABLES are namespaced too (_fti_*)"
 # Same hazard, different variables: the wrap/extent caches, table cells, tab signatures and
 # keymap lists are all per-control arrays living in the global namespace.
-ft-keymap kmns
-ft-keymap-set kmns UP act_up
+ft_keymap kmns
+ft_keymap_set kmns key=UP keyCode='act_up $this'
 check "a keymap list lives under _fti_*"      "${_fti_kmns__list+set}" "set"
 check "…and not under the bare name"          "${kmns__list+set}"      ""
 _ft_keymap_lookup kmns UP
-check "lookup takes the keymap NAME, not the array" "$FT_RET" "act_up"
+check "lookup takes the keymap NAME, not the array" "$FT_RET" 'act_up $this'
 
 ft-label name=wrapped parent=app text="a fairly long piece of prose that must wrap somewhere"
 ft_wrap_cached wrapped "a fairly long piece of prose that must wrap somewhere" 12
