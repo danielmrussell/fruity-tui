@@ -168,4 +168,39 @@ FT_ANIM_PHASE[__ft_kcpulse]=7; _ft_kcpulse_arm   # idempotent: must NOT reset th
 check "re-arm does not reset the phase" "${FT_ANIM_PHASE[__ft_kcpulse]}" "7"
 _ft_kcpulse_disarm; [[ -z "${FT_ANIM_PHASE[__ft_kcpulse]:-}" ]] && check "disarm stops it" 1 1 || check "disarm stops it" 0 1
 
+
+# ── A legend that goes stale is a legend that lies ──────────────────────────
+# `keys=auto` is DERIVED from the focused control, so every transition that changes what the
+# control can do has to mark it dirty. _ft_legend_dirty was called on focus changes, runlevel
+# changes and the textfield's state — and NOT when the KEYS THEMSELVES change, which was fair
+# enough while a binding could only be written before the app ran. `ft-modify btn key=…` and
+# `defaultKeys=` make rebinding an ordinary thing to do at runtime, and the legend went on
+# advertising the keys the control used to have until something else happened to repaint it.
+note "changing a control's keys repaints a derived legend"
+ft-form name=slroot width=80 height=8
+    ft-button name=slbtn "Go"
+    ft-keylegend name=sllegend keys=auto
+end_ft_form
+FT_ROOT=slroot; ft_layout slroot; ft_focus slbtn
+_legend_text() { FT_OUT=""; _ft_draw_keylegend sllegend; printf '%s' "$FT_OUT"; }
+before=$(_legend_text)
+check "the legend starts on the button's own key" \
+      "$(case "$before" in *Activate*) echo yes ;; *) echo "${before:-empty}" ;; esac)" "yes"
+
+FT_DIRTY=(); ft-modify slbtn key=Z keyCap="Zap it" keyImp=crucial keyCode='ft_quit'
+check "binding a key marks the legend dirty"  "${FT_DIRTY[sllegend]:-no}" "1"
+check "…and the new cap is what it draws" \
+      "$(case "$(_legend_text)" in *Zap*) echo yes ;; *) echo missing ;; esac)" "yes"
+
+FT_DIRTY=(); ft-modify slbtn defaultKeys=false
+check "silencing prototype keys marks it dirty" "${FT_DIRTY[sllegend]:-no}" "1"
+check "…and the prototype's cap is gone" \
+      "$(case "$(_legend_text)" in *Activate*) echo still-there ;; *) echo gone ;; esac)" "gone"
+
+FT_DIRTY=(); ft-modify slbtn keymap=kmt
+check "pointing at a shared keymap marks it dirty" "${FT_DIRTY[sllegend]:-no}" "1"
+# The bar advertises ACCELERATORS as well as keys, and they move the same way.
+FT_DIRTY=(); ft-modify slbtn accessKey=g
+check "changing an accessKey marks it dirty"       "${FT_DIRTY[sllegend]:-no}" "1"
+
 summary

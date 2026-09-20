@@ -2432,6 +2432,13 @@ _ft_prop_owed() {               # name key → 1 if the change is refused (the p
     _ft_owed_keys+="$key "
     case "$key" in
         left|top|position) _ft_owed+=" moved" ;;
+        # A `keys=auto` legend is DERIVED from the focused control's keys, so changing which
+        # keys it has must repaint it. _ft_legend_dirty was called on focus, runlevel and the
+        # textfield's own state — every transition that existed when a binding could only be
+        # written before the app ran. Writing keys at RUNTIME is ordinary now (ft-modify takes
+        # key fields, and defaultKeys can silence a prototype), and the legend went on
+        # advertising keys the control no longer had until something else repainted it.
+        keymap|defaultKeys) _ft_legend_dirty ;;
         draw) _ft_get_raw "$name" draw; FT_DRAW[$name]=$FT_RET; _ft_owed+=" paint" ;;
         # `focusable` has a TABLE behind it, exactly as `draw` does, and the ring is built
         # from that table rather than from the property. Writing only the property left
@@ -2462,6 +2469,7 @@ _ft_prop_owed() {               # name key → 1 if the change is refused (the p
         accessKey)
             _ft_accel_unregister "$name"
             _ft_accel_register "$name"
+            _ft_legend_dirty                    # the bar advertises accelerators too
             # `;;&` — DO THE REGISTRATION, THEN LET THE GENERAL RULE DECIDE THE REPAINT.
             # This arm used to end `need_paint=1  # the underline moved`, which is true and
             # not the whole truth: _ft_preferred_width_button, _radio and _multitoggle all
@@ -2601,7 +2609,8 @@ ft-modify() {                   # name args...
         _ft_setprop "$name" "$key" "$val" || { rejected=1; continue; }
         _ft_prop_owed "$name" "$key" || rejected=1
     done
-    (( ${#_kf[@]} )) && { _ft_keymap_of "$name"; _ft_keyfields "$FT_RET" "${_kf[@]}"; }
+    (( ${#_kf[@]} )) && { _ft_keymap_of "$name"; _ft_keyfields "$FT_RET" "${_kf[@]}"
+                          _ft_legend_dirty; }      # same reason as keymap= above
     _ft_prop_owed_pay "$name"
     return $rejected
 }
