@@ -702,7 +702,7 @@ _resize() {
 # budget -- _show_step rebuilds the STAGE's contents, the bar stays put.
 ft-form name=app width="$FT_COLS" height="$FT_ROWS" \
         display=flex flexDirection=column \
-        keymap '[Qq]'=ft_quit
+        key='[Qq]' keyCode=ft_quit
     # overflow=hidden CLIPS an over-tall page to the stage so it can never paint
     # over the bar; minHeight=0 lets the stage actually shrink (a flex item's
     # default min-height is its content, which would otherwise shove the bar off).
@@ -723,11 +723,11 @@ end_ft_form
 # the strip but are handled elsewhere (Tab = focus traversal, Enter/Esc = the focused
 # control, K/B = the OK/Back button accelerators), so declaring them here never shadows
 # that. Q is a real binding (ft_quit) that also carries a label.
-_km_app=${FT_KEYMAP[app]}
-ft-keymap-cap "$_km_app" '[Kk]'   -        150 "Next page"
-ft-keymap-cap "$_km_app" ENTER    -        100 "Edit / activate"
-ft-keymap-cap "$_km_app" TAB      -         90 "Next field"
-ft-keymap-cap "$_km_app" ESC      -         80 "Exit edit"
-ft-keymap-cap "$_km_app" '[Bb]'   -         50 "Back"
-ft-keymap-cap "$_km_app" '[Qq]'   ft_quit   40 "Quit"
+ft-modify app \
+    key='[Kk]' keyCap="Next page" keyImp=150 \
+    key=ENTER keyCap="Edit / activate" keyImp=100 \
+    key=TAB keyCap="Next field" keyImp=90 \
+    key=ESC keyCap="Exit edit" keyImp=80 \
+    key='[Bb]' keyCap="Back" keyImp=50 \
+    key='[Qq]' keyCap="Quit" keyImp=40 keyCode=ft_quit
 ft-run app _show_step _resize "" _show_step

@@ -58,7 +58,7 @@ _emit_buttons() {               # spec...
     done
 }
 
-ft-form name=app width="$FT_COLS" height="$FT_ROWS" keymap '[Qq]'=ft_quit
+ft-form name=app width="$FT_COLS" height="$FT_ROWS" key='[Qq]' keyCode=ft_quit
     ft-frame name=win position=absolute left=4 top=2 width="$WIDTH" height="$HEIGHT" \
              text="$TITLE" display=flex flexDirection=column gap=1 \
              justifyContent=center alignItems=center

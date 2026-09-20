@@ -978,14 +978,14 @@ _show_page() {
     # our LABELLED versions (same keymap → last registration wins). Backward before forward: the
     # legend sorts stably by importance, so declaring Next first would print it to the LEFT of
     # Prev and read backwards against the very buttons it describes.
-    local km=${FT_KEYMAP[app]}
-    ft-keymap-cap "$km" '<' btnStepPrev_on_activate "$FT_IMPORTANCE_IMPORTANT" "Prev step"
-    ft-keymap-cap "$km" '>' btnStepNext_on_activate "$FT_IMPORTANCE_IMPORTANT" "Next step"
-    ft-keymap-cap "$km" '[Bb]' btnBack_on_activate "$FT_IMPORTANCE_NORMAL" "Back ← page"
-    ft-keymap-cap "$km" '[Kk]' btnOk_on_activate   "$FT_IMPORTANCE_NORMAL" "Okay → next page"
-    ft-keymap-cap "$km" '[Ee]' _cycle_effect "$FT_IMPORTANCE_NORMAL" "effect="
-    ft-keymap-cap "$km" '[Rr]' _reset_drag   "$FT_IMPORTANCE_NORMAL" "un-drag"
-    ft-keymap-cap "$km" '[Qq]' ft_quit 40 "Quit"
+    ft-modify app \
+        key='<' keyCap="Prev step" keyImp=important keyCode=btnStepPrev_on_activate \
+        key='>' keyCap="Next step" keyImp=important keyCode=btnStepNext_on_activate \
+        key='[Bb]' keyCap="Back ← page" keyImp=normal keyCode=btnBack_on_activate \
+        key='[Kk]' keyCap="Okay → next page" keyImp=normal keyCode=btnOk_on_activate \
+        key='[Ee]' keyCap="effect=" keyImp=normal keyCode=_cycle_effect \
+        key='[Rr]' keyCap="un-drag" keyImp=normal keyCode=_reset_drag \
+        key='[Qq]' keyCap="Quit" keyImp=40 keyCode=ft_quit
     ft_refresh
     ft_focus call || ft_focus_first
     _p3_reconcile
@@ -1026,7 +1026,7 @@ _resize() { ft-modify app width="$FT_COLS" height="$FT_ROWS"; _show_page; }
 # ── App scaffold ──────────────────────────────────────────────────────────────
 ft-form name=app width="$FT_COLS" height="$FT_ROWS" \
         display=flex flexDirection=column \
-        keymap '[Qq]'=ft_quit
+        key='[Qq]' keyCode=ft_quit
     # alignItems=stretch, not center: `win` then fills the stage's height, and its own flex
     # column can hand the leftover rows to the demonstration frame instead of overflowing.
     ft-div name=stage flexGrow=1 flexShrink=1 minHeight=0 overflow=hidden \

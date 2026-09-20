@@ -24,7 +24,6 @@
 _FT_RADIO_LOADED=1
 
 ft_prototype_radio() {
-    _ft_define_keymap_activate
     ft_prototype extends=ft_control focusable=true mouse=activate keymap=activate \
         setProp=_ft_radio_setprop \
         defaults="display=inline-block checked=false"

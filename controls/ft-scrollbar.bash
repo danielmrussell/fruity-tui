@@ -51,15 +51,16 @@ _FT_SCROLLBAR_LOADED=1
 _ft_define_keymap_scrollbar() {
     # UP/DOWN carry the labels; LEFT/RIGHT are the same actions for a horizontal bar and
     # stay unlabelled, so the bar shows one "Scroll" pair rather than four rows of the
-    # same thing. That is what the short binding form is FOR.
-    ft-keymap-cap ft_keymap_scrollbar UP   ft_scrollbar_key_prev   crucial   "Scroll up"
-    ft-keymap-cap ft_keymap_scrollbar DOWN ft_scrollbar_key_next   crucial   "Scroll down"
-    ft-keymap-cap ft_keymap_scrollbar PGUP ft_scrollbar_key_pgprev important "Page up"
-    ft-keymap-cap ft_keymap_scrollbar PGDN ft_scrollbar_key_pgnext important "Page down"
-    ft-keymap-cap ft_keymap_scrollbar HOME ft_scrollbar_key_home   normal    "Top"
-    ft-keymap-cap ft_keymap_scrollbar END  ft_scrollbar_key_end    normal    "Bottom"
-    ft-bindkeys ft_keymap_scrollbar \
-        LEFT=ft_scrollbar_key_prev  RIGHT=ft_scrollbar_key_next
+    # same thing. That is what a group with no keyCap= is FOR: bound, not advertised.
+    ft_keymap_set ft_keymap_scrollbar \
+        key=UP    keyCap="Scroll up"   keyImp=crucial   keyCode='ft_scrollbar_key_prev $this' \
+        key=DOWN  keyCap="Scroll down" keyImp=crucial   keyCode='ft_scrollbar_key_next $this' \
+        key=PGUP  keyCap="Page up"     keyImp=important keyCode='ft_scrollbar_key_pgprev $this' \
+        key=PGDN  keyCap="Page down"   keyImp=important keyCode='ft_scrollbar_key_pgnext $this' \
+        key=HOME  keyCap=Top           keyImp=normal    keyCode='ft_scrollbar_key_home $this' \
+        key=END   keyCap=Bottom        keyImp=normal    keyCode='ft_scrollbar_key_end $this' \
+        key=LEFT                                        keyCode='ft_scrollbar_key_prev $this' \
+        key=RIGHT                                       keyCode='ft_scrollbar_key_next $this'
 }
 ft_prototype_scrollbar() {
     ft_prototype extends=ft_control \

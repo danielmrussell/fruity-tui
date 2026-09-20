@@ -31,29 +31,29 @@ _ft_define_keymap_tree() {
     # to focus navigation, so passing THROUGH a tree does not drive its cursor. Enter steps
     # inside. Copy is here too, because copying what you are standing next to needs no
     # permission (and at this rung it takes the WHOLE tree — see ft_tree_copy).
-    ft-bindkeys ft_keymap_tree ENTER=ft_key_delve
-    ft-keymap-cap ft_keymap_tree ENTER ft_key_delve "$FT_IMPORTANCE_CRUCIAL" "Open tree"
+    ft_keymap_set ft_keymap_tree \
+        key=ENTER keyCap="Open tree" keyImp=crucial keyCode='ft_key_delve $this $key'
 
     # THE BROWSING RUNG — one Enter in. NOW the arrows are the tree's, all of them, and they
     # never bubble: once you have stepped into a control, exploring its keys must not be able
     # to throw you out of it. Esc leaves, Tab leaves.
-    ft_keymap_once ft_keymap_tree_browsing
-    ft-bindkeys ft_keymap_tree_browsing \
-        UP=ft_tree_key_up      DOWN=ft_tree_key_down \
-        LEFT=ft_tree_key_left  RIGHT=ft_tree_key_right \
-        HOME=ft_tree_key_home  END=ft_tree_key_end \
-        PGUP=ft_tree_key_pgup  PGDN=ft_tree_key_pgdn \
-        ENTER=ft_tree_key_enter SPACE=ft_tree_key_enter \
-        ESC=ft_key_undelve \
-        CTRL+c=ft_tree_copy    ALT+w=ft_tree_copy
-    ft-keymap-cap ft_keymap_tree_browsing UP    ft_tree_key_up    "$FT_IMPORTANCE_CRUCIAL"   "Up"
-    ft-keymap-cap ft_keymap_tree_browsing DOWN  ft_tree_key_down  "$FT_IMPORTANCE_CRUCIAL"   "Down"
-    # Backward before forward, so the legend reads ◀ Collapse then ▶ Expand — the same order
-    # as the keys themselves on the keyboard.
-    ft-keymap-cap ft_keymap_tree_browsing LEFT  ft_tree_key_left  "$FT_IMPORTANCE_IMPORTANT" "Collapse"
-    ft-keymap-cap ft_keymap_tree_browsing RIGHT ft_tree_key_right "$FT_IMPORTANCE_IMPORTANT" "Expand"
-    ft-keymap-cap ft_keymap_tree_browsing ENTER ft_tree_key_enter "$FT_IMPORTANCE_IMPORTANT" "Open"
-    ft-keymap-cap ft_keymap_tree_browsing ESC   ft_key_undelve    "$FT_IMPORTANCE_IMPORTANT" "Leave"
+    ft-keymap ft_keymap_tree_browsing
+        ft-key key=UP     keyCap="Up"       keyImp=crucial   keyCode='ft_tree_key_up $this'
+        ft-key key=DOWN   keyCap="Down"     keyImp=crucial   keyCode='ft_tree_key_down $this'
+        # Backward before forward, so the legend reads ◀ Collapse then ▶ Expand — the same order
+        # as the keys themselves on the keyboard.
+        ft-key key=LEFT   keyCap="Collapse" keyImp=important keyCode='ft_tree_key_left $this'
+        ft-key key=RIGHT  keyCap="Expand"   keyImp=important keyCode='ft_tree_key_right $this'
+        ft-key key=HOME                                      keyCode='ft_tree_key_home $this'
+        ft-key key=END                                       keyCode='ft_tree_key_end $this'
+        ft-key key=PGUP                                      keyCode='ft_tree_key_pgup $this'
+        ft-key key=PGDN                                      keyCode='ft_tree_key_pgdn $this'
+        ft-key key=ENTER  keyCap="Open"     keyImp=important keyCode='ft_tree_key_enter $this'
+        ft-key key=SPACE                                     keyCode='ft_tree_key_enter $this'
+        ft-key key=CTRL+c                                    keyCode='ft_tree_copy $this'
+        ft-key key=ALT+w                                     keyCode='ft_tree_copy $this'
+        ft-key key=ESC    keyCap="Leave"    keyImp=important keyCode='ft_key_undelve $this'
+    end_ft_keymap
     # COPY IS Ctrl+C, with Alt+W beside it — the pair the text field already uses, and the
     # only two spellings of copy this framework has. Ctrl+C is taken from the tty on purpose
     # (ft_enter_tty's `intr undef`, behind FT_CTRL_C_COPY) and Settings offers it by name, so
@@ -61,8 +61,9 @@ _ft_define_keymap_tree() {
     # on a terminal that never negotiated a keyboard protocol, where the tty still raises
     # SIGINT before Ctrl+C can arrive as a key. Bind both or the key works on some terminals
     # and not others.
-    ft-bindkeys ft_keymap_tree CTRL+c=ft_tree_copy ALT+w=ft_tree_copy
-    ft-keymap-cap ft_keymap_tree CTRL+c ft_tree_copy "$FT_IMPORTANCE_NORMAL" "Copy tree"
+    ft_keymap_set ft_keymap_tree \
+        key=CTRL+c keyCap="Copy tree" keyImp=normal keyCode='ft_tree_copy $this' \
+        key=ALT+w                                   keyCode='ft_tree_copy $this'
 }
 # Copy THE WHOLE TREE, drawn the way it is on screen — indentation and the same ▾/▸ glyphs,
 # so what you paste looks like what you were looking at.

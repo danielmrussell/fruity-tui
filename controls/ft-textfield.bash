@@ -137,49 +137,53 @@ declare -A FT_TEXTFIELD_VBAR=() FT_TEXTFIELD_HBAR=()
 # be read (and changed) side by side. They are defined here, under the name of the one
 # the prototype starts in; the other three are reached through the runlevel ladder.
 _ft_define_keymap_textfield_idle() {
-    ft-bindkeys ft_keymap_textfield \
-        LEFT=ft_textfield_move_left      RIGHT=ft_textfield_move_right \
-        UP=ft_textfield_move_up          DOWN=ft_textfield_move_down \
-        HOME=ft_textfield_move_home      END=ft_textfield_move_end \
-        SHIFT+left=ft_textfield_select_left   SHIFT+right=ft_textfield_select_right \
-        SHIFT+up=ft_textfield_select_up       SHIFT+down=ft_textfield_select_down \
-        SHIFT+home=ft_textfield_select_home   SHIFT+end=ft_textfield_select_end \
-        ENTER=ft_textfield_enter \
-        BACKSPACE=ft_textfield_backspace  DEL=ft_textfield_delete \
-        INS=ft_textfield_toggle_mode SPACE=ft_textfield_space \
-        CTRL+b=ft_textfield_move_left    CTRL+f=ft_textfield_move_right \
-        CTRL+a=ft_textfield_move_home    CTRL+e=ft_textfield_move_end \
-        CTRL+h=ft_textfield_backspace CTRL+d=ft_textfield_delete \
-        CTRL+k=ft_textfield_kill_to_end  CTRL+u=ft_textfield_kill_to_start \
-        CTRL+w=ft_textfield_ctrl_w   ALT+w=ft_textfield_copy   CTRL+c=ft_textfield_ctrl_c   ALT+a=ft_textfield_select_all \
-        CTRL+x=ft_textfield_ctrl_x   CTRL+v=ft_textfield_yank \
-        CTRL+SPACE=ft_textfield_set_mark  CTRL+g=ft_textfield_keyboard_quit \
-        CTRL+y=ft_textfield_yank     ALT+y=ft_textfield_yank_pop \
-        'CTRL+/'=ft_textfield_undo   CTRL+r=ft_textfield_redo \
-        CTRL+z=ft_textfield_undo \
-        PASTE=ft_textfield_paste \
-        ALT+b=ft_textfield_move_word_back  ALT+f=ft_textfield_move_word_fwd  ALT+d=ft_textfield_kill_word_fwd \
-        ALT+left=ft_textfield_move_word_back  ALT+right=ft_textfield_move_word_fwd \
-        SHIFT+ALT+left=ft_textfield_select_word_back  SHIFT+ALT+right=ft_textfield_select_word_fwd \
-        CTRL+home=ft_textfield_move_doc_home  CTRL+end=ft_textfield_move_doc_end \
-        SHIFT+CTRL+home=ft_textfield_select_doc_home  SHIFT+CTRL+end=ft_textfield_select_doc_end \
-        'ALT+<'=ft_textfield_move_doc_home  'ALT+>'=ft_textfield_move_doc_end \
-        PGUP=ft_textfield_pgup  PGDN=ft_textfield_pgdn \
-        TAB=ft_textfield_tab  BTAB=ft_textfield_btab  ESC=ft_textfield_esc \
-        '?'=ft_textfield_insert_char        # catch-all: any single typed character
+    # The EDITING keymap — the map `editing=ft_keymap_textfield` names at the top of this file.
+    # It is a RUNLEVEL map, and it used to be the one map nobody declared: the old positional
+    # binding call brought it into being as a side effect, through a nameref. Declared here now.
+    ft-keymap ft_keymap_textfield
+        ft-key key=LEFT keyCode='ft_textfield_move_left $this'  key=RIGHT keyCode='ft_textfield_move_right $this'
+        ft-key key=UP keyCode='ft_textfield_move_up $this'  key=DOWN keyCode='ft_textfield_move_down $this'
+        ft-key key=HOME keyCode='ft_textfield_move_home $this'  key=END keyCode='ft_textfield_move_end $this'
+        ft-key key=SHIFT+left keyCode='ft_textfield_select_left $this'  key=SHIFT+right keyCode='ft_textfield_select_right $this'
+        ft-key key=SHIFT+up keyCode='ft_textfield_select_up $this'  key=SHIFT+down keyCode='ft_textfield_select_down $this'
+        ft-key key=SHIFT+home keyCode='ft_textfield_select_home $this'  key=SHIFT+end keyCode='ft_textfield_select_end $this'
+        ft-key key=ENTER keyCode='ft_textfield_enter $this'
+        ft-key key=BACKSPACE keyCode='ft_textfield_backspace $this'  key=DEL keyCode='ft_textfield_delete $this'
+        ft-key key=INS keyCode='ft_textfield_toggle_mode $this'  key=SPACE keyCode='ft_textfield_space $this'
+        ft-key key=CTRL+b keyCode='ft_textfield_move_left $this'  key=CTRL+f keyCode='ft_textfield_move_right $this'
+        ft-key key=CTRL+a keyCode='ft_textfield_move_home $this'  key=CTRL+e keyCode='ft_textfield_move_end $this'
+        ft-key key=CTRL+h keyCode='ft_textfield_backspace $this'  key=CTRL+d keyCode='ft_textfield_delete $this'
+        ft-key key=CTRL+k keyCode='ft_textfield_kill_to_end $this'  key=CTRL+u keyCode='ft_textfield_kill_to_start $this'
+        ft-key key=CTRL+w keyCode='ft_textfield_ctrl_w $this'  key=ALT+w keyCode='ft_textfield_copy $this'  key=CTRL+c keyCode='ft_textfield_ctrl_c $this'  key=ALT+a keyCode='ft_textfield_select_all $this'
+        ft-key key=CTRL+x keyCode='ft_textfield_ctrl_x $this'  key=CTRL+v keyCode='ft_textfield_yank $this'
+        ft-key key=CTRL+SPACE keyCode='ft_textfield_set_mark $this'  key=CTRL+g keyCode='ft_textfield_keyboard_quit $this'
+        ft-key key=CTRL+y keyCode='ft_textfield_yank $this'  key=ALT+y keyCode='ft_textfield_yank_pop $this'
+        ft-key key='CTRL+/' keyCode='ft_textfield_undo $this'  key=CTRL+r keyCode='ft_textfield_redo $this'
+        ft-key key=CTRL+z keyCode='ft_textfield_undo $this'
+        ft-key key=PASTE keyCode='ft_textfield_paste $this'
+        ft-key key=ALT+b keyCode='ft_textfield_move_word_back $this'  key=ALT+f keyCode='ft_textfield_move_word_fwd $this'  key=ALT+d keyCode='ft_textfield_kill_word_fwd $this'
+        ft-key key=ALT+left keyCode='ft_textfield_move_word_back $this'  key=ALT+right keyCode='ft_textfield_move_word_fwd $this'
+        ft-key key=SHIFT+ALT+left keyCode='ft_textfield_select_word_back $this'  key=SHIFT+ALT+right keyCode='ft_textfield_select_word_fwd $this'
+        ft-key key=CTRL+home keyCode='ft_textfield_move_doc_home $this'  key=CTRL+end keyCode='ft_textfield_move_doc_end $this'
+        ft-key key=SHIFT+CTRL+home keyCode='ft_textfield_select_doc_home $this'  key=SHIFT+CTRL+end keyCode='ft_textfield_select_doc_end $this'
+        ft-key key='ALT+<' keyCode='ft_textfield_move_doc_home $this'  key='ALT+>' keyCode='ft_textfield_move_doc_end $this'
+        ft-key key=PGUP keyCode='ft_textfield_pgup $this'  key=PGDN keyCode='ft_textfield_pgdn $this'
+        ft-key key=TAB keyCode='ft_textfield_tab $this'  key=BTAB keyCode='ft_textfield_btab $this'  key=ESC keyCode='ft_textfield_esc $this'
+        ft-key key='?' keyCode='ft_textfield_insert_char $this $key'        # catch-all: any single typed character
+    end_ft_keymap
     # A field's legend is STATE-DEPENDENT (idle vs editing, a selection to copy, a
     # kill-ring to paste), so its caps come from _ft_caps_textfield (below), not from
-    # static ft-keymap-cap entries here — those would show "Enter: Edit" even mid-edit.
+    # static keyCap= fields here — those would show "Enter: Edit" even mid-edit.
     # The INACTIVE keymap — merely focused, and deliberately almost empty. Movement
     # keys are NOT bound here: arrows keep moving FOCUS while a field is only focused,
     # which is the whole reason the scrolling runlevel exists. Printable keys are
-    # unbound too, so k/n and accelerators keep driving the app.
-    ft-keymap ft_keymap_textfield_idle
-    ft-bindkeys ft_keymap_textfield_idle \
-        ENTER=ft_textfield_engage \
-        'CTRL+/'=ft_textfield_undo   CTRL+r=ft_textfield_redo \
-        CTRL+z=ft_textfield_undo \
-        CTRL+c=ft_textfield_ctrl_c   ALT+w=ft_textfield_ctrl_c
+    # unbound too, so k/n and accelerators keep driving the app. It is this prototype's OWN
+    # map, so the engine has already declared it — this only fills it.
+    ft_keymap_set ft_keymap_textfield_idle \
+        key=ENTER keyCode='ft_textfield_engage $this' \
+        key='CTRL+/' keyCode='ft_textfield_undo $this'  key=CTRL+r keyCode='ft_textfield_redo $this' \
+        key=CTRL+z keyCode='ft_textfield_undo $this' \
+        key=CTRL+c keyCode='ft_textfield_ctrl_c $this'  key=ALT+w keyCode='ft_textfield_ctrl_c $this'
         # …copy IS bound here, though almost nothing else is: landing on a field and
         # pressing copy should give you what is in it. Unbound, Ctrl+C fell through to the
         # run loop, which used to quit — the worst possible answer to "copy this".
@@ -189,44 +193,44 @@ _ft_define_keymap_textfield_idle() {
     # bubbles when there is nothing left to scroll, so you fall out of the far edge
     # into focus navigation rather than getting stuck.
     ft-keymap ft_keymap_textfield_scrolling
-    ft-bindkeys ft_keymap_textfield_scrolling \
-        LEFT=ft_textfield_idle_left  RIGHT=ft_textfield_idle_right \
-        HOME=ft_textfield_idle_home  END=ft_textfield_idle_end \
-        PGUP=ft_textfield_idle_pgup  PGDN=ft_textfield_idle_pgdn \
-        'CTRL+/'=ft_textfield_undo   CTRL+r=ft_textfield_redo \
-        CTRL+z=ft_textfield_undo
-    # The headline keys carry LEGEND metadata (ft-keymap-cap, not ft-bindkeys): this rung is
-    # new, and a mode that announces nothing is a trap — you press Enter, land somewhere
-    # you have never been, and nothing on screen says what changed or how to get out.
-    ft-keymap-cap ft_keymap_textfield_scrolling UP    ft_textfield_idle_up   "$FT_IMPORTANCE_CRUCIAL"   "Scroll"
-    ft-keymap-cap ft_keymap_textfield_scrolling DOWN  ft_textfield_idle_down "$FT_IMPORTANCE_CRUCIAL"   "Scroll"
-    ft-keymap-cap ft_keymap_textfield_scrolling ENTER ft_textfield_activate  "$FT_IMPORTANCE_CRUCIAL"   "Edit"
-    ft-keymap-cap ft_keymap_textfield_scrolling ESC   ft_textfield_leave     "$FT_IMPORTANCE_IMPORTANT" "Leave"
+        ft-key key=LEFT keyCode='ft_textfield_idle_left $this'  key=RIGHT keyCode='ft_textfield_idle_right $this'
+        ft-key key=HOME keyCode='ft_textfield_idle_home $this'  key=END keyCode='ft_textfield_idle_end $this'
+        ft-key key=PGUP keyCode='ft_textfield_idle_pgup $this'  key=PGDN keyCode='ft_textfield_idle_pgdn $this'
+        ft-key key='CTRL+/' keyCode='ft_textfield_undo $this'  key=CTRL+r keyCode='ft_textfield_redo $this'
+        ft-key key=CTRL+z keyCode='ft_textfield_undo $this'
+        # The headline keys carry LEGEND metadata (the keyCap=/keyImp= the rows above omit):
+        # this rung is new, and a mode that announces nothing is a trap — you press Enter, land
+        # somewhere you have never been, and nothing on screen says what changed or how to get out.
+        ft-key key=UP    keyCap=Scroll keyImp=crucial   keyCode='ft_textfield_idle_up $this'
+        ft-key key=DOWN  keyCap=Scroll keyImp=crucial   keyCode='ft_textfield_idle_down $this'
+        ft-key key=ENTER keyCap=Edit   keyImp=crucial   keyCode='ft_textfield_activate $this'
+        ft-key key=ESC   keyCap=Leave  keyImp=important keyCode='ft_textfield_leave $this'
+    end_ft_keymap
 
     # The PERUSING keymap — a caret you drive through content you cannot change: move,
     # select, copy. It is the editing map MINUS every mutation. Nothing here has to
     # check read-only-ness at runtime: the keys that would alter the value are simply
     # not bound, which is a stronger guarantee than a guard inside each handler.
     ft-keymap ft_keymap_textfield_perusing
-    ft-bindkeys ft_keymap_textfield_perusing \
-        LEFT=ft_textfield_move_left      RIGHT=ft_textfield_move_right \
-        UP=ft_textfield_move_up          DOWN=ft_textfield_move_down \
-        HOME=ft_textfield_move_home      END=ft_textfield_move_end \
-        PGUP=ft_textfield_pgup       PGDN=ft_textfield_pgdn \
-        SHIFT+left=ft_textfield_select_left   SHIFT+right=ft_textfield_select_right \
-        SHIFT+up=ft_textfield_select_up       SHIFT+down=ft_textfield_select_down \
-        SHIFT+home=ft_textfield_select_home   SHIFT+end=ft_textfield_select_end \
-        CTRL+b=ft_textfield_move_left    CTRL+f=ft_textfield_move_right \
-        CTRL+a=ft_textfield_move_home    CTRL+e=ft_textfield_move_end \
-        ALT+b=ft_textfield_move_word_back     ALT+f=ft_textfield_move_word_fwd \
-        ALT+left=ft_textfield_move_word_back  ALT+right=ft_textfield_move_word_fwd \
-        SHIFT+ALT+left=ft_textfield_select_word_back  SHIFT+ALT+right=ft_textfield_select_word_fwd \
-        CTRL+home=ft_textfield_move_doc_home  CTRL+end=ft_textfield_move_doc_end \
-        SHIFT+CTRL+home=ft_textfield_select_doc_home  SHIFT+CTRL+end=ft_textfield_select_doc_end \
-        'ALT+<'=ft_textfield_move_doc_home    'ALT+>'=ft_textfield_move_doc_end \
-        ALT+w=ft_textfield_copy      CTRL+c=ft_textfield_ctrl_c   ALT+a=ft_textfield_select_all \
-        CTRL+SPACE=ft_textfield_set_mark  CTRL+g=ft_textfield_keyboard_quit \
-        TAB=ft_textfield_tab         BTAB=ft_textfield_btab       ESC=ft_textfield_esc
+        ft-key key=LEFT keyCode='ft_textfield_move_left $this'  key=RIGHT keyCode='ft_textfield_move_right $this'
+        ft-key key=UP keyCode='ft_textfield_move_up $this'  key=DOWN keyCode='ft_textfield_move_down $this'
+        ft-key key=HOME keyCode='ft_textfield_move_home $this'  key=END keyCode='ft_textfield_move_end $this'
+        ft-key key=PGUP keyCode='ft_textfield_pgup $this'  key=PGDN keyCode='ft_textfield_pgdn $this'
+        ft-key key=SHIFT+left keyCode='ft_textfield_select_left $this'  key=SHIFT+right keyCode='ft_textfield_select_right $this'
+        ft-key key=SHIFT+up keyCode='ft_textfield_select_up $this'  key=SHIFT+down keyCode='ft_textfield_select_down $this'
+        ft-key key=SHIFT+home keyCode='ft_textfield_select_home $this'  key=SHIFT+end keyCode='ft_textfield_select_end $this'
+        ft-key key=CTRL+b keyCode='ft_textfield_move_left $this'  key=CTRL+f keyCode='ft_textfield_move_right $this'
+        ft-key key=CTRL+a keyCode='ft_textfield_move_home $this'  key=CTRL+e keyCode='ft_textfield_move_end $this'
+        ft-key key=ALT+b keyCode='ft_textfield_move_word_back $this'  key=ALT+f keyCode='ft_textfield_move_word_fwd $this'
+        ft-key key=ALT+left keyCode='ft_textfield_move_word_back $this'  key=ALT+right keyCode='ft_textfield_move_word_fwd $this'
+        ft-key key=SHIFT+ALT+left keyCode='ft_textfield_select_word_back $this'  key=SHIFT+ALT+right keyCode='ft_textfield_select_word_fwd $this'
+        ft-key key=CTRL+home keyCode='ft_textfield_move_doc_home $this'  key=CTRL+end keyCode='ft_textfield_move_doc_end $this'
+        ft-key key=SHIFT+CTRL+home keyCode='ft_textfield_select_doc_home $this'  key=SHIFT+CTRL+end keyCode='ft_textfield_select_doc_end $this'
+        ft-key key='ALT+<' keyCode='ft_textfield_move_doc_home $this'  key='ALT+>' keyCode='ft_textfield_move_doc_end $this'
+        ft-key key=ALT+w keyCode='ft_textfield_copy $this'  key=CTRL+c keyCode='ft_textfield_ctrl_c $this'  key=ALT+a keyCode='ft_textfield_select_all $this'
+        ft-key key=CTRL+SPACE keyCode='ft_textfield_set_mark $this'  key=CTRL+g keyCode='ft_textfield_keyboard_quit $this'
+        ft-key key=TAB keyCode='ft_textfield_tab $this'  key=BTAB keyCode='ft_textfield_btab $this'  key=ESC keyCode='ft_textfield_esc $this'
+    end_ft_keymap
 }
 ft_prototype_textfield() {
     # What a repaint can see that is not a property (see _ft_textfield_paint_state).

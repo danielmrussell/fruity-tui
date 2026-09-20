@@ -32,7 +32,6 @@
 _FT_MULTITOGGLE_LOADED=1
 
 ft_prototype_multitoggle() {
-    _ft_define_keymap_activate
     ft_prototype extends=ft_control \
         focusable=true \
         mouse=activate \

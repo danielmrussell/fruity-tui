@@ -18,7 +18,7 @@ source "$here/fruity-tui.bash"
 ft_init
 ft_term_size
 
-ft-form name=app width="$FT_COLS" height="$FT_ROWS" keymap '[Qq]'=ft_quit
+ft-form name=app width="$FT_COLS" height="$FT_ROWS" key='[Qq]' keyCode=ft_quit
     ft-frame name=win position=absolute left=4 top=2 width=40 height=5 \
              title=Hello display=flex flexDirection=column gap=1 \
              justifyContent=center alignItems=center

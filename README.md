@@ -253,7 +253,8 @@ says what is in it, and the engine runs that exactly once:
 ft_prototype_label() { ft_prototype extends=ft_control keymap=label … ; }
 
 _ft_define_keymap_label() {
-    ft-keymap-cap ft_keymap_label UP ft_label_key_up "$FT_IMPORTANCE_CRUCIAL" "Scroll up"
+    ft_keymap_set ft_keymap_label \
+        key=UP keyCap="Scroll up" keyImp=crucial keyCode='ft_label_key_up $this'
     …
 }
 ```

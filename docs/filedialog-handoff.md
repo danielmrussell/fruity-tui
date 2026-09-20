@@ -341,11 +341,11 @@ The REQ-03 assertion is: each glyph's `ft_display_width` equals the number writt
   rest are immediate actions.
 - **REQ-05** — every toolbar item is keyboard-reachable (not mouse-only) with a discoverable hint.
   `__fdlegend` is a hardcoded string today (`keys="S=Save Enter=Open …"`, ft-filedialog.bash:211);
-  change it to **`keys=auto`** (controls/ft-keylegend.bash:11,93) and declare every toolbar key with
-  `ft-keymap-cap MAP PATTERN ACTION IMPORTANCE LABEL` — note the FIRST argument is the keymap
-  **name**, and importance is `crucial|important|normal|minor`. Once it is `auto` the legend's
-  wording comes from your cap LABELs, so §4.1's golden legend line becomes a target for the labels
-  you write, not a string to reproduce.
+  change it to **`keys=auto`** (controls/ft-keylegend.bash:11,93) and declare every toolbar key
+  with key fields — `key=PATTERN keyCap="Label" keyImp=crucial|important|normal|minor
+  keyCode='code'` — on the control itself or in its keymap. Once it is `auto` the legend's
+  wording comes from your `keyCap=` values, so §4.1's golden legend line becomes a target for the
+  labels you write, not a string to reproduce.
 - **REQ-06** — disabled items **look** disabled: Paste with an empty clipboard, Parent at `/`,
   Trash with nothing selected (REQ-08b makes that state reachable). Dimmed and non-activating,
   never silently inert. **Three assertions per case.** (1) STATE: `ft_resolved_prop <item> disabled` is

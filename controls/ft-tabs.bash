@@ -34,20 +34,21 @@ _FT_TABS_LOADED=1
 _ft_define_keymap_tabs() {
     # INACTIVE — Enter steps into the strip. Left/Right are not bound here: arrowing ACROSS
     # a form must not switch tabs under you, which reflows the whole page.
-    ft-bindkeys ft_keymap_tabs ENTER=ft_key_delve
-    ft-keymap-cap ft_keymap_tabs ENTER ft_key_delve crucial "Switch tabs"
+    ft_keymap_set ft_keymap_tabs \
+        key=ENTER keyCap="Switch tabs" keyImp=crucial keyCode='ft_key_delve $this $key'
 
     # BROWSING — inside the strip, every arrow is the strip's. Labelled, so they reach the
     # derived legend: switching tabs IS what a tab strip is for, and unlabelled these bound
     # fine but the bar showed nothing but "Locate", leaving it undiscoverable.
-    ft_keymap_once ft_keymap_tabs_browsing
-    ft-bindkeys ft_keymap_tabs_browsing \
-        UP=ft_tabs_prev DOWN=ft_tabs_next ESC=ft_key_undelve
-    ft-keymap-cap ft_keymap_tabs_browsing LEFT  ft_tabs_prev   crucial   "Previous tab"
-    ft-keymap-cap ft_keymap_tabs_browsing RIGHT ft_tabs_next   crucial   "Next tab"
-    ft-keymap-cap ft_keymap_tabs_browsing HOME  ft_tabs_first  normal    "First tab"
-    ft-keymap-cap ft_keymap_tabs_browsing END   ft_tabs_last   normal    "Last tab"
-    ft-keymap-cap ft_keymap_tabs_browsing ESC   ft_key_undelve important "Leave"
+    ft-keymap ft_keymap_tabs_browsing
+        ft-key key=LEFT  keyCap="Previous tab" keyImp=crucial   keyCode='ft_tabs_prev $this'
+        ft-key key=RIGHT keyCap="Next tab"     keyImp=crucial   keyCode='ft_tabs_next $this'
+        ft-key key=UP                                           keyCode='ft_tabs_prev $this'
+        ft-key key=DOWN                                         keyCode='ft_tabs_next $this'
+        ft-key key=HOME  keyCap="First tab"    keyImp=normal    keyCode='ft_tabs_first $this'
+        ft-key key=END   keyCap="Last tab"     keyImp=normal    keyCode='ft_tabs_last $this'
+        ft-key key=ESC   keyCap="Leave"        keyImp=important keyCode='ft_key_undelve $this'
+    end_ft_keymap
 }
 ft_prototype_tabs() {
     ft_runlevels browsing=ft_keymap_tabs_browsing

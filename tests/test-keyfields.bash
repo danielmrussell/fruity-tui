@@ -85,6 +85,30 @@ check "a field that is not a key field is named" "$ERR" 'g4: "nonsense=1" is not
 err ft_keymap_set no_such_map key=Z keyCode='saw z'
 check "setting an undeclared map is refused" "$ERR" "ft_keymap_set no_such_map: no such keymap (declare it with ft_keymap)"
 
+# REPORTING AN ERROR IS NOT REFUSING IT. Every message above went to stderr while the call
+# still returned 0, so a caller testing `ft_keymap_set … || handle` saw success — and the
+# suite, not this gate, is what noticed.
+note "an authoring error FAILS, it does not merely complain"
+no "a group with neither code nor cap"  ft_keymap_set g4 key=P
+no "a modifier before any key="         ft_keymap_set g4 keyCap=orphan
+no "a field that is not a key field"    ft_keymap_set g4 nonsense=1
+no "key= with no pattern"               ft_keymap_set g4 key= keyCode='saw x'
+ok "…and a good call still succeeds"    ft_keymap_set g4 key=P keyCode='saw p'
+
+# `default` is the reserved pattern for "what an unmatched key does", and it is written as an
+# ordinary group — so the entry has four fields like any other. Reading "everything after the
+# first tab" gave "drop<TAB>0<TAB>", which equals neither drop nor bubble, and a drop default
+# silently stopped dropping.
+note "the reserved default entry survives being written as a group"
+ft_keymap gd
+ft_keymap_set gd key=default keyCode=drop
+_ft_keymap_default gd
+check "the default reads back as exactly drop" "$FT_RET" "drop"
+ft_keymap gd2
+ft_keymap_set gd2 key=Z keyCode='saw z'
+_ft_keymap_default gd2
+check "an undeclared default is bubble"        "$FT_RET" "bubble"
+
 note "declaring a map twice is an error — it used to silently EMPTY it"
 ft_keymap g5
 ft_keymap_set g5 key=X keyCode='saw x'

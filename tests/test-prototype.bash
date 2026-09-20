@@ -179,12 +179,21 @@ _ft_mouse_target mfBtn; check "a button takes its own click" "$FT_RET" mfBtn
 if _ft_mouse_target mfHd; then r=$FT_RET; else r="(none)"; fi
 check "an inert heading does NOT claim it" "$r" "(none)"
 
-note "ft_keymap_once: the guard belongs to the keymap, not to eight invented globals"
+note "the once-guard belongs to the ENGINE now, not to eight invented globals"
+# A prototype KEYMAP is global, but a prototype CONSTRUCTOR is not: building a DERIVED
+# prototype re-runs its base's constructor, so label's map is declared again for button,
+# checkbox and every other heir. Each control used to guard that by hand — eight globals
+# called _FT_KM_<TYPE>_READY — and then with ft_keymap_once. The engine does it, which is why
+# `ft_keymap` can afford to refuse a duplicate outright.
 _KM_BUILDS=0
-_build() { ft_keymap_once ft_keymap_probe_once && (( _KM_BUILDS++ )); }
+_build() { _ft_keymap_declare_once ft_keymap_probe_once && (( _KM_BUILDS++ )); }
 _build; _build; _build
-check "built exactly once across three asks" "$_KM_BUILDS" 1
+check "declared exactly once across three asks" "$_KM_BUILDS" 1
 check "…and the keymap really exists"        "$(declare -p _fti_ft_keymap_probe_once__list >/dev/null 2>&1 && echo yes)" yes
+# The thing the guard exists to prevent: a second ask must not EMPTY what the first bound.
+ft_keymap_set ft_keymap_probe_once key=X keyCode='probe_x $this'
+_build
+check "a repeat ask leaves the bindings alone" "$(ft_keymap_dump ft_keymap_probe_once | cut -f1)" "X"
 
 note "a cycle in the class graph must REPORT, not take the process down"
 # ft_prototype_init calls "ft_prototype_<type>", and `extends=` calls the BASE PROTOTYPE's

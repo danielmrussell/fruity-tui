@@ -995,14 +995,17 @@ _ft_define_keymap_form() {
     # Tab/Shift-Tab = linear ring order; the ARROWS move by geometry (spatial), so you
     # can cut across columns the way the layout looks. Controls that consume an arrow
     # (a slider's ←/→, a field in edit mode) never bubble it here, so they are unaffected.
-    ft-bindkeys ft_keymap_form TAB=ft_focus_next  BTAB=ft_focus_prev \
-                           RIGHT=ft_focus_right LEFT=ft_focus_left \
-                           DOWN=ft_focus_down   UP=ft_focus_up \
-                           ESC=ft_esc_action
-    # '.' = "where am I?" — flash a locator frame around the focused control. Bubbles
-    # here from any idle control (printable keys are unbound on controls); while a field
-    # is in EDIT mode it types a period instead, which is what you want.
-    ft-keymap-cap ft_keymap_form '.' ft_focus_ping "$FT_IMPORTANCE_NORMAL" "Locate"
+    # None of these take the control or the key: they move THE FOCUS, which the ring owns —
+    # so the code is the call, with no arguments invented for it.
+    ft_keymap_set ft_keymap_form \
+        key=TAB   keyCode=ft_focus_next    key=BTAB  keyCode=ft_focus_prev \
+        key=RIGHT keyCode=ft_focus_right   key=LEFT  keyCode=ft_focus_left \
+        key=DOWN  keyCode=ft_focus_down    key=UP    keyCode=ft_focus_up \
+        key=ESC   keyCode=ft_esc_action \
+        key='.'   keyCap=Locate keyImp=normal keyCode=ft_focus_ping
+        # '.' = "where am I?" — flash a locator frame around the focused control. Bubbles
+        # here from any idle control (printable keys are unbound on controls); while a field
+        # is in EDIT mode it types a period instead, which is what you want.
 }
 declare -A FT_PROTO_RUNLEVEL_EXTRA=()   # type → just what the prototype ADDED, in order
 # ft_runlevels [for=TYPE] level[=keymap]…
@@ -1448,10 +1451,12 @@ ft_prop_kind_set() { [[ -z "$1" ]] && return 1
                      [[ "$2" == paint && "${FT_PROP_KIND[$FT_RET]:-}" == layout ]] && return 0
                      FT_PROP_KIND[$FT_RET]=$2; }
 
-# ── Shared arg parser: props, then `keymap` section of key=action bindings ───
-# keymap=NAME (with '=') attaches a SHARED keymap by reference (a plain
-# property, consulted by dispatch between the instance overlay and the
-# prototype default). The bare token `keymap` starts the instance-overlay section.
+# ── Shared arg parser: properties, content, and key fields ──────────────────
+# keymap=NAME is a property: a SHARED keymap attached by reference (a space-separated LIST,
+# last wins), consulted by dispatch between the instance overlay and the prototype default.
+# A control's OWN keys are written as key fields — `key=ENTER keyCode='…'` — which the loop
+# below collects and folds into its instance overlay. They replace a bare `keymap` token
+# that opened a section of PATTERN=ACTION arguments, a second grammar for the same thing.
 #
 # A bare argument is the element's CONTENT, like text between HTML tags: it
 # sets the prototype's content property (text for most prototypes, title for frames —
@@ -1512,16 +1517,9 @@ _ft_is_assignment() {           # 0 iff "$1" is a property assignment, not conte
 }
 _ft_apply_args() {              # name args...
     local name=$1; shift
-    local inkeymap=0 arg key val
+    local arg key val
     local -a _kf=()
     for arg in "$@"; do
-        if [[ "$inkeymap" == 0 && "$arg" == keymap ]]; then inkeymap=1; continue; fi
-        if (( inkeymap )); then
-            key="${arg%%=*}"; val="${arg#*=}"
-            _ft_keymap_of "$name"
-            ft-keymap-set "$FT_RET" "$key" "$val"
-            continue
-        fi
         # KEY FIELDS are not properties — a control binds many keys and the property store
         # holds one value per name — so they are collected here and folded into this
         # control's own keymap (its instance overlay) once the arguments are read.
@@ -1734,7 +1732,7 @@ _ft_prototype_resolve_value() {     # key value → FT_RET
     FT_RET=$val
     # A keymap is DECLARED here and DEFINED by `_ft_define_keymap_<name>`, run exactly once.
     # The prototype says which keymap it uses; the definer says what is in it. Before this, every
-    # control opened its constructor with a `ft_keymap_once` block, so the one line that
+    # control opened its constructor with a hand-written once-guard, so the one line that
     # mattered — which keymap am I? — was buried under twenty binding lines.
     if [[ "$key" == keymap && -n "$val" ]]; then
         local definer=_ft_define_keymap_${val#ft_keymap_}
@@ -2067,7 +2065,7 @@ _ft_accel_unregister() {        # name — drop every accelerator currently regi
             FT_ACCEL_LIST[$akey]=$newlist                # other sharers keep the letter
         else
             unset "FT_ACCEL_LIST[$akey]"
-            [[ -n "${FT_KEYMAP[$form]:-}" ]] && ft-keymap-unset "${FT_KEYMAP[$form]}" "[${ac}${ac,,}]"
+            [[ -n "${FT_KEYMAP[$form]:-}" ]] && ft_keymap_unset "${FT_KEYMAP[$form]}" "[${ac}${ac,,}]"
         fi
     done
     unset "FT_ACCEL_FORM[$name]"
@@ -2123,9 +2121,8 @@ _ft_accel_dispatch() {          # form letter
     return 0
 }
 
-# A form ADVERTISES its accelerators. They are ordinary keymap bindings already, but written
-# with ft-keymap-set (2 fields, no legend metadata) — which is exactly why a focused button's
-# accessKey never reached the bar. The label has to be read LIVE here rather than baked into
+# A form ADVERTISES its accelerators. They are ordinary keymap bindings already, but carry no
+# keyCap — which is exactly why a focused button's accessKey never reached the bar. The label has to be read LIVE here rather than baked into
 # a static keycap: `ft-modify ok text="Save As"` must not leave a stale legend entry, and a
 # control that has since been hidden or disabled must drop out of the bar entirely.
 # Importance is deliberately NORMAL: accelerators are always live, so at a higher tier a
@@ -2572,7 +2569,7 @@ _ft_prop_owed_pay() {           # name — settle what _ft_prop_owed recorded
 
 ft-modify() {                   # name args...
     local name=$1; shift
-    local inkeymap=0 arg key val rejected=0
+    local arg key val rejected=0
     local -a _kf=()
     local _ft_owed="" _ft_owed_keys=""
     # A control removed by an earlier handler has NO TYPE, and ${ASSOC[""]} is a bash error
@@ -2580,13 +2577,6 @@ ft-modify() {                   # name args...
     local _ty=${FT_TYPE[$name]:-} textprop=text
     [[ -n "$_ty" ]] && textprop=${FT_PROTO_TEXTPROP[$_ty]:-text}
     for arg in "$@"; do
-        if [[ "$inkeymap" == 0 && "$arg" == keymap ]]; then inkeymap=1; continue; fi
-        if (( inkeymap )); then
-            key="${arg%%=*}"; val="${arg#*=}"
-            _ft_keymap_of "$name"
-            ft-keymap-set "$FT_RET" "$key" "$val"
-            continue
-        fi
         # KEY FIELDS are not properties — a control binds many keys and the property store
         # holds one value per name — so they are collected here and folded into this
         # control's own keymap (its instance overlay) once the arguments are read.
@@ -7906,7 +7896,7 @@ _ft_imp_tier() { local n=$1; if (( n >= 160 )); then FT_RET=crucial; elif (( n >
 # obstruction, a button does not work around one.
 FT_IMPORTANCE_MINOR=30         # prose, captions, decorative text
 # _ft_importance KEYWORD-OR-NUMBER → FT_RET. ONE definition of what the words mean, shared by
-# `ft-keymap-cap`'s IMPORTANCE argument and every control's `importance=` property, so a legend
+# a binding's `keyImp=` field and every control's `importance=` property, so a legend
 # and a callout cannot end up disagreeing about what "important" is worth.
 _ft_importance() {              # crucial|important|normal|minor|0-255 → FT_RET
     case "$1" in
@@ -7936,7 +7926,7 @@ _ft_control_importance() {      # name → FT_RET (0–255)
 
 # The legend a status bar shows is not hand-authored — it is DERIVED from whatever the
 # focused control (and its ancestors, up to the form) can do RIGHT NOW. Each control
-# declares its keys with ft-keymap-cap (importance + label); the legend collects them from
+# declares its keys with a `keyCap=` and a `keyImp=`; the legend collects them from
 # the exact same cascade dispatch walks — instance overlay → shared keymap=ref →
 # prototype default, at the focused leaf then each ancestor — so what the user is shown to press is
 # always what a press would actually do. Nearest-wins dedup: a leaf's binding for a key
@@ -8389,10 +8379,12 @@ _ft_tab_activate() {            # tabname
 # Shared prototype-default keymap for anything ENTER/SPACE-activatable: a prototype that says
 # `keymap=activate` gets this built for it, once. (button/radio/multitoggle/checkbox.)
 _ft_define_keymap_activate() {
-    ft-bindkeys ft_keymap_activate ENTER=ft_activate SPACE=ft_activate
-    # The one thing to do on a button/checkbox/radio/multitoggle: activate it. This cap
-    # leads the legend for the whole activate family (Space does the same, unshown).
-    ft-keymap-cap ft_keymap_activate ENTER ft_activate "$FT_IMPORTANCE_CRUCIAL" "Activate"
+    # The one thing to do on a button/checkbox/radio/multitoggle: activate it. Enter carries
+    # the cap that leads the legend for the whole activate family; Space does the same and is
+    # deliberately unshown.
+    ft_keymap_set ft_keymap_activate \
+        key=SPACE keyCode='ft_activate $this' \
+        key=ENTER keyCap=Activate keyImp=crucial keyCode='ft_activate $this'
 }
 
 # ── Run loop ─────────────────────────────────────────────────────────────────

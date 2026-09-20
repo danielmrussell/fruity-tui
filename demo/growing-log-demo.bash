@@ -42,7 +42,7 @@ clear_log()  { lines=0; log_text=""; add_lines 0; }
 # just suppress the label's own and duplicate it.)
 ft-form name=app width="$FT_COLS" height="$FT_ROWS" \
         display=flex flexDirection=column \
-        keymap '[Aa]'=add_one '[Tt]'=add_ten '[Xx]'=clear_log '[Qq]'=ft_quit
+        key='[Aa]' keyCode=add_one key='[Tt]' keyCode=add_ten key='[Xx]' keyCode=clear_log key='[Qq]' keyCode=ft_quit
 
     ft-frame name=viewport title=" output " flexGrow=1 flexShrink=1 minHeight=0 \
              display=flex flexDirection=column
@@ -53,11 +53,11 @@ ft-form name=app width="$FT_COLS" height="$FT_ROWS" \
     ft-statusbar name=statusline flexShrink=0 status="Press A to add a line."
 end_ft_form
 
-km=${FT_KEYMAP[app]}
-ft-keymap-cap "$km" '[Aa]' add_one   "$FT_IMPORTANCE_CRUCIAL"   "Add a line"
-ft-keymap-cap "$km" '[Tt]' add_ten   "$FT_IMPORTANCE_IMPORTANT" "Add ten"
-ft-keymap-cap "$km" '[Xx]' clear_log "$FT_IMPORTANCE_NORMAL"    "Clear"
-ft-keymap-cap "$km" '[Qq]' ft_quit    40                 "Quit"
+ft-modify app \
+    key='[Aa]' keyCap="Add a line" keyImp=crucial keyCode=add_one \
+    key='[Tt]' keyCap="Add ten" keyImp=important keyCode=add_ten \
+    key='[Xx]' keyCap="Clear" keyImp=normal keyCode=clear_log \
+    key='[Qq]' keyCap="Quit" keyImp=40 keyCode=ft_quit
 
 setup() { add_lines 3; }
 ft-run app setup

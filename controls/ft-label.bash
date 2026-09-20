@@ -39,25 +39,28 @@ _ft_define_keymap_label() {
     # A label only becomes focusable when it SCROLLS (_ft_label_focus_skip), so its ladder
     # only ever matters then — a scroll-less label is not a Tab stop and has no rungs to
     # climb. INACTIVE: Enter steps in. SCROLLING: the arrows are the label's and never eject.
-    ft-bindkeys ft_keymap_label ENTER=ft_key_delve
-    ft-keymap-cap ft_keymap_label ENTER ft_key_delve "$FT_IMPORTANCE_CRUCIAL" "Scroll"
+    ft_keymap_set ft_keymap_label \
+        key=ENTER keyCap=Scroll keyImp=crucial keyCode='ft_key_delve $this $key'
 
-    ft_keymap_once ft_keymap_label_scrolling
-    ft-bindkeys ft_keymap_label_scrolling \
-        LEFT=ft_label_key_up RIGHT=ft_label_key_down ESC=ft_key_undelve
-    ft-keymap-cap ft_keymap_label_scrolling UP    ft_label_key_up   "$FT_IMPORTANCE_CRUCIAL"   "Scroll up"
-    ft-keymap-cap ft_keymap_label_scrolling DOWN  ft_label_key_down "$FT_IMPORTANCE_CRUCIAL"   "Scroll down"
-    ft-keymap-cap ft_keymap_label_scrolling PGUP  ft_label_key_pgup "$FT_IMPORTANCE_IMPORTANT" "Page up"
-    ft-keymap-cap ft_keymap_label_scrolling PGDN  ft_label_key_pgdn "$FT_IMPORTANCE_IMPORTANT" "Page down"
-    ft-keymap-cap ft_keymap_label_scrolling HOME  ft_label_key_home "$FT_IMPORTANCE_NORMAL"    "Top"
-    ft-keymap-cap ft_keymap_label_scrolling END   ft_label_key_end  "$FT_IMPORTANCE_NORMAL"    "Bottom"
-    ft-keymap-cap ft_keymap_label_scrolling ESC   ft_key_undelve    "$FT_IMPORTANCE_IMPORTANT" "Leave"
+    # Left/Right are bound but uncaptioned — the legend leads with Up/Down.
+    ft-keymap ft_keymap_label_scrolling
+        ft-key key=LEFT  keyCode='ft_label_key_up $this'
+        ft-key key=RIGHT keyCode='ft_label_key_down $this'
+        ft-key key=UP    keyCap="Scroll up"   keyImp=crucial   keyCode='ft_label_key_up $this'
+        ft-key key=DOWN  keyCap="Scroll down" keyImp=crucial   keyCode='ft_label_key_down $this'
+        ft-key key=PGUP  keyCap="Page up"     keyImp=important keyCode='ft_label_key_pgup $this'
+        ft-key key=PGDN  keyCap="Page down"   keyImp=important keyCode='ft_label_key_pgdn $this'
+        ft-key key=HOME  keyCap=Top           keyImp=normal    keyCode='ft_label_key_home $this'
+        ft-key key=END   keyCap=Bottom        keyImp=normal    keyCode='ft_label_key_end $this'
+        ft-key key=ESC   keyCap=Leave         keyImp=important keyCode='ft_key_undelve $this'
+    end_ft_keymap
     # Alt+C was WRONG and was the source of the mistake spreading: the framework has exactly
     # two spellings of copy — Ctrl+C (taken from the tty on purpose, named in Settings) and
     # readline's Alt+W (the one that still arrives where no keyboard protocol was
     # negotiated). Alt+C was neither, so "copy" meant a third thing on labels alone.
-    ft-bindkeys ft_keymap_label CTRL+c=ft_label_copy ALT+w=ft_label_copy
-    ft-keymap-cap ft_keymap_label CTRL+c ft_label_copy "$FT_IMPORTANCE_NORMAL" "Copy all"
+    ft_keymap_set ft_keymap_label \
+        key=CTRL+c keyCap="Copy all" keyImp=normal keyCode='ft_label_copy $this' \
+        key=ALT+w                                  keyCode='ft_label_copy $this'
 }
 ft_prototype_label() {
     # draw/height/preferredWidth are bound by convention from _ft_draw_label,

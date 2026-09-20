@@ -184,13 +184,13 @@ _arm_arrow() {
 }
 
 _legend() {
-    local km=${FT_KEYMAP[app]}
-    ft-keymap-cap "$km" '<' _prev_step "$FT_IMPORTANCE_IMPORTANT" "Prev step"
-    ft-keymap-cap "$km" '>' _next_step "$FT_IMPORTANCE_IMPORTANT" "Next step"
-    ft-keymap-cap "$km" '[Bb]' _prev_page "$FT_IMPORTANCE_NORMAL" "Back ← page"
-    ft-keymap-cap "$km" '[Nn]' _next_page "$FT_IMPORTANCE_NORMAL" "Next → page"
-    ft-keymap-cap "$km" '[Rr]' _replay    "$FT_IMPORTANCE_NORMAL" "Replay"
-    ft-keymap-cap "$km" '[Qq]' ft_quit 40 "Quit"
+    ft-modify app \
+        key='<' keyCap="Prev step" keyImp=important keyCode=_prev_step \
+        key='>' keyCap="Next step" keyImp=important keyCode=_next_step \
+        key='[Bb]' keyCap="Back ← page" keyImp=normal keyCode=_prev_page \
+        key='[Nn]' keyCap="Next → page" keyImp=normal keyCode=_next_page \
+        key='[Rr]' keyCap="Replay" keyImp=normal keyCode=_replay \
+        key='[Qq]' keyCap="Quit" keyImp=40 keyCode=ft_quit
 }
 
 _show() {
@@ -218,7 +218,7 @@ _resize() { ft-modify app width="$FT_COLS" height="$FT_ROWS"; _show; }
 # ── App scaffold ─────────────────────────────────────────────────────────────
 ft-form name=app width="$FT_COLS" height="$FT_ROWS" \
         display=flex flexDirection=column \
-        keymap '[Qq]'=ft_quit
+        key='[Qq]' keyCode=ft_quit
     ft-div name=body flexGrow=1 flexShrink=1 minHeight=0 overflow=hidden \
            display=flex flexDirection=column
     end_ft_div

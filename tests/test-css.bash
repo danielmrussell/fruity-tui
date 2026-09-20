@@ -150,7 +150,7 @@ ft_stylesheet name=borders style='
     textfield:focus { border-color: 51; }
     textfield.edged { border-color: 208; }
 '
-ft-form name=broot width=40 height=10 keymap x=x
+ft-form name=broot width=40 height=10 key=x keyCode=x
   ft-textfield name=ba size=14 value="a"
   ft-textfield name=bb size=14 value="b" class=edged
 end_ft_form
@@ -182,7 +182,7 @@ ft_stylesheet name=isosheet style='widget99::scrollbar { color: 199; }'
 _ft_css_query iso color app;                    check "element query ignores the ::scrollbar rule" "$_QGOT" "0"
 _ft_css_color_pe iso scrollbar color 38;        check "...but the pseudo-element query resolves it" "$FT_RET" $'\e[38;5;199m'
 # a real scrolling field paints its thumb in the ::scrollbar colour
-ft-form name=sroot width=40 height=12 keymap x=x
+ft-form name=sroot width=40 height=12 key=x keyCode=x
   ft-textfield name=sf value=$'l1\nl2\nl3\nl4\nl5\nl6\nl7\nl8' rows=4 size=16
 end_ft_form
 ft_layout sroot; ft_focus sf

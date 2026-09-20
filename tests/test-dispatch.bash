@@ -39,10 +39,10 @@ ft_dispatch_event ENTER
 check "on_activate hook ran" "$ACT" "yes"
 
 note "instance overlay beats shared ref beats class default"
-ft-keymap sharedNav
-ft-bindkeys sharedNav ENTER='_hit ref'
+ft_keymap sharedNav
+ft_keymap_set sharedNav key=ENTER keyCode='_hit ref $this $key'
 ft-form name=app2 width=40 height=10
-    ft-button name=b2 text=" B " keymap=sharedNav keymap ENTER='_hit overlay'
+    ft-button name=b2 text=" B " keymap=sharedNav key=ENTER keyCode='_hit overlay $this $key'
     ft-button name=b3 text=" C " keymap=sharedNav
     ft-button name=b4 text=" D " onActivate=b4_on_activate
 end_ft_form
@@ -59,7 +59,7 @@ ft_dispatch_event ENTER
 check "class default remains for b4" "$ACT2" "yes"
 
 note "editing the SHARED keymap changes every control attached by reference"
-ft-keymap-set sharedNav ENTER '_hitplain'
+ft_keymap_set sharedNav key=ENTER keyCode='_hitplain $this $key'
 ft_focus b3; HIT=""
 ft_dispatch_event ENTER
 check "b3 sees the updated shared binding" "$HIT" "plain:b3:ENTER"
@@ -110,7 +110,7 @@ check "destroyed accessKey no longer fires" "$GACT" ""
 
 note "a drop default swallows keys instead of bubbling"
 ft-form name=app5 width=40 height=10
-    ft-button name=b5 text=" B " keymap default=drop
+    ft-button name=b5 text=" B " key=default keyCode=drop
 end_ft_form
 FT_ROOT=app5
 QUITS=0
@@ -144,7 +144,7 @@ KA_OUTER=0; KA_INNER=0
 ka_outer() { KA_OUTER=1; }
 ka_inner() { KA_INNER=1; }
 ka_args()  { KA_ARGS="$*"; }
-ft-keymap ka_outer_map; ft-keymap-set ka_outer_map X ka_outer
+ft_keymap ka_outer_map; ft_keymap_set ka_outer_map key=X keyCode=ka_outer
 _ka_build() {                   # innermap
     ft_remove ka 2>/dev/null
     KA_OUTER=0; KA_INNER=0; KA_ARGS=""
@@ -165,17 +165,17 @@ note "…the reserved words the keymap docs promise"
 # "An ACTION is a function name, or the reserved words bubble / drop." Neither was
 # implemented: `bubble` announced "bubble: command not found" on the alt screen and then
 # SWALLOWED the key — the exact opposite of what it says on the tin.
-ft-keymap ka_bub; ft-keymap-set ka_bub X bubble
+ft_keymap ka_bub; ft_keymap_set ka_bub key=X keyCode=bubble
 _ka_build ka_bub; _ka_err
 check "bubble declines, so the ancestor gets the key" "$KA_OUTER" "1"
 check "…in silence"                                   "${FT_RET:-clean}" "clean"
-ft-keymap ka_drop; ft-keymap-set ka_drop X drop
+ft_keymap ka_drop; ft_keymap_set ka_drop key=X keyCode=drop
 _ka_build ka_drop; _ka_err
 check "drop swallows it here"                         "$KA_OUTER" "0"
 check "…in silence"                                   "${FT_RET:-clean}" "clean"
 
 note "…an action naming a function that is not there"
-ft-keymap ka_gone; ft-keymap-set ka_gone X ka_no_such_function
+ft_keymap ka_gone; ft_keymap_set ka_gone key=X keyCode=ka_no_such_function
 _ka_build ka_gone; _ka_err
 check "nothing is announced on the screen the user is looking at" "${FT_RET:-clean}" "clean"
 check "and the key is NOT claimed — it bubbles to something that works" "$KA_OUTER" "1"
@@ -187,18 +187,19 @@ _ka_build ka_gone; _ka_err; _ka_build ka_gone; _ka_err
 check "…once, not once per keypress" "${#FT_UNRESOLVED_ACTIONS[@]}" "$n1"
 
 note "…an EMPTY action, which used to run the CONTROL'S OWN NAME"
-# `ft-keymap-set map X` with the action left off stored nothing, and the invocation
+# A binding with the action left off stored nothing, and the invocation
 # `"${words[@]}" "$name" "$tok"` then had the control name in the command position. Names
 # are identifiers, so a control called `rm` or `clear` ran rm or clear.
-no "ft-keymap-set refuses a binding with no action" ft-keymap-set ka_empty_map X
-ft-keymap ka_empty
+ft_keymap ka_empty_map
+no "a group with no keyCode and no keyCap is refused" ft_keymap_set ka_empty_map key=X
+ft_keymap ka_empty
 _ft_keymap_put ka_empty X $'X\t'          # …and forced past that, dispatch still refuses
 _ka_build ka_empty; _ka_err
 check "an empty action runs nothing"      "${FT_RET:-clean}" "clean"
 check "…and does not claim the key"       "$KA_OUTER" "1"
 # The dangerous shape, end to end: a control whose NAME is a real command.
 ft_remove kb 2>/dev/null
-ft-keymap ka_empty2; _ft_keymap_put ka_empty2 X $'X\t'
+ft_keymap ka_empty2; _ft_keymap_put ka_empty2 X $'X\t'
 ft-form name=kb width=40 height=8
     ft-button name=touch "Go" keymap=ka_empty2
 end_ft_form
@@ -229,10 +230,13 @@ ft_dispatch_event X >/dev/null 2>&1
 popd >/dev/null
 check "quoted, it stays one asterisk" "$KA_ARGS" "* kabtn X"
 
-note "…while ft-bindkeys catches the typo that made an empty action in the first place"
-err=$( ft-bindkeys ka_bk X 2>&1 )
-check "a pair with no = is reported" \
-      "$(case "$err" in *"not PATTERN=ACTION"*) echo yes ;; *) echo "${err:-silent}" ;; esac)" "yes"
+note "…while the parser catches the typo that made an empty action in the first place"
+# The typo that produced one: a dropped `=`, which under the old PATTERN=ACTION grammar bound
+# the key to its own name. A bare word is not a field, so now it is named and dropped.
+ft_keymap ka_bk
+err=$( ft_keymap_set ka_bk X 2>&1 )
+check "a bare word is not a key field" \
+      "$(case "$err" in *"is not a key field"*) echo yes ;; *) echo "${err:-silent}" ;; esac)" "yes"
 
 note "the back-compat single-control path resolves actions the SAME way"
 # It had every one of these faults too, in its own copy of the invocation.

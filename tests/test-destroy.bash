@@ -35,7 +35,7 @@ check "the grandchild's own dirty entry is gone too" "${FT_DIRTY[grandchild]+set
 note "ft_remove cleans up a control's own instance-overlay keymap"
 # (Prototype-default keymaps are shared and survive — only the per-instance
 # overlay, created by a trailing `keymap k=action` section, is torn down.)
-ft-scrollbar name=sb parent=app width=1 height=5 keymap UP=ft_quit
+ft-scrollbar name=sb parent=app width=1 height=5 key=UP keyCode=ft_quit
 km="${FT_KEYMAP[sb]}"
 check "sb got an overlay keymap list" "$(declare -p "_fti_${km}__list" 2>/dev/null >/dev/null; echo $?)" "0"
 ft_remove sb

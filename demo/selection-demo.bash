@@ -21,7 +21,7 @@ ft_term_size
 
 ft-form name=app width="$FT_COLS" height="$FT_ROWS" \
         display=flex justifyContent=center alignItems=center \
-        keymap '[Qq]'=ft_quit
+        key='[Qq]' keyCode=ft_quit
     ft-frame name=win width=46 height=18 \
              title="Selection Controls" display=flex flexDirection=column gap=1 alignItems=center
         ft-label name=hint \

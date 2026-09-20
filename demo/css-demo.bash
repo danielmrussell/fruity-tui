@@ -633,17 +633,17 @@ _show_page() {
     # our LABELLED versions (same keymap → last wins). STEP arrows on < > (IMPORTANT, so they
     # rank BELOW a control's own crucial mode keys like Esc/Enter, but still lead the globals);
     # PAGE nav on K (Okay) / B (Back).
-    local km=${FT_KEYMAP[app]}
     # BACKWARD BEFORE FORWARD. The legend sorts by importance and is STABLE, so equal-weight
     # caps appear in declaration order — declaring Next first put "▶ Next step" to the LEFT of
     # "◀ Prev step", which reads backwards against the very buttons it describes.
-    ft-keymap-cap "$km" '<' btnStepPrev_on_activate "$FT_IMPORTANCE_IMPORTANT" "Prev step"
-    ft-keymap-cap "$km" '>' btnStepNext_on_activate "$FT_IMPORTANCE_IMPORTANT" "Next step"
-    ft-keymap-cap "$km" '[Bb]' btnBack_on_activate "$FT_IMPORTANCE_NORMAL" "Back ← page"
-    ft-keymap-cap "$km" '[Kk]' btnOk_on_activate   "$FT_IMPORTANCE_NORMAL" "Okay → next page"
-    ft-keymap-cap "$km" '[Ww]' _toggle_wrap "$FT_IMPORTANCE_NORMAL" "↩ wrap marks"
-    ft-keymap-cap "$km" '[Nn]' _toggle_nl   "$FT_IMPORTANCE_NORMAL" "¶ newline marks"
-    ft-keymap-cap "$km" '[Qq]' ft_quit 40 "Quit"
+    ft-modify app \
+        key='<' keyCap="Prev step" keyImp=important keyCode=btnStepPrev_on_activate \
+        key='>' keyCap="Next step" keyImp=important keyCode=btnStepNext_on_activate \
+        key='[Bb]' keyCap="Back ← page" keyImp=normal keyCode=btnBack_on_activate \
+        key='[Kk]' keyCap="Okay → next page" keyImp=normal keyCode=btnOk_on_activate \
+        key='[Ww]' keyCap="↩ wrap marks" keyImp=normal keyCode=_toggle_wrap \
+        key='[Nn]' keyCap="¶ newline marks" keyImp=normal keyCode=_toggle_nl \
+        key='[Qq]' keyCap="Quit" keyImp=40 keyCode=ft_quit
     ft_refresh
     ft_focus css || ft_focus_first
 }
@@ -669,7 +669,7 @@ _resize() { ft-modify app width="$FT_COLS" height="$FT_ROWS"; _show_page; }
 # ── App scaffold ──────────────────────────────────────────────────────────────
 ft-form name=app width="$FT_COLS" height="$FT_ROWS" \
         display=flex flexDirection=column \
-        keymap '[Qq]'=ft_quit
+        key='[Qq]' keyCode=ft_quit
     ft-div name=stage flexGrow=1 flexShrink=1 minHeight=0 overflow=hidden \
              display=flex justifyContent=center alignItems=center
     end_ft_div

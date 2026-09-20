@@ -129,12 +129,7 @@ ft_keymap() {
 # the same rule every tag in this framework follows.
 _FT_KEYMAP_BLOCK=""
 ft-keymap() {
-    # TRANSITIONAL LENIENCE: `ft-keymap NAME` is also the OLD bare declaration, still used by
-    # controls that re-declare a map when a derived prototype re-runs their constructor. It
-    # reuses an existing map here instead of emptying it (bindings replace by pattern, so
-    # re-declaring the same table is a no-op) and becomes strict, like ft_keymap, once those
-    # call sites are converted in the next commit.
-    _ft_keymap_declare_once "$1"
+    ft_keymap "$1" || return 1
     _FT_KEYMAP_BLOCK=$1
 }
 ft-key() {
@@ -158,23 +153,23 @@ end_ft_keymap() { _FT_KEYMAP_BLOCK=""; }
 # key is a legend that lies.
 _ft_keyfields() {               # map field…
     local map=$1; shift
-    local f pat="" cap="" imp="" code="" open=0
+    local f pat="" cap="" imp="" code="" open=0 bad=0
     for f in "$@"; do
         case $f in
             key=*)
-                (( open )) && [[ -n "$pat" ]] && _ft_keyfield_put "$map" "$pat" "$code" "$imp" "$cap"
+                (( open )) && [[ -n "$pat" ]] && { _ft_keyfield_put "$map" "$pat" "$code" "$imp" "$cap" || bad=1; }
                 pat=${f#key=}; cap=""; imp=""; code=""; open=1
                 # A patternless key= still OPENS a group, so its modifiers are absorbed rather
                 # than each reported as an orphan: one mistake, one message.
-                [[ -z "$pat" ]] && printf 'ft: %s: key= with no pattern\n' "$map" >&2 ;;
-            keyCap=*)  if (( open )); then cap=${f#keyCap=};  else _ft_keyfield_orphan "$map" "$f"; fi ;;
-            keyImp=*)  if (( open )); then imp=${f#keyImp=};  else _ft_keyfield_orphan "$map" "$f"; fi ;;
-            keyCode=*) if (( open )); then code=${f#keyCode=}; else _ft_keyfield_orphan "$map" "$f"; fi ;;
-            *) printf 'ft: %s: "%s" is not a key field\n' "$map" "$f" >&2 ;;
+                [[ -z "$pat" ]] && { printf 'ft: %s: key= with no pattern\n' "$map" >&2; bad=1; } ;;
+            keyCap=*)  if (( open )); then cap=${f#keyCap=};  else _ft_keyfield_orphan "$map" "$f"; bad=1; fi ;;
+            keyImp=*)  if (( open )); then imp=${f#keyImp=};  else _ft_keyfield_orphan "$map" "$f"; bad=1; fi ;;
+            keyCode=*) if (( open )); then code=${f#keyCode=}; else _ft_keyfield_orphan "$map" "$f"; bad=1; fi ;;
+            *) printf 'ft: %s: "%s" is not a key field\n' "$map" "$f" >&2; bad=1 ;;
         esac
     done
-    (( open )) && [[ -n "$pat" ]] && _ft_keyfield_put "$map" "$pat" "$code" "$imp" "$cap"
-    return 0
+    (( open )) && [[ -n "$pat" ]] && { _ft_keyfield_put "$map" "$pat" "$code" "$imp" "$cap" || bad=1; }
+    return $bad
 }
 _ft_keyfield_orphan() {
     printf 'ft: %s: %s before any key= — dropped\n' "$1" "${2%%=*}=" >&2
@@ -290,9 +285,15 @@ _ft_keymap_lookup() {
 # _ft_keymap_default NAME → sets FT_RET to the default action (bubble|drop).
 _ft_keymap_default() {
     local -n L="_fti_${1}__list"
-    local i
+    local i rest
     for (( i=${#L[@]}-1; i>=0; i-- )); do
-        if [[ "${L[$i]%%$'\t'*}" == default ]]; then FT_RET="${L[$i]#*$'\t'}"; return; fi
+        # FIELD TWO, not "everything after the first tab": `key=default keyCode=drop` writes a
+        # full four-field entry like any other group, and reading the rest of the line gave
+        # "drop<TAB>0<TAB>", which equals neither `drop` nor `bubble` — so a drop default
+        # silently stopped dropping.
+        if [[ "${L[$i]%%$'\t'*}" == default ]]; then
+            rest="${L[$i]#*$'\t'}"; FT_RET="${rest%%$'\t'*}"; return
+        fi
     done
     FT_RET=bubble
 }
@@ -317,55 +318,3 @@ _ft_keymap_caps() {             # name (array FT_CAPS must exist)
         FT_CAPS+=("${imp}"$'\t'"${pat}"$'\t'"${label}")
     done
 }
-
-# ── Deprecated: the old positional calls ─────────────────────────────────────
-# These are the shape the tree was written in — a binding was a FUNCTION NAME, and a
-# legend cap was a second call with four positional arguments. They stay only while the
-# ~190 call sites are converted, and each translates its action into the code the new
-# storage holds: the old invocation appended the control and the token, so `fn` becomes
-# `fn $this $key` and behaves exactly as it did. THEY ARE DELETED IN THE NEXT COMMIT.
-_ft_keymap_compat_code() {      # action → FT_RET (code)
-    case $1 in
-        ''|-)          FT_RET="" ;;                 # legend-only
-        bubble|drop)   FT_RET=$1 ;;
-        *)             FT_RET="$1 \"\$this\" \"\$key\"" ;;   # the args the old shape appended silently
-    esac
-}
-ft-keymap-set() {
-    if (( $# < 3 )); then
-        printf 'ft: ft-keymap-set %s %s: no ACTION (use `bubble` to match and decline)\n' \
-               "${1:-?}" "${2:-?}" >&2
-        return 1
-    fi
-    local _sv=$FT_RET; _ft_keymap_compat_code "$3"; local code=$FT_RET; FT_RET=$_sv
-    _ft_keymap_put "$1" "$2" "$2"$'\t'"$code"$'\t0\t'
-}
-ft-keymap-cap() {               # map pattern action importance label
-    local _imp=${4:-0} _sv_ret=$FT_RET
-    case $_imp in
-        crucial|important|normal|minor) _ft_importance "$_imp"; _imp=$FT_RET ;;
-    esac
-    _ft_keymap_compat_code "$3"; local code=$FT_RET; FT_RET=$_sv_ret
-    _ft_keymap_put "$1" "$2" "$2"$'\t'"$code"$'\t'"$_imp"$'\t'"${5:-}"
-}
-ft-keymap-unset() { ft_keymap_unset "$@"; }
-ft-keymap-dump()  { ft_keymap_dump "$@"; }
-ft-bindkeys() {
-    local name=$1; shift
-    local kv pat act
-    for kv in "$@"; do
-        # `${kv#*=}` hands back the WHOLE string when there is no `=` in it, so a dropped
-        # `=` bound the key to its own name as an action — `ft-bindkeys map ENTER` bound
-        # ENTER to a command called ENTER. Silent, and it looked like a working binding.
-        if [[ "$kv" != *=* ]]; then
-            printf 'ft: ft-bindkeys %s: "%s" is not PATTERN=ACTION\n' "$name" "$kv" >&2
-            continue
-        fi
-        pat="${kv%%=*}"; act="${kv#*=}"
-        ft-keymap-set "$name" "$pat" "$act"
-    done
-}
-
-# ft_keymap_once NAME — DEPRECATED, the app-level spelling of the engine's own guard.
-# Every control used to open its constructor with one of these. Deleted in the next commit.
-ft_keymap_once() { _ft_keymap_declare_once "$1"; }

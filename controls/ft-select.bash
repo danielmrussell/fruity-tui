@@ -41,32 +41,32 @@ _ft_define_keymap_select() {
     # enter/exit scripts do that (select_runlevel_browsing_enter/_exit below), so `open` and
     # the runlevel can never disagree. Arrows stay with focus navigation out here: a closed
     # select used to change its VALUE when you arrowed past it.
-    ft-bindkeys ft_keymap_select ENTER=ft_key_delve SPACE=ft_key_delve
-    ft-keymap-cap ft_keymap_select ENTER ft_key_delve "$FT_IMPORTANCE_CRUCIAL" "Choose"
+    ft_keymap_set ft_keymap_select \
+        key=ENTER keyCap="Choose" keyImp=crucial keyCode='ft_key_delve $this $key' \
+        key=SPACE                               keyCode='ft_key_delve $this $key'
 
     # BROWSING — inside the list. Every arrow is the select's and none of them eject.
-    ft_keymap_once ft_keymap_select_browsing
-    ft-bindkeys ft_keymap_select_browsing \
-        UP=ft_select_key_up DOWN=ft_select_key_down \
-        LEFT=ft_select_key_up RIGHT=ft_select_key_down \
-        HOME=ft_select_key_home END=ft_select_key_end \
-        PGUP=ft_select_key_pgup PGDN=ft_select_key_pgdn \
-        ENTER=ft_select_key_commit SPACE=ft_select_key_commit \
-        ESC=ft_key_undelve \
-        CTRL+c=ft_select_copy ALT+w=ft_select_copy
-    ft-keymap-cap ft_keymap_select_browsing UP   ft_select_key_up     "$FT_IMPORTANCE_CRUCIAL"   "Previous"
-    ft-keymap-cap ft_keymap_select_browsing DOWN ft_select_key_down   "$FT_IMPORTANCE_CRUCIAL"   "Next"
-    ft-keymap-cap ft_keymap_select_browsing ENTER ft_select_key_commit "$FT_IMPORTANCE_IMPORTANT" "Choose"
-    ft-keymap-cap ft_keymap_select_browsing PGUP ft_select_key_pgup   "$FT_IMPORTANCE_NORMAL"    "Page up"
-    ft-keymap-cap ft_keymap_select_browsing PGDN ft_select_key_pgdn   "$FT_IMPORTANCE_NORMAL"    "Page down"
-    ft-keymap-cap ft_keymap_select_browsing HOME ft_select_key_home   "$FT_IMPORTANCE_NORMAL"    "First"
-    ft-keymap-cap ft_keymap_select_browsing END  ft_select_key_end    "$FT_IMPORTANCE_NORMAL"    "Last"
-    ft-keymap-cap ft_keymap_select_browsing ESC  ft_key_undelve       "$FT_IMPORTANCE_IMPORTANT" "Leave"
+    ft-keymap ft_keymap_select_browsing
+        ft-key key=UP     keyCap="Previous"  keyImp=crucial   keyCode='ft_select_key_up $this'
+        ft-key key=DOWN   keyCap="Next"      keyImp=crucial   keyCode='ft_select_key_down $this'
+        ft-key key=LEFT                                       keyCode='ft_select_key_up $this'
+        ft-key key=RIGHT                                      keyCode='ft_select_key_down $this'
+        ft-key key=ENTER  keyCap="Choose"    keyImp=important keyCode='ft_select_key_commit $this'
+        ft-key key=SPACE                                      keyCode='ft_select_key_commit $this'
+        ft-key key=PGUP   keyCap="Page up"   keyImp=normal    keyCode='ft_select_key_pgup $this'
+        ft-key key=PGDN   keyCap="Page down" keyImp=normal    keyCode='ft_select_key_pgdn $this'
+        ft-key key=HOME   keyCap="First"     keyImp=normal    keyCode='ft_select_key_home $this'
+        ft-key key=END    keyCap="Last"      keyImp=normal    keyCode='ft_select_key_end $this'
+        ft-key key=CTRL+c                                     keyCode='ft_select_copy $this'
+        ft-key key=ALT+w                                      keyCode='ft_select_copy $this'
+        ft-key key=ESC    keyCap="Leave"     keyImp=important keyCode='ft_key_undelve $this'
+    end_ft_keymap
     # Ctrl+C, with Alt+W beside it — see the note in ft-tree.bash: Ctrl+C is the framework's
     # copy key (taken from the tty on purpose, named in Settings), Alt+W is the one that
     # still arrives on a terminal with no keyboard-protocol negotiation.
-    ft-bindkeys ft_keymap_select CTRL+c=ft_select_copy ALT+w=ft_select_copy
-    ft-keymap-cap ft_keymap_select CTRL+c ft_select_copy "$FT_IMPORTANCE_NORMAL" "Copy option"
+    ft_keymap_set ft_keymap_select \
+        key=CTRL+c keyCap="Copy option" keyImp=normal keyCode='ft_select_copy $this' \
+        key=ALT+w                                     keyCode='ft_select_copy $this'
 }
 # Stepping in OPENS a dropdown, stepping out closes it — one fact, in one place, so `open`
 # and the runlevel cannot drift apart. A list box (size>1) is always open; there is nothing
@@ -340,7 +340,7 @@ ft_select_open() {
                                                           # currently-selected option.
     ft-modify "$name" open=true cursor="$sel" scroll=0
     _ft_keymap_of "$name"
-    ft-keymap-set "$FT_RET" ESC ft_select_close
+    ft_keymap_set "$FT_RET" key=ESC keyCode='ft_select_close $this'
     # The dropdown is an OVERLAY: mark one open and suspend the keycap pulse right away, so
     # the status bar's animation stops repainting over the list (which caused it to glitch).
     (( FT_OVERLAY_DEPTH++ )); declare -F _ft_kcpulse_disarm >/dev/null && _ft_kcpulse_disarm
@@ -437,7 +437,7 @@ ft_select_close() {             # name — close the dropdown, repaint what it c
     # overlay closes. Guarded by `was` so a redundant close can't underflow it.
     [[ "$was" == true ]] && (( FT_OVERLAY_DEPTH > 0 )) && (( FT_OVERLAY_DEPTH-- ))
     [[ "${FT_OPEN_SELECT:-}" == "$name" ]] && FT_OPEN_SELECT=""
-    [[ -n "${FT_KEYMAP[$name]:-}" ]] && ft-keymap-unset "${FT_KEYMAP[$name]}" ESC
+    [[ -n "${FT_KEYMAP[$name]:-}" ]] && ft_keymap_unset "${FT_KEYMAP[$name]}" ESC
     _ft_enclosing_form_of "$name"; local form=${FT_RET:-$FT_ROOT}
     (( n > 0 )) && _ft_erase_rect "$col" "$etop" "$cols" "$evis" "$form"
     ft_dirty_subtree "$form"

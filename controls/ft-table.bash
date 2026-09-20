@@ -55,28 +55,26 @@ _FT_TABLE_LOADED=1
 _ft_define_keymap_table() {
     # INACTIVE — merely focused. Enter steps in; the arrows still belong to focus
     # navigation. Copy here takes the WHOLE table (see ft_table_copy).
-    ft-bindkeys ft_keymap_table ENTER=ft_key_delve CTRL+c=ft_table_copy ALT+w=ft_table_copy
-    ft-keymap-cap ft_keymap_table ENTER  ft_key_delve   "$FT_IMPORTANCE_CRUCIAL" "Browse rows"
-    ft-keymap-cap ft_keymap_table CTRL+c ft_table_copy  "$FT_IMPORTANCE_NORMAL"  "Copy table"
+    ft_keymap_set ft_keymap_table \
+        key=ENTER  keyCap="Browse rows" keyImp=crucial keyCode='ft_key_delve $this $key' \
+        key=CTRL+c keyCap="Copy table"  keyImp=normal  keyCode='ft_table_copy $this' \
+        key=ALT+w                                      keyCode='ft_table_copy $this'
 
     # BROWSING — one Enter in, and NOW there is a current row: the arrows move it, it is
     # highlighted, and copy takes that row rather than the whole table. Nothing here bubbles.
-    ft_keymap_once ft_keymap_table_browsing
-    ft-bindkeys ft_keymap_table_browsing \
-        UP=ft_table_key_up      DOWN=ft_table_key_down \
-        LEFT=ft_table_key_up    RIGHT=ft_table_key_down \
-        PGUP=ft_table_key_pgup  PGDN=ft_table_key_pgdn \
-        HOME=ft_table_key_home  END=ft_table_key_end \
-        ESC=ft_key_undelve \
-        CTRL+c=ft_table_copy    ALT+w=ft_table_copy
-    ft-keymap-cap ft_keymap_table_browsing UP   ft_table_key_up   "$FT_IMPORTANCE_CRUCIAL"   "Up a row"
-    ft-keymap-cap ft_keymap_table_browsing DOWN ft_table_key_down "$FT_IMPORTANCE_CRUCIAL"   "Down a row"
-    ft-keymap-cap ft_keymap_table_browsing PGUP ft_table_key_pgup "$FT_IMPORTANCE_IMPORTANT" "Page up"
-    ft-keymap-cap ft_keymap_table_browsing PGDN ft_table_key_pgdn "$FT_IMPORTANCE_IMPORTANT" "Page down"
-    ft-keymap-cap ft_keymap_table_browsing HOME ft_table_key_home "$FT_IMPORTANCE_NORMAL"    "Top"
-    ft-keymap-cap ft_keymap_table_browsing END  ft_table_key_end  "$FT_IMPORTANCE_NORMAL"    "Bottom"
-    ft-keymap-cap ft_keymap_table_browsing CTRL+c ft_table_copy   "$FT_IMPORTANCE_NORMAL"    "Copy row"
-    ft-keymap-cap ft_keymap_table_browsing ESC  ft_key_undelve    "$FT_IMPORTANCE_IMPORTANT" "Leave"
+    ft-keymap ft_keymap_table_browsing
+        ft-key key=UP     keyCap="Up a row"   keyImp=crucial   keyCode='ft_table_key_up $this'
+        ft-key key=DOWN   keyCap="Down a row" keyImp=crucial   keyCode='ft_table_key_down $this'
+        ft-key key=LEFT                                        keyCode='ft_table_key_up $this'
+        ft-key key=RIGHT                                       keyCode='ft_table_key_down $this'
+        ft-key key=PGUP   keyCap="Page up"    keyImp=important keyCode='ft_table_key_pgup $this'
+        ft-key key=PGDN   keyCap="Page down"  keyImp=important keyCode='ft_table_key_pgdn $this'
+        ft-key key=HOME   keyCap="Top"        keyImp=normal    keyCode='ft_table_key_home $this'
+        ft-key key=END    keyCap="Bottom"     keyImp=normal    keyCode='ft_table_key_end $this'
+        ft-key key=CTRL+c keyCap="Copy row"   keyImp=normal    keyCode='ft_table_copy $this'
+        ft-key key=ALT+w                                       keyCode='ft_table_copy $this'
+        ft-key key=ESC    keyCap="Leave"      keyImp=important keyCode='ft_key_undelve $this'
+    end_ft_keymap
 }
 # WHAT COPY TAKES IS A FUNCTION OF HOW FAR IN YOU ARE. Standing next to the table, there is
 # no current row and copy hands you the whole thing, printable. Once you have stepped in

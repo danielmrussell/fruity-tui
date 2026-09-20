@@ -54,6 +54,6 @@ _build() {
 
 ft-form name=app width="$FT_COLS" height="$FT_ROWS" \
         display=flex justifyContent=center alignItems=center \
-        keymap '[Qq]'=ft_quit
+        key='[Qq]' keyCode=ft_quit
 end_ft_form
 ft-run app _build

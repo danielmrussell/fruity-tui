@@ -94,11 +94,12 @@ _ft_keycap_glyph CTRL+PGUP; check "modifier spelled + dash" "$FT_RET" "Ctrl-PgUp
 _ft_keycap_glyph x;        check "bare char stays itself" "$FT_RET" "x"
 
 note "keys=auto DERIVES the legend from the focused control's chain, sorted, Up/Down leading"
-ft-form name=lroot width=80 height=8 keymap '[Kk]'=noop
+ft-form name=lroot width=80 height=8 key='[Kk]' keyCode=noop
   ft-label name=big2 text=$'a\nb\nc\nd\ne\nf\ng\nh\ni\nj\nk\nl' width=20 maxHeight=4
   ft-keylegend name=lbar keys=auto
 end_ft_form
-ft-keymap-cap "${FT_KEYMAP[lroot]}" '[Kk]' - 150 "Next page"
+ft_keymap_set "${FT_KEYMAP[lroot]}" \
+    key='[Kk]' keyCap="Next page" keyImp=150
 ft_layout lroot
 FT_ROOT=lroot; ft_focus big2
 _ft_legend_caps

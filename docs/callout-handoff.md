@@ -362,7 +362,7 @@ assertion, a separate chrome rule in the demo. Each was a patch over the same mi
 of a button and a cell of a paragraph are not the same loss.
 
 `importance` is now a control property on `ft_control`, using the framework's EXISTING scale —
-`ft-keymap-cap` has taken an IMPORTANCE argument all along ("a raw 0-255 weight, or one of the
+A binding's `keyImp=` has taken an importance all along ("a raw 0-255 weight, or one of the
 anchor KEYWORDS", modelled on CSS `font-weight: bold | 700`). Same keywords, same constants, one
 resolver (`_ft_importance`) shared by both, so a key legend and a callout cannot disagree about
 what "important" is worth. `FT_IMPORTANCE_MINOR` (30) was added below the three existing anchors
@@ -388,7 +388,7 @@ for.
 
 **The one trap, and it is the FT_RET clobber again.** `_ft_importance` returns through FT_RET, and
 prototype constructors declare their key bindings in tables interleaved with other FT_RET-returning
-calls — so calling it from `ft-keymap-cap` without restoring FT_RET silently corrupted whatever
+calls — so calling it while folding a key group without restoring FT_RET silently corrupted whatever
 the caller had in flight. The scrollbar's arrow bindings stopped dispatching entirely
 (test-scrollbar 29/33, test-dispatch 44/47) while every importance VALUE was perfectly correct.
 Borrow FT_RET and give it back; never duplicate the keyword table to dodge it.
