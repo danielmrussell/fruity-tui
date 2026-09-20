@@ -1,4 +1,4 @@
-.#!/usr/bin/env bash
+#!/usr/bin/env bash
 # keycap.bash — show the exact bytes your terminal sends for a key, the enhanced
 # keyboard protocol it negotiates, and how our decoder classifies it. Press q to quit.
 #
