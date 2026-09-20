@@ -223,11 +223,11 @@ warm_equals_cold "…and the third" a5
 note "tree: moving the cursor and collapsing a branch"
 ft-form name=a6 width=60 height=16
     ft-tree name=tr6 rows=6
-        ft-tree-node "src"      key=src  depth=0 expanded=true
-        ft-tree-node "core"     key=core depth=1
-        ft-tree-node "controls" key=ctl  depth=1 expanded=true
-        ft-tree-node "tree"     key=tree depth=2
-        ft-tree-node "README"   key=rd   depth=0
+        ft-tree-node "src"      id=src  depth=0 expanded=true
+        ft-tree-node "core"     id=core depth=1
+        ft-tree-node "controls" id=ctl  depth=1 expanded=true
+        ft-tree-node "tree"     id=tree depth=2
+        ft-tree-node "README"   id=rd   depth=0
     end_ft_tree
 end_ft_form
 ft_layout a6; FT_ROOT=a6; FT_FOCUS=tr6

@@ -34,9 +34,9 @@ FALLBACK=$'\e[48;5;21;38;5;231m'         # a recognisable fallback SGR
 ft-form name=app width="$FT_COLS" height="$FT_ROWS"
     ft-label name=plain text="a control with a ladder"
     ft-tree name=trec rows=6
-        ft-tree-node "alpha" key=a depth=0
-        ft-tree-node "beta"  key=b depth=0
-        ft-tree-node "gamma" key=g depth=0
+        ft-tree-node "alpha" id=a depth=0
+        ft-tree-node "beta"  id=b depth=0
+        ft-tree-node "gamma" id=g depth=0
     end_ft_tree
 end_ft_form
 FT_ROOT=app; ft_layout app

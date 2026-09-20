@@ -64,9 +64,9 @@ check "release activated the button" "$CLICKED" "1"
 note "tree: click a row selects it; click the glyph column toggles the branch"
 ft-empty app
 ft-tree name=tr rows=8
-  ft-tree-node "root"  key=root depth=0 expanded=true
-  ft-tree-node "child" key=ch   depth=1
-  ft-tree-node "leaf"  key=lf   depth=0
+  ft-tree-node "root"  id=root depth=0 expanded=true
+  ft-tree-node "child" id=ch   depth=1
+  ft-tree-node "leaf"  id=lf   depth=0
 end_ft_tree
 end_ft_form
 ft_layout app; FT_FOCUS=tr
@@ -80,7 +80,7 @@ _ft_tree_gather tr; check "clicking the glyph collapsed root" "${FT_TREE_NODE_EX
 note "scroll wheel routes Up/Down to the control under the cursor"
 ft-empty app
 ft-tree name=tr2 rows=3
-  for _i in 1 2 3 4 5 6; do ft-tree-node "n$_i" key="k$_i" depth=0; done
+  for _i in 1 2 3 4 5 6; do ft-tree-node "n$_i" id="k$_i" depth=0; done
 end_ft_tree
 end_ft_form
 ft_layout app; FT_FOCUS=tr2

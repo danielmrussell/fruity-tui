@@ -13,12 +13,12 @@ _plain() { printf '%s' "$1" | sed -E 's/\x1b\[[0-9;?]*[A-Za-z]//g'; }
 
 ft-form name=app width=80 height=40
 ft-tree name=t rows=6 onActivate=t_on_activate
-    ft-tree-node "src"            key=src  depth=0 expanded=true
-    ft-tree-node "ft-core.bash"   key=core depth=1
-    ft-tree-node "controls"       key=ctl  depth=1 expanded=false
-    ft-tree-node "ft-tree.bash"   key=tree depth=2
-    ft-tree-node "ft-select.bash" key=sel  depth=2
-    ft-tree-node "README.md"      key=rd   depth=0
+    ft-tree-node "src"            id=src  depth=0 expanded=true
+    ft-tree-node "ft-core.bash"   id=core depth=1
+    ft-tree-node "controls"       id=ctl  depth=1 expanded=false
+    ft-tree-node "ft-tree.bash"   id=tree depth=2
+    ft-tree-node "ft-select.bash" id=sel  depth=2
+    ft-tree-node "README.md"      id=rd   depth=0
 end_ft_tree
 end_ft_form
 ft_layout app; FT_ROOT=app; FT_FOCUS=t
@@ -26,7 +26,7 @@ ft_layout app; FT_ROOT=app; FT_FOCUS=t
 note "model: flat nodes, depth, branch = next node is deeper"
 _ft_tree_gather t
 check "6 nodes gathered"          "$FT_TREE_NODE_COUNT"            "6"
-check "keys in order"             "${FT_TREE_NODE_KEY[*]}"     "src core ctl tree sel rd"
+check "keys in order"             "${FT_TREE_NODE_ID[*]}"     "src core ctl tree sel rd"
 check "src is a branch"           "${FT_TREE_NODE_IS_BRANCH[0]}"  "1"
 check "core (leaf) is not"        "${FT_TREE_NODE_IS_BRANCH[1]}"  "0"
 check "controls is a branch"      "${FT_TREE_NODE_IS_BRANCH[2]}"  "1"
@@ -68,8 +68,8 @@ ft_tree_key_enter t; check "Enter on a leaf fired on_activate(core)" "$ACT" "cor
 note "Enter works on a FRESHLY built tree — no arrow-move needed first (regression)"
 ft-form name=fr width=40 height=10
   ft-tree name=tfresh rows=6 onActivate=tfresh_on_activate
-    ft-tree-node "one" key=k1 depth=0
-    ft-tree-node "two" key=k2 depth=0
+    ft-tree-node "one" id=k1 depth=0
+    ft-tree-node "two" id=k2 depth=0
   end_ft_tree
 end_ft_form
 ft_layout fr
@@ -95,7 +95,7 @@ case "$pl" in *"▸"*) check "collapsed branch shows ▸" 1 1 ;; *) check "colla
 note "scrolling: more visible nodes than rows → scrollbar gutter + windowing"
 ft-empty app
 ft-tree name=t2 rows=3
-    for _i in 1 2 3 4 5 6 7 8; do ft-tree-node "item $_i" key="k$_i" depth=0; done
+    for _i in 1 2 3 4 5 6 7 8; do ft-tree-node "item $_i" id="k$_i" depth=0; done
 end_ft_tree
 end_ft_form
 ft_layout app; FT_FOCUS=t2

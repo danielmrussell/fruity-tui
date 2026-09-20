@@ -130,9 +130,9 @@ note "itemCopied is EMITTED — a list control copies the item you are looking a
 ft_remove itf 2>/dev/null
 ft-form name=itf width=60 height=20
     ft-tree name=itree rows=6
-        ft-tree-node name=itn1 "設定"     key=a depth=0 expanded=true
-        ft-tree-node name=itn2 "子ノード" key=b depth=1
-        ft-tree-node name=itn3 "README"   key=c depth=0
+        ft-tree-node name=itn1 "設定"     id=a depth=0 expanded=true
+        ft-tree-node name=itn2 "子ノード" id=b depth=1
+        ft-tree-node name=itn3 "README"   id=c depth=0
     end_ft_tree
     ft-select name=isel size=1
         ft-option value=r "Red"

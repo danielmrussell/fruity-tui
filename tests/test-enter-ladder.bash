@@ -41,8 +41,8 @@ ft-form name=app width=70 height=26
     # not run. (ft-tree opens a scope — end_ft_tree closes it, and leaving it to end_ft_form
     # warns on stderr, which tests/run-all.bash counts as a failure.)
     ft-tree   name=tr  rows=4 onActivate=tree_activated
-        ft-tree-node "branch" key=br depth=0 expanded=true
-        ft-tree-node "leaf"   key=lf depth=1
+        ft-tree-node "branch" id=br depth=0 expanded=true
+        ft-tree-node "leaf"   id=lf depth=1
     end_ft_tree
 end_ft_form
 ft_layout app

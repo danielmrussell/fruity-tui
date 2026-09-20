@@ -114,8 +114,8 @@ _b_multi() {
 }
 _b_tree() {
     ft-tree name=victim rows=3 width=14
-        ft-tree-node "$1"   key=a depth=0 expanded=true
-        ft-tree-node "Leaf" key=b depth=1
+        ft-tree-node "$1"   id=a depth=0 expanded=true
+        ft-tree-node "Leaf" id=b depth=1
     end_ft_tree
 }
 _b_tabs() {

@@ -25,7 +25,7 @@ ft-form name=app width=80 height=24
     ft-option value=b "Beta"
   end_ft_select
   ft-tree name=trv rows=4
-    ft-tree-node "Root" key=root depth=0
+    ft-tree-node "Root" id=root depth=0
   end_ft_tree
 end_ft_form
 ft_layout app; FT_ROOT=app

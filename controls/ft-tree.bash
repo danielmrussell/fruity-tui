@@ -6,17 +6,17 @@
 #  with a depth per node — a node is a BRANCH when the node after it is deeper:
 #
 #      ft-tree name=fs rows=10 width=30
-#          ft-tree-node "src"           key=src   depth=0 expanded=true
-#          ft-tree-node "ft-core.bash"  key=core  depth=1
-#          ft-tree-node "controls"      key=ctl   depth=1 expanded=false
-#          ft-tree-node "ft-tree.bash"  key=tree  depth=2
-#          ft-tree-node "README.md"     key=rd    depth=0
+#          ft-tree-node "src"           id=src   depth=0 expanded=true
+#          ft-tree-node "ft-core.bash"  id=core  depth=1
+#          ft-tree-node "controls"      id=ctl   depth=1 expanded=false
+#          ft-tree-node "ft-tree.bash"  id=tree  depth=2
+#          ft-tree-node "README.md"     id=rd    depth=0
 #      end_ft_tree
 #
 #  Keys (while focused): ↑/↓ move the cursor over VISIBLE nodes; →/l expand a
 #  branch (or step into its first child); ←/h collapse it (or step to the
 #  parent); Enter/Space toggle a branch and "activate" a leaf; Home/End/PgUp/
-#  PgDn jump. The tree keeps `value` = the cursor node's key, so a host reads the
+#  PgDn jump. The tree keeps `value` = the cursor node's id, so a host reads the
 #  current selection like any control; onChange=fn fires on cursor moves,
 #  onActivate=fn on Enter over a leaf.
 #
@@ -112,12 +112,12 @@ ft_prototype_tree() {
 # Nodes are display=none data holders (never laid out or drawn on their own —
 # the tree draws them), exactly like ft-table's rows.
 ft_prototype_treenode() {
-    ft_prototype extends=ft_control defaults="display=none depth=0 expanded=false key="
-    # Register key/depth/expanded so the arg parser accepts them as PROPERTIES
+    ft_prototype extends=ft_control defaults="display=none depth=0 expanded=false id="
+    # Register id/depth/expanded so the arg parser accepts them as PROPERTIES
     # even when the value contains a space — a file named "my report.txt" makes
-    # key="f:my report.txt", and without this the parser would mistake the whole
-    # `key=…` token for the node's text (you'd see "key=f:my report.txt" on screen).
-    ft_prop_kind_set key      paint
+    # id="f:my report.txt", and without this the parser would mistake the whole
+    # `id=…` token for the node's text (you'd see "id=f:my report.txt" on screen).
+    ft_prop_kind_set id       paint
     ft_prop_kind_set depth    layout
     ft_prop_kind_set expanded paint
 }
@@ -126,7 +126,7 @@ ft-tree()     { ft_new tree "$@" && FT_NEST_STACK+=("$FT_RET"); }
 end_ft_tree() { ft-end tree; }
 
 _FT_TREE_SEQ=0
-ft-tree-node() {                # [name=..] "label" [key=..] [depth=N] [expanded=true]
+ft-tree-node() {                # [name=..] "label" [id=..] [depth=N] [expanded=true]
     # An explicit name= WINS, the way it does for ft-table-header and ft-table-row. This
     # used to prepend a generated name unconditionally, so `ft-tree-node name=mine …` was
     # accepted, ignored, and the node kept its generated name — leaving the caller holding
@@ -141,12 +141,12 @@ ft-tree-node() {                # [name=..] "label" [key=..] [depth=N] [expanded
 # ── Model: flat node arrays + the visible-row projection ─────────────────────
 _ft_tree_gather() {             # name → FT_TN_* arrays + FT_TREE_NODE_COUNT
     local name=$1 k
-    FT_TREE_NODE_NAME=(); FT_TREE_NODE_TEXT=(); FT_TREE_NODE_KEY=(); FT_TREE_NODE_DEPTH=(); FT_TREE_NODE_EXPANDED=(); FT_TREE_NODE_IS_BRANCH=()
+    FT_TREE_NODE_NAME=(); FT_TREE_NODE_TEXT=(); FT_TREE_NODE_ID=(); FT_TREE_NODE_DEPTH=(); FT_TREE_NODE_EXPANDED=(); FT_TREE_NODE_IS_BRANCH=()
     for k in ${FT_KIDS[$name]:-}; do
         [[ "${FT_TYPE[$k]:-}" == treenode ]] || continue
         FT_TREE_NODE_NAME+=("$k")
         _ft_get_raw "$k" text;     FT_TREE_NODE_TEXT+=("$FT_RET")
-        _ft_get_raw "$k" key;      FT_TREE_NODE_KEY+=("$FT_RET")
+        _ft_get_raw "$k" id;       FT_TREE_NODE_ID+=("$FT_RET")
         _ft_get_raw "$k" depth;    FT_TREE_NODE_DEPTH+=("${FT_RET:-0}")
         _ft_get_raw "$k" expanded; [[ "$FT_RET" == true ]] && FT_TREE_NODE_EXPANDED+=(1) || FT_TREE_NODE_EXPANDED+=(0)
     done
@@ -191,7 +191,7 @@ _ft_tree_set_cursor() {         # name nodeidx
     (( vp < sc )) && sc=$vp
     (( vp >= sc + rows )) && sc=$(( vp - rows + 1 ))
     (( sc > vn - rows )) && sc=$(( vn - rows )); (( sc < 0 )) && sc=0
-    local newval=${FT_TREE_NODE_KEY[$idx]}
+    local newval=${FT_TREE_NODE_ID[$idx]}
     ft-modify "$name" cursor="$idx" scroll="$sc" value="$newval"
     _ft_hook "$name" on_change "$newval"
     ft_dirty "$name"; return 0
@@ -266,10 +266,10 @@ ft_tree_key_enter() {           # toggle a branch; activate a leaf
         (( FT_TREE_NODE_EXPANDED[i] )) && _ft_tree_set_exp "$n" "$i" 0 || _ft_tree_set_exp "$n" "$i" 1
         _ft_tree_set_cursor "$n" "$i"
     else
-        # Fire with the CURSOR NODE's key directly — the `value` prop is only
+        # Fire with the CURSOR NODE's id directly — the `value` prop is only
         # refreshed when the cursor MOVES, so on a freshly-built tree (cursor never
         # moved) it is still empty and Enter would activate nothing.
-        _ft_hook "$n" on_activate "${FT_TREE_NODE_KEY[$i]}"
+        _ft_hook "$n" on_activate "${FT_TREE_NODE_ID[$i]}"
     fi
     return 0
 }

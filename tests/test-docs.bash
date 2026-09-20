@@ -34,7 +34,7 @@ ft-form name=docf width=40 height=20
     ft-textfield name=dt size=6
     ft-select name=dsel size=1; ft-option value=a A; end_ft_select
     ft-multitoggle name=dm text=x; ft-option value=a glyph=A; end_ft_multitoggle
-    ft-tree name=dtr rows=2; ft-tree-node "n" key=k depth=0; end_ft_tree
+    ft-tree name=dtr rows=2; ft-tree-node "n" id=k depth=0; end_ft_tree
     ft-table name=dtb; ft-table-header "H"; ft-table-row "c"; end_ft_table
 end_ft_form
 

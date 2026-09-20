@@ -101,7 +101,7 @@ declare -A _INC_SAMPLE=(
 declare -A _INC_EXEMPT=(
     [name]="identity — a control is renamed by rebuilding it"
     [parent]="refused by ft-modify; the tree moves by verb, and ft_append is driven below"
-    [key]="a tree node's identity in the expansion record, not something it draws"
+    [id]="a tree node's identity in the expansion record, not something it draws"
     [group]="a radio's identity; which radio is chosen is driven by its verbs below"
     [draw]="names a paint FUNCTION; what that function paints is the app's"
     [eventListeners]="listener bookkeeping; paints nothing"
@@ -233,11 +233,11 @@ if [[ "${1:-}" == --fixture ]]; then
                                  ft-table-row delta; ft-table-row echo;    ft-table-row foxtrot
                              end_ft_table ;;
                 tree)        ft-tree name=sub rows=5 width=24
-                                 ft-tree-node "src"          key=src  depth=0 expanded=true
-                                 ft-tree-node "ft-core.bash" key=core depth=1
-                                 ft-tree-node "controls"     key=ctl  depth=1 expanded=false
-                                 ft-tree-node "ft-tree.bash" key=tree depth=2
-                                 ft-tree-node "README.md"    key=rd   depth=0
+                                 ft-tree-node "src"          id=src  depth=0 expanded=true
+                                 ft-tree-node "ft-core.bash" id=core depth=1
+                                 ft-tree-node "controls"     id=ctl  depth=1 expanded=false
+                                 ft-tree-node "ft-tree.bash" id=tree depth=2
+                                 ft-tree-node "README.md"    id=rd   depth=0
                              end_ft_tree ;;
                 tabs)        ft-tabs name=sub width=30 height=7
                                  ft-tab name=tab1 title=One

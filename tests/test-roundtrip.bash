@@ -136,11 +136,11 @@ _rt_build() {                   # type
                          ft-table-row delta; ft-table-row echo;    ft-table-row foxtrot
                      end_ft_table ;;
         tree)        ft-tree name=rtc rows=6 width=30
-                         ft-tree-node "src"          key=src  depth=0 expanded=true
-                         ft-tree-node "ft-core.bash" key=core depth=1
-                         ft-tree-node "controls"     key=ctl  depth=1 expanded=false
-                         ft-tree-node "ft-tree.bash" key=tree depth=2
-                         ft-tree-node "README.md"    key=rd   depth=0
+                         ft-tree-node "src"          id=src  depth=0 expanded=true
+                         ft-tree-node "ft-core.bash" id=core depth=1
+                         ft-tree-node "controls"     id=ctl  depth=1 expanded=false
+                         ft-tree-node "ft-tree.bash" id=tree depth=2
+                         ft-tree-node "README.md"    id=rd   depth=0
                      end_ft_tree ;;
         tabs)        ft-tabs name=rtc width=40 height=10
                          ft-tab name=rtt1 title=One
