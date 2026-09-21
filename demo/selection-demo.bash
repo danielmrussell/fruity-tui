@@ -39,7 +39,7 @@ ft-form name=app width="$FT_COLS" height="$FT_ROWS" \
             ft-checkbox name=cbLines  text="Show line numbers" checked=false accessKey=W
         end_ft_div
         ft-div name=btnrow display=flex justifyContent=center
-            ft-button name=btnOk text=OK accessKey=K onActivate=btnOk_on_activate
+            ft-button name=btnOk text=OK accessKey=K onActivate='btnOk_on_activate "$@"'
         end_ft_div
         ft-label name=status text=""
     end_ft_frame

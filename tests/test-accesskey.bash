@@ -50,7 +50,7 @@ note "an app relabelling its OWN button's key is not a conflict"
 # labelled cap that does the same thing. Flagging that would make the check noise.
 ft_remove f2
 ft-form name=f3 width=60 height=8
-    ft-button name=quit text="Quit" accessKey=Q onActivate=ft_quit
+    ft-button name=quit text="Quit" accessKey=Q onActivate='ft_quit "$@"'
 end_ft_form
 ft_layout f3; FT_ROOT=f3
 ft_keymap_set "${FT_KEYMAP[f3]}" \

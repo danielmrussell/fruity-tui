@@ -28,9 +28,9 @@ hit_share()  { FIRED="share"; }
 hit_second() { FIRED="second"; }
 
 ft-form name=app width=60 height=14
-    ft-button name=save text="Save" accessKey=S onActivate=hit_save
-    ft-button name=shareA text="Share" accessKey=H onActivate=hit_share
-    ft-button name=shareB text="Hide" accessKey=H onActivate=hit_second
+    ft-button name=save text="Save" accessKey=S onActivate='hit_save "$@"'
+    ft-button name=shareA text="Share" accessKey=H onActivate='hit_share "$@"'
+    ft-button name=shareB text="Hide" accessKey=H onActivate='hit_second "$@"'
 end_ft_form
 ft_layout app
 FT_ROOT=app

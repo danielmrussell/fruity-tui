@@ -116,15 +116,16 @@ ft_run app' ;;
     6)  explain=\
 "A flex row of three frames: left grows 1 share, right grows 3, the middle is a fixed width. The labelled WIDTH and HEIGHT sliders reshape it live -- Tab to one, then Left/Right adjust (PgUp/PgDn jump, Home/End snap). A focused slider lights up in the theme's one focus colour; each one's one-line _on_change hook just feeds its value into ft_set. Two glyph styles are shown (fill, blocks); track and dots also exist. (The demo sits in a fixed-size box so a tick reflows only that region -- snappy.)"
         code='ft-label  Width
-ft-slider name=rowW min=30 max=56 value=56 step=2 variant=fill   showValue=true onChange=rowW_on_change
+ft-slider name=rowW min=30 max=56 value=56 step=2 variant=fill   showValue=true onChange='rowW_on_change "$@"'
 ft-label text=Height
-ft-slider name=rowH min=3  max=6  value=3         variant=blocks showValue=true onChange=rowH_on_change
+ft-slider name=rowH min=3  max=6  value=3         variant=blocks showValue=true onChange='rowH_on_change "$@"'
 ...
 rowW_on_change() { ft_set flexRow width="$1"; }   # flexRow = the container
 rowH_on_change() { ft_set flexRow height="$1"; }' ;;
     7)  explain=\
 "Every input keeps its own value automatically -- no handler needed just to remember what is set. Ticking Show advanced ENABLES the compression radios (its _on_activate); unticking disables them again (its _on_deactivate); disabled controls dim and drop out of Tab order. There is no special submit: Save is an ordinary button whose _on_activate reads the values and acts -- here it writes a one-line summary and, if Beep is on, rings the bell (audible only if your terminal's bell is enabled). Reading values on a button is exactly how Samba Mago will collect samba-tool settings. (The controls sit in a fixed-width box, so the growing status line never shoves them around.) Note: ft_get is fork-free -- it fills your variable, no \$(...) subshell."
-        code='ft-checkbox name=cbAdvanced "Show advanced" accessKey=A onActivate=cbAdvanced_on_activate onDeactivate=cbAdvanced_on_deactivate
+        code='ft-checkbox name=cbAdvanced text="Show advanced" accessKey=A \
+             onActivate=cbAdvanced_on_activate onDeactivate=cbAdvanced_on_deactivate
 ft-div name=advBox
     ft-radio name=rNone group=comp value=none text="No compression" accessKey=N
     ft-radio name=rFast group=comp value=fast text="Fast" accessKey=F
@@ -147,7 +148,7 @@ btnSave_on_activate() {           # the "submit": just read the values
     ft-option value=write text="Write"
     ft-option value=admin text="Administer"
 end_ft_select
-ft-select name=theme                 # size=1 -> dropdown onChange=theme_on_change
+ft-select name=theme                 # size=1 -> dropdown onChange='theme_on_change "$@"'
     ft-option value=dark text="Dark"
     ft-option value=light text="Light"
     ft-option value=ocean text="Ocean"
@@ -300,11 +301,11 @@ fi
                     ft-div name=sliders display=flex gap=4
                         ft-div name=wCol display=flex flexDirection=column alignItems=center
                             ft-label name=wLbl text=Width
-                            ft-slider name=rowW min=30 max=56 value=56 step=2 width=22 variant=fill showValue=true onChange=rowW_on_change
+                            ft-slider name=rowW min=30 max=56 value=56 step=2 width=22 variant=fill showValue=true onChange='rowW_on_change "$@"'
                         end_ft_div
                         ft-div name=hCol display=flex flexDirection=column alignItems=center
                             ft-label name=hLbl text=Height
-                            ft-slider name=rowH min=3 max=6 value=3 width=12 variant=blocks showValue=true onChange=rowH_on_change
+                            ft-slider name=rowH min=3 max=6 value=3 width=12 variant=blocks showValue=true onChange='rowH_on_change "$@"'
                         end_ft_div
                     end_ft_div
                 end_ft_div ;;
@@ -315,7 +316,7 @@ fi
                 # opts (its own centred, fixed-width row) so it can grow on Save
                 # without stretching the control box.
                 ft-div name=opts display=flex flexDirection=column gap=0 alignItems=start
-                    ft-checkbox name=cbAdvanced text="Show advanced" accessKey=A onActivate=cbAdvanced_on_activate onDeactivate=cbAdvanced_on_deactivate
+                    ft-checkbox name=cbAdvanced text="Show advanced" accessKey=A onActivate='cbAdvanced_on_activate "$@"' onDeactivate='cbAdvanced_on_deactivate "$@"'
                     ft-div name=advBox display=flex flexDirection=column gap=0 alignItems=start
                         ft-radio name=rNone group=comp value=none text="No compression" accessKey=N disabled=true
                         ft-radio name=rFast group=comp value=fast text="Fast" accessKey=F disabled=true
@@ -332,7 +333,7 @@ fi
                     end_ft_select
                     local _ti=0
                     case "$THEME_SEL" in dark) _ti=0 ;; light) _ti=1 ;; ocean) _ti=2 ;; esac
-                    ft-select name=theme selectedIndex="$_ti" onChange=theme_on_change
+                    ft-select name=theme selectedIndex="$_ti" onChange='theme_on_change "$@"'
                         ft-option value=dark text="Dark"
                         ft-option value=light text="Light"
                         ft-option value=ocean text="Ocean"
@@ -351,19 +352,19 @@ fi
                 ft-div name=styles display=flex gap=2 alignItems=start
                     ft-frame name=stD title=Double borderStyle=double borderColor=cyan width=18 height=6 display=flex flexDirection=column alignItems=center gap=0
                         ft-label name=stDt text="single ⇄ double"
-                        ft-checkbox name=stDc text="Double" checked=true onActivate=stDc_on_activate onDeactivate=stDc_on_deactivate
+                        ft-checkbox name=stDc text="Double" checked=true onActivate='stDc_on_activate "$@"' onDeactivate='stDc_on_deactivate "$@"'
                     end_ft_frame
                     ft-frame name=stR title=Rounded borderRadius=1 borderColor=green width=18 height=6 display=flex flexDirection=column alignItems=center gap=0
                         ft-label name=stRt text="round corners"
-                        ft-checkbox name=stRad text="Rounded" checked=true onActivate=stRad_on_activate onDeactivate=stRad_on_deactivate
+                        ft-checkbox name=stRad text="Rounded" checked=true onActivate='stRad_on_activate "$@"' onDeactivate='stRad_on_deactivate "$@"'
                     end_ft_frame
                     ft-frame name=stH title=Dashed borderStyle=dashed borderColor=orange width=18 height=6 display=flex flexDirection=column alignItems=center gap=0
                         ft-label name=stHt text="border on/off"
-                        ft-checkbox name=stHc text="Border" checked=true onDeactivate=stHc_on_deactivate onActivate=stHc_on_activate
+                        ft-checkbox name=stHc text="Border" checked=true onDeactivate='stHc_on_deactivate "$@"' onActivate='stHc_on_activate "$@"'
                     end_ft_frame
                     ft-frame name=stS title=Stars borderGlyph=★ borderColor=gold width=18 height=6 display=flex flexDirection=column alignItems=center gap=0
                         ft-label name=stSt text="pick a glyph"
-                        ft-select name=stSsel size=1 onChange=stSsel_on_change
+                        ft-select name=stSsel size=1 onChange='stSsel_on_change "$@"'
                             ft-option value=★ text="Star"
                             ft-option value=♥ text="Heart"
                             ft-option value=◆ text="Diamond"
@@ -376,7 +377,7 @@ fi
                 ft-div name=tbox display=flex flexDirection=column gap=1 alignItems=start
                     ft-div name=trowN display=flex gap=1 alignItems=center
                         ft-label     name=tlN text="Name" width=6
-                        ft-textfield name=tfName size=30 value="admin" placeholder="username" onChange=tfName_on_change
+                        ft-textfield name=tfName size=30 value="admin" placeholder="username" onChange='tfName_on_change "$@"'
                     end_ft_div
                     ft-div name=trowD display=flex gap=1 alignItems=start
                         ft-label     name=tlD text="Notes" width=6
@@ -385,9 +386,9 @@ fi
                                      placeholder="A multi-line text box -- type, press Enter for new lines. With Wrap on, long lines fold to the next row (a ↩ marks each folded row); turn Wrap off and a long line scrolls sideways instead (the caret drags the view)."
                     end_ft_div
                     ft-div name=trowT display=flex flexDirection=column alignItems=start
-                        ft-checkbox name=cbWrap text="Wrap long lines" accessKey=W checked=true onActivate=cbWrap_on_activate onDeactivate=cbWrap_on_deactivate
-                        ft-checkbox name=cbWrapInd text="  └ ↩ wrap marks" accessKey=M checked=true onActivate=cbWrapInd_on_activate onDeactivate=cbWrapInd_on_deactivate
-                        ft-checkbox name=cbLineNo text="Line numbers" accessKey=L checked=true onActivate=cbLineNo_on_activate onDeactivate=cbLineNo_on_deactivate
+                        ft-checkbox name=cbWrap text="Wrap long lines" accessKey=W checked=true onActivate='cbWrap_on_activate "$@"' onDeactivate='cbWrap_on_deactivate "$@"'
+                        ft-checkbox name=cbWrapInd text="  └ ↩ wrap marks" accessKey=M checked=true onActivate='cbWrapInd_on_activate "$@"' onDeactivate='cbWrapInd_on_deactivate "$@"'
+                        ft-checkbox name=cbLineNo text="Line numbers" accessKey=L checked=true onActivate='cbLineNo_on_activate "$@"' onDeactivate='cbLineNo_on_deactivate "$@"'
                     end_ft_div
                 end_ft_div ;;
             12) # The readline keys, rendered by ft-table -- and made LIVE: the
@@ -399,14 +400,14 @@ fi
                 ft-div name=tblCtl display=flex gap=3 alignItems=center justifyContent=center
                     ft-div name=tblStyleWrap display=flex gap=1 alignItems=center
                         ft-label name=tblStyleL text="Style"
-                        ft-select name=tblStyle size=1 selectedIndex="$_si" onChange=tblStyle_on_change
+                        ft-select name=tblStyle size=1 selectedIndex="$_si" onChange='tblStyle_on_change "$@"'
                             ft-option value=grid text="Grid"
                             ft-option value=heavy text="Heavy"
                             ft-option value=lines text="Lines"
                             ft-option value=minimal text="Minimal"
                         end_ft_select
                     end_ft_div
-                    ft-checkbox name=tblStripe text="Striped" accessKey=T checked="$TBL_STRIPE_SEL" onChange=tblStripe_on_change
+                    ft-checkbox name=tblStripe text="Striped" accessKey=T checked="$TBL_STRIPE_SEL" onChange='tblStripe_on_change "$@"'
                 end_ft_div
                 ft-table name=keys style="$TBL_STYLE_SEL" striped="$TBL_STRIPE_SEL" rows=7
                     ft-table-header text="Keys"
@@ -440,13 +441,13 @@ fi
                         ft-table-row "Table style"  "$TBL_STYLE_SEL"
                         ft-table-row "Striped rows" "$TBL_STRIPE_SEL"
                     end_ft_table
-                    ft-button name=btnSaveSettings text="Save to file..." accessKey=S onActivate=btnSaveSettings_on_activate
+                    ft-button name=btnSaveSettings text="Save to file..." accessKey=S onActivate='btnSaveSettings_on_activate "$@"'
                     ft-label  name=saveStatus color=notice textAlign=center width=64 \
                               text="Save opens the real file dialog to pick where these go."
                 end_ft_div ;;
             14) # A page all about the file dialog itself.
                 ft-div name=fdrow display=flex flexDirection=column gap=1 alignItems=center
-                    ft-button name=btnOpenFD text="Open the file dialog..." accessKey=O onActivate=btnOpenFD_on_activate
+                    ft-button name=btnOpenFD text="Open the file dialog..." accessKey=O onActivate='btnOpenFD_on_activate "$@"'
                     ft-label  name=fdResult color=notice textAlign=center width=64 \
                               text="Click to open it (Save mode). The path you pick shows here."
                 end_ft_div ;;
@@ -461,15 +462,15 @@ fi
                 # never resizes the button -- the text change is then a local
                 # repaint, not a whole-frame reflow.
                 ft-div name=actionrow display=flex gap=2 justifyContent=center
-                    ft-button name=btnVis text="Invisible" accessKey=V width=11 onActivate=btnVis_on_activate
-                    ft-button name=btnDisp text="Remove" accessKey=R width=11 onActivate=btnDisp_on_activate
+                    ft-button name=btnVis text="Invisible" accessKey=V width=11 onActivate='btnVis_on_activate "$@"'
+                    ft-button name=btnDisp text="Remove" accessKey=R width=11 onActivate='btnDisp_on_activate "$@"'
                 end_ft_div
             fi
             ft-div name=btnrow display=flex gap=2 justifyContent=center
-                ft-button name=btnBack text=Back accessKey=B onActivate=btnBack_on_activate
-                [[ "$STEP" == 7 ]] && ft-button name=btnSave text=Save accessKey=S onActivate=btnSave_on_activate
-                ft-button name=btnOk text="$oktext" accessKey=K onActivate=btnOk_on_activate
-                ft-button name=btnQuit text=Quit accessKey=Q onActivate=btnQuit_on_activate
+                ft-button name=btnBack text=Back accessKey=B onActivate='btnBack_on_activate "$@"'
+                [[ "$STEP" == 7 ]] && ft-button name=btnSave text=Save accessKey=S onActivate='btnSave_on_activate "$@"'
+                ft-button name=btnOk text="$oktext" accessKey=K onActivate='btnOk_on_activate "$@"'
+                ft-button name=btnQuit text=Quit accessKey=Q onActivate='btnQuit_on_activate "$@"'
             end_ft_div
         end_ft_frame
     end_ft_div

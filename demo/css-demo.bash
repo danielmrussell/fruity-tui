@@ -498,7 +498,7 @@ _show_page() {
                 ft-div name=ctl1 display=flex gap=4 alignItems=center
                     ft-div name=grp381 display=flex gap=1 alignItems=center
                         ft-label text="Parent colour:"
-                        ft-select name=inhColor size=1 onChange=inhColor_on_change
+                        ft-select name=inhColor size=1 onChange='inhColor_on_change "$@"'
                             ft-option value=crimson text="Crimson"
                             ft-option value=dodgerblue text="Blue"
                             ft-option value=46 text="Green"
@@ -509,12 +509,12 @@ _show_page() {
                     # registered last and wins the form keymap outright, so a B here would
                     # underline a letter that pages backwards instead of ticking the box.
                     # ft_accesskey_conflicts catches exactly this.
-                    ft-checkbox name=inhBold text="Bold" accessKey=O onActivate=inhBold_on_activate onDeactivate=inhBold_on_deactivate
+                    ft-checkbox name=inhBold text="Bold" accessKey=O onActivate='inhBold_on_activate "$@"' onDeactivate='inhBold_on_deactivate "$@"'
                 end_ft_div ;;
             2)  ft-textfield name=spec value="$SPEC" size=44 rows=2 wrap=true class="${SEL_CLASS/none/}"
                 ft-div name=ctl2 display=flex gap=1 alignItems=center
                     ft-label "#spec class ="
-                    ft-select name=selClass size=1 onChange=selClass_on_change
+                    ft-select name=selClass size=1 onChange='selClass_on_change "$@"'
                         ft-option value=none text="(none)"
                         ft-option value=warning text=".warning"
                         ft-option value=ok text=".ok"
@@ -523,19 +523,19 @@ _show_page() {
             3)  ft-textfield name=spec value="$SPEC" size=44 rows=2 wrap=true class=hot
                 ft-div name=ctl3 display=flex gap=2 alignItems=center
                     ft-label text="Rules on:"
-                    ft-checkbox name=spType text="textfield" accessKey=T checked=true onActivate=spType_on_activate onDeactivate=spType_on_deactivate
-                    ft-checkbox name=spClass text=".hot" accessKey=C onActivate=spClass_on_activate onDeactivate=spClass_on_deactivate
-                    ft-checkbox name=spId text="#spec" accessKey=I onActivate=spId_on_activate onDeactivate=spId_on_deactivate
+                    ft-checkbox name=spType text="textfield" accessKey=T checked=true onActivate='spType_on_activate "$@"' onDeactivate='spType_on_deactivate "$@"'
+                    ft-checkbox name=spClass text=".hot" accessKey=C onActivate='spClass_on_activate "$@"' onDeactivate='spClass_on_deactivate "$@"'
+                    ft-checkbox name=spId text="#spec" accessKey=I onActivate='spId_on_activate "$@"' onDeactivate='spId_on_deactivate "$@"'
                 end_ft_div ;;
             4)  ft-textfield name=spec value="$SPEC" size=44 rows=2 wrap=true
                 ft-div name=ctl4 display=flex gap=2 alignItems=center
-                    ft-checkbox name=stDisabled text="Disable the box" accessKey=D onActivate=stDisabled_on_activate onDeactivate=stDisabled_on_deactivate
+                    ft-checkbox name=stDisabled text="Disable the box" accessKey=D onActivate='stDisabled_on_activate "$@"' onDeactivate='stDisabled_on_deactivate "$@"'
                     ft-label color=muted "· Tab = :focus · Enter = :editing"
                 end_ft_div ;;
             5)  ft-textfield name=spec value="$SPEC" size=44 rows=2 wrap=true --accent="$VAR_ACCENT"
                 ft-div name=ctl5 display=flex gap=1 alignItems=center
                     ft-label "--accent ="
-                    ft-select name=varPick size=1 onChange=varPick_on_change
+                    ft-select name=varPick size=1 onChange='varPick_on_change "$@"'
                         ft-option value=crimson text="crimson"
                         ft-option value=dodgerblue text="dodgerblue"
                         ft-option value=46 text="green"
@@ -545,7 +545,7 @@ _show_page() {
             6)  ft-textfield name=spec value="$SPEC" size=44 rows=2 wrap=true color="$CF_FMT"
                 ft-div name=ctl6 display=flex gap=1 alignItems=center
                     ft-label text="color:"
-                    ft-select name=cfFmt size=1 onChange=cfFmt_on_change
+                    ft-select name=cfFmt size=1 onChange='cfFmt_on_change "$@"'
                         ft-option value=crimson text="crimson (name)"
                         ft-option value=#dc143c text="#dc143c (hex)"
                         ft-option value="rgb(220,20,60)" text="rgb(220,20,60)"
@@ -555,7 +555,7 @@ _show_page() {
             7)  ft-textfield name=spec value="$SPEC" size=44 rows=2 wrap=true class="pe-$STRUCT" placeholder="#spec is empty — so you see its ::placeholder"
                 ft-div name=ctl7 display=flex gap=1 alignItems=center
                     ft-label text="Pseudo-element:"
-                    ft-select name=structPick size=1 onChange=structPick_on_change
+                    ft-select name=structPick size=1 onChange='structPick_on_change "$@"'
                         ft-option value=border text="::border"
                         ft-option value=selection text="::selection"
                         ft-option value=scrollbar text="::scrollbar"
@@ -567,7 +567,7 @@ _show_page() {
                 ft-div name=ctl8 display=flex gap=4 alignItems=center
                     ft-div name=grp446 display=flex gap=1 alignItems=center
                         ft-label text="animation:"
-                        ft-select name=animPick size=1 onChange=animPick_on_change
+                        ft-select name=animPick size=1 onChange='animPick_on_change "$@"'
                             ft-option value=none text="none"
                             ft-option value=glow text="glow"
                             ft-option value=alarm text="alarm"
@@ -575,7 +575,7 @@ _show_page() {
                     end_ft_div
                     ft-div name=grp455 display=flex gap=1 alignItems=center
                         ft-label text="duration:"
-                        ft-slider name=animDur min=1 max=8 value="$AN_DUR" step=1 width=14 variant=fill showValue=true onChange=animDur_on_change
+                        ft-slider name=animDur min=1 max=8 value="$AN_DUR" step=1 width=14 variant=fill showValue=true onChange='animDur_on_change "$@"'
                         ft-label color=muted text="s"
                     end_ft_div
                 end_ft_div ;;
@@ -584,13 +584,13 @@ _show_page() {
                 end_ft_div
                 ft-textfield name=specOut value="$SPEC" size=44 rows=1 wrap=true
                 ft-div name=ctl9 display=flex gap=1 alignItems=center
-                    ft-checkbox name=cbNest text="Wrap the first box in a .spotlight" accessKey=C onActivate=cbNest_on_activate onDeactivate=cbNest_on_deactivate
+                    ft-checkbox name=cbNest text="Wrap the first box in a .spotlight" accessKey=C onActivate='cbNest_on_activate "$@"' onDeactivate='cbNest_on_deactivate "$@"'
                 end_ft_div ;;
             10) ft-textfield name=spec value="$SPEC" size=44 rows=2 wrap=true
                 ft-div name=ctl10 display=flex gap=1 alignItems=center
                     ft-label text="Theme:"
                     local _ti=0; case "$THEME_SEL" in dark) _ti=0 ;; light) _ti=1 ;; ocean) _ti=2 ;; esac
-                    ft-select name=themePick size=1 selectedIndex="$_ti" onChange=themePick_on_change
+                    ft-select name=themePick size=1 selectedIndex="$_ti" onChange='themePick_on_change "$@"'
                         ft-option value=dark text="Dark"
                         ft-option value=light text="Light"
                         ft-option value=ocean text="Ocean"
@@ -601,16 +601,16 @@ _show_page() {
 
             # ── STEP through THIS page's lesson (◀ ▶); the bottom buttons move PAGES ──
             ft-div name=stepnav display=flex gap=2 alignItems=center justifyContent=center
-                ft-button name=btnStepPrev text="◀" onActivate=btnStepPrev_on_activate
+                ft-button name=btnStepPrev text="◀" onActivate='btnStepPrev_on_activate "$@"'
                 ft-label name=stepcount color=accent text=" Step $STEP of $nsteps "
-                ft-button name=btnStepNext text="▶" onActivate=btnStepNext_on_activate
+                ft-button name=btnStepNext text="▶" onActivate='btnStepNext_on_activate "$@"'
             end_ft_div
 
             # PAGE navigation lives at the very bottom (orthogonal to the ◀▶ step arrows).
             ft-div name=btnrow display=flex gap=2 justifyContent=center
-                ft-button name=btnBack text="Back" accessKey=B onActivate=btnBack_on_activate
-                ft-button name=btnOk text="$oktext" accessKey=K onActivate=btnOk_on_activate
-                ft-button name=btnQuit text="Quit" accessKey=Q onActivate=btnQuit_on_activate
+                ft-button name=btnBack text="Back" accessKey=B onActivate='btnBack_on_activate "$@"'
+                ft-button name=btnOk text="$oktext" accessKey=K onActivate='btnOk_on_activate "$@"'
+                ft-button name=btnQuit text="Quit" accessKey=Q onActivate='btnQuit_on_activate "$@"'
             end_ft_div
 
             _place_callout    # the CURRENT step's numbered pop-up instruction, pointing at its control

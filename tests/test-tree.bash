@@ -12,7 +12,7 @@ FT_COLS=80; FT_ROWS=40
 _plain() { printf '%s' "$1" | sed -E 's/\x1b\[[0-9;?]*[A-Za-z]//g'; }
 
 ft-form name=app width=80 height=40
-ft-tree name=t rows=6 onActivate=t_on_activate
+ft-tree name=t rows=6 onActivate='t_on_activate "$@"'
     ft-tree-node text="src" id=src depth=0 expanded=true
     ft-tree-node text="ft-core.bash" id=core depth=1
     ft-tree-node text="controls" id=ctl depth=1 expanded=false
@@ -67,7 +67,7 @@ ft_tree_key_enter t; check "Enter on a leaf fired on_activate(core)" "$ACT" "cor
 
 note "Enter works on a FRESHLY built tree — no arrow-move needed first (regression)"
 ft-form name=fr width=40 height=10
-  ft-tree name=tfresh rows=6 onActivate=tfresh_on_activate
+  ft-tree name=tfresh rows=6 onActivate='tfresh_on_activate "$@"'
     ft-tree-node text="one" id=k1 depth=0
     ft-tree-node text="two" id=k2 depth=0
   end_ft_tree

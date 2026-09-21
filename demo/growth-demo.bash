@@ -66,8 +66,8 @@ _build_stage() {                    # stage
                 fi
             end_ft_div
             ft-div name=btnrow display=flex gap=2 justifyContent=center
-                ft-button name=btnOk text=OK accessKey=K onActivate=btnOk_on_activate
-                ft-button name=btnQuit text=Quit accessKey=Q onActivate=btnQuit_on_activate
+                ft-button name=btnOk text=OK accessKey=K onActivate='btnOk_on_activate "$@"'
+                ft-button name=btnQuit text=Quit accessKey=Q onActivate='btnQuit_on_activate "$@"'
             end_ft_div
         end_ft_frame
     end_ft_form

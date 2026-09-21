@@ -28,11 +28,11 @@ on_last()   { FIRED+="last ";   }
 
 build() {
     ft-form name=ap width=70 height=12
-        ft-button name=first text="First" accessKey=F onActivate=on_first
-        ft-button name=off text="Off" accessKey=O onActivate=on_off disabled=true
-        ft-button name=gone text="Gone" accessKey=G onActivate=on_gone display=none
-        ft-button name=unseen text="Unseen" accessKey=U onActivate=on_unseen visibility=hidden
-        ft-button name=last text="Last" accessKey=L onActivate=on_last
+        ft-button name=first text="First" accessKey=F onActivate='on_first "$@"'
+        ft-button name=off text="Off" accessKey=O onActivate='on_off "$@"' disabled=true
+        ft-button name=gone text="Gone" accessKey=G onActivate='on_gone "$@"' display=none
+        ft-button name=unseen text="Unseen" accessKey=U onActivate='on_unseen "$@"' visibility=hidden
+        ft-button name=last text="Last" accessKey=L onActivate='on_last "$@"'
     end_ft_form
     ft_layout ap; FT_ROOT=ap; ft_focus first
 }
@@ -102,14 +102,14 @@ note "a control added AFTER the form was built joins the ring, in its tree posit
 # added into a container in the middle lands in the middle, not at the end.
 ft_remove ap 2>/dev/null
 ft-form name=rt width=70 height=12
-    ft-button name=alpha text="Alpha" onActivate=on_first
+    ft-button name=alpha text="Alpha" onActivate='on_first "$@"'
     ft-div    name=slot
     end_ft_div
-    ft-button name=omega text="Omega" onActivate=on_last
+    ft-button name=omega text="Omega" onActivate='on_last "$@"'
 end_ft_form
 ft_layout rt; FT_ROOT=rt; ft_focus alpha
 check "the ring starts with the declared two" "${FT_FOCUS_RING[*]}" "alpha omega"
-ft-button name=middle text="Middle" accessKey=M onActivate=on_gone parent=slot
+ft-button name=middle text="Middle" accessKey=M onActivate='on_gone "$@"' parent=slot
 ft_layout rt
 ft_refresh >/dev/null 2>&1
 check "the new control joined the ring"       "${FT_FOCUS_RING[*]}" "alpha middle omega"
@@ -181,8 +181,8 @@ note "a control removed BETWEEN the press and the release"
 # array with "", which bash reports on stderr — the alt screen.
 ft_remove ap 2>/dev/null
 ft-form name=mp width=70 height=10
-    ft-button name=doomed text="Doomed" onActivate=on_gone
-    ft-button name=bystander text="Other" onActivate=on_last
+    ft-button name=doomed text="Doomed" onActivate='on_gone "$@"'
+    ft-button name=bystander text="Other" onActivate='on_last "$@"'
 end_ft_form
 ft_layout mp; FT_ROOT=mp; ft_focus bystander
 FT_MOUSE_BUTTON=0; FT_MOUSE_X=$(( ${FT_ABSOLUTE_X[doomed]} + 1 )); FT_MOUSE_Y=$(( ${FT_ABSOLUTE_Y[doomed]} + 1 ))

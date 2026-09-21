@@ -74,30 +74,30 @@ _build() {
         ft-frame name=win title="ft-tabs — a control full of controls" \
                  display=flex flexDirection=column gap=1 padding=1 alignItems=center \
                  borderStyle=double
-            ft-tabs name=picker width=58 height=14 activeTab=0 onChange=picker_on_change
+            ft-tabs name=picker width=58 height=14 activeTab=0 onChange='picker_on_change "$@"'
                 # ── Tab 1: a little form (text fields + checkbox) ──────────────
                 ft-tab title="Account (1)"
                     ft-div name=rowU display=flex gap=1 alignItems=center
                         ft-label name=lU text="User" width=6
-                        ft-textfield name=fUser size=26 value="admin" placeholder="username" onChange=fUser_on_change \
+                        ft-textfield name=fUser size=26 value="admin" placeholder="username" onChange='fUser_on_change "$@"' \
                                      helpLabel2="Field" helpAccel2="F" \
                                      helpText2="The domain administrator account (e.g. Administrator). Press F1 on any control for its help; ← → or the accelerator letters switch tabs; Esc closes."
                     end_ft_div
                     ft-div name=rowH display=flex gap=1 alignItems=center
                         ft-label name=lH text="Host" width=6
-                        ft-textfield name=fHost size=26 placeholder="dc1.example.com" onChange=fHost_on_change
+                        ft-textfield name=fHost size=26 placeholder="dc1.example.com" onChange='fHost_on_change "$@"'
                     end_ft_div
-                    ft-checkbox name=cbRemember text="Remember me" accessKey=R checked=true onChange=cbRemember_on_change
+                    ft-checkbox name=cbRemember text="Remember me" accessKey=R checked=true onChange='cbRemember_on_change "$@"'
                 end_ft_tab
                 # ── Tab 2: sliders ────────────────────────────────────────────
                 ft-tab title="Tuning (2)"
                     ft-div name=rowV display=flex gap=1 alignItems=center
                         ft-label name=lV text="Volume" width=11
-                        ft-slider name=volume min=0 max=100 value=70 width=30 variant=fill showValue=true onChange=volume_on_change
+                        ft-slider name=volume min=0 max=100 value=70 width=30 variant=fill showValue=true onChange='volume_on_change "$@"'
                     end_ft_div
                     ft-div name=rowB display=flex gap=1 alignItems=center
                         ft-label name=lB text="Brightness" width=11
-                        ft-slider name=bright min=0 max=100 value=40 width=30 variant=blocks showValue=true onChange=bright_on_change
+                        ft-slider name=bright min=0 max=100 value=40 width=30 variant=blocks showValue=true onChange='bright_on_change "$@"'
                     end_ft_div
                 end_ft_tab
                 # ── Tab 3: a data table ───────────────────────────────────────
@@ -118,7 +118,7 @@ _build() {
                     ft-radio name=cZstd  group=comp text="zstd"  accessKey=Z
                     ft-div name=rowT display=flex gap=1 alignItems=center
                         ft-label name=lT text="Theme" width=6
-                        ft-select name=theme size=1 onChange=theme_on_change
+                        ft-select name=theme size=1 onChange='theme_on_change "$@"'
                             ft-option value=dark text="Dark"
                             ft-option value=light text="Light"
                             ft-option value=ocean text="Ocean"
@@ -130,7 +130,7 @@ _build() {
             ft-label name=status text="←/→ or 1-4 switch tabs · Tab enters · Esc = menu · Shift+Tab leaves" \
                      width=60 color=notice textAlign=center
             ft-div name=btnrow display=flex gap=2 justifyContent=center
-                ft-button name=btnQuit text=Quit accessKey=Q onActivate=btnQuit_on_activate
+                ft-button name=btnQuit text=Quit accessKey=Q onActivate='btnQuit_on_activate "$@"'
             end_ft_div
         end_ft_frame
     end_ft_form

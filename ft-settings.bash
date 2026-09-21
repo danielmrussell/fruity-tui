@@ -65,10 +65,10 @@ _ft_settings_build() {
 
             ft-label name=__sethk2 color=accent text="Windows Terminal"
             if (( wt )); then
-                ft-checkbox name=__setwt accessKey=F checked="$wtchecked" onActivate=__setwt_on_activate onDeactivate=__setwt_on_deactivate \
+                ft-checkbox name=__setwt accessKey=F checked="$wtchecked" onActivate='__setwt_on_activate "$@"' onDeactivate='__setwt_on_deactivate "$@"' \
                             text="Take Ctrl+Shift+Home/End/Up/Down from scrollback"
             else
-                ft-checkbox name=__setwt disabled=true onActivate=__setwt_on_activate onDeactivate=__setwt_on_deactivate \
+                ft-checkbox name=__setwt disabled=true onActivate='__setwt_on_activate "$@"' onDeactivate='__setwt_on_deactivate "$@"' \
                             text="Take Ctrl+Shift nav keys from scrollback (Windows Terminal only)"
             fi
             ft-label name=__setwtnote color=muted text="$wtnote"
@@ -76,7 +76,7 @@ _ft_settings_build() {
 
             ft-label name=__sethk4 color=accent text="Editing"
             ft-checkbox name=__setcc accessKey=K checked="$ccchecked" \
-                        onActivate=__setcc_on_activate onDeactivate=__setcc_on_deactivate \
+                        onActivate='__setcc_on_activate "$@"' onDeactivate='__setcc_on_deactivate "$@"' \
                         text="Ctrl+C copies a selection instead of quitting"
             ft-label name=__setccnote color=muted text="$ccnote"
             ft-label name=__setsp4 text=" "
@@ -90,7 +90,7 @@ _ft_settings_build() {
             ft-label name=__setsp3 text=" "
 
             ft-div name=__setbtns display=flex justifyContent=center width=$(( ww - 4 ))
-                ft-button name=__setclose accessKey=C text=Close onActivate=__setclose_on_activate
+                ft-button name=__setclose accessKey=C text=Close onActivate='__setclose_on_activate "$@"'
             end_ft_div
         end_ft_frame
     end_ft_form

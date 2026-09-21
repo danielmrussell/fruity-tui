@@ -12,7 +12,7 @@ exec {FT_TTY}>/dev/null
 
 note "vertical: scrollTop/scrollHeight/clientHeight, client defaults to track"
 ft-form name=app width=40 height=24
-    ft-scrollbar name=v width=1 height=8 scrollHeight=20 onScroll=v_on_scroll
+    ft-scrollbar name=v width=1 height=8 scrollHeight=20 onScroll='v_on_scroll "$@"'
 end_ft_form
 ft_layout app
 _ft_sb_state v

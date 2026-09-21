@@ -145,8 +145,8 @@ saw_check()   { box_state=on; }
 saw_uncheck() { box_state=off; }
 ft_remove ap 2>/dev/null
 ft-form name=nap width=60 height=10
-    ft-textfield name=fld size=20 value="" onChange=saw_change
-    ft-checkbox name=box text="Tick" onActivate=saw_check onDeactivate=saw_uncheck
+    ft-textfield name=fld size=20 value="" onChange='saw_change "$@"'
+    ft-checkbox name=box text="Tick" onActivate='saw_check "$@"' onDeactivate='saw_uncheck "$@"'
 end_ft_form
 ft_layout nap; FT_ROOT=nap
 ft_set fld value="typed by hand"
@@ -154,8 +154,8 @@ ft_set box checked=true
 ft_state_save "$D/n" >/dev/null
 ft_remove nap
 ft-form name=nap width=60 height=10
-    ft-textfield name=fld size=20 value="" onChange=saw_change
-    ft-checkbox name=box text="Tick" onActivate=saw_check onDeactivate=saw_uncheck
+    ft-textfield name=fld size=20 value="" onChange='saw_change "$@"'
+    ft-checkbox name=box text="Tick" onActivate='saw_check "$@"' onDeactivate='saw_uncheck "$@"'
 end_ft_form
 ft_layout nap; FT_ROOT=nap
 restored=""; restore_calls=0; box_state=""
@@ -417,8 +417,8 @@ ncb_on_activate()   { _NFIRED+="cb:activate "; }
 ncb_on_deactivate() { _NFIRED+="cb:deactivate "; }
 ft-form name=nap width=60 height=12 display=flex flexDirection=column
     ft-radio    name=nr1 text="One" group=ng
-    ft-radio    name=nr2 text="Two" group=ng onActivate=nr2_on_activate onDeactivate=nr2_on_deactivate
-    ft-checkbox name=ncb text="Box" onActivate=ncb_on_activate onDeactivate=ncb_on_deactivate
+    ft-radio    name=nr2 text="Two" group=ng onActivate='nr2_on_activate "$@"' onDeactivate='nr2_on_deactivate "$@"'
+    ft-checkbox name=ncb text="Box" onActivate='ncb_on_activate "$@"' onDeactivate='ncb_on_deactivate "$@"'
 end_ft_form
 FT_ROOT=nap; ft_layout nap
 ft_radio_select nr2
@@ -454,7 +454,7 @@ _MSEEN=""
 mstate_on_activate()   { _MSEEN+="activate(${1-<NO ARG>}) "; }
 mstate_on_deactivate() { _MSEEN+="deactivate(${1-<NO ARG>}) "; }
 ft-form name=msap width=60 height=12 display=flex flexDirection=column
-    ft-multitoggle name=mstate text="Pri" onActivate=mstate_on_activate onDeactivate=mstate_on_deactivate
+    ft-multitoggle name=mstate text="Pri" onActivate='mstate_on_activate "$@"' onDeactivate='mstate_on_deactivate "$@"'
         ft-option value=low  glyph="[L]"
         ft-option value=high glyph="[H]"
     end_ft_multitoggle

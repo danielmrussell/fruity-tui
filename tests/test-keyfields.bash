@@ -216,8 +216,8 @@ check "ENTER runs the instance code, not activate" "$SAW" "mine b4"
 note "defaultKeys=false silences the prototype's keys, not the app's"
 ft-form name=dkapp width=40 height=10
     ft-div name=dkbox
-        ft-button name=dk1 text="Go" onActivate=dk_activate
-        ft-button name=dk2 text="No" onActivate=dk_activate
+        ft-button name=dk1 text="Go" onActivate='dk_activate "$@"'
+        ft-button name=dk2 text="No" onActivate='dk_activate "$@"'
     end_ft_div
 end_ft_form
 DK=""; dk_activate() { DK=fired; }
@@ -323,9 +323,9 @@ note "every visible, enabled claimant of a shortcut responds"
 PH=""
 ph_one() { PH+="one "; }; ph_two() { PH+="two "; }; ph_three() { PH+="three "; }
 ft-form name=phapp width=50 height=8
-    ft-button name=ph1 text="Save file"  accessKey=s onActivate=ph_one
-    ft-button name=ph2 text="Save state" accessKey=s onActivate=ph_two
-    ft-button name=ph3 text="Sleep"      accessKey=s onActivate=ph_three
+    ft-button name=ph1 text="Save file"  accessKey=s onActivate='ph_one "$@"'
+    ft-button name=ph2 text="Save state" accessKey=s onActivate='ph_two "$@"'
+    ft-button name=ph3 text="Sleep"      accessKey=s onActivate='ph_three "$@"'
 end_ft_form
 FT_ROOT=phapp; ft_layout phapp
 PH=""; _ft_accel_dispatch phapp S
@@ -337,14 +337,77 @@ ft_set ph2 display=inline-block; ft_set ph3 disabled=true
 PH=""; _ft_accel_dispatch phapp S
 check "…nor a disabled one"              "$PH" "one two "
 
-# A listener's value is a FUNCTION NAME, not code — the plist holding them is space-separated,
-# so `onActivate='fn arg'` would split in two. It used to be stored and then silently skipped
-# at dispatch; it is refused where it is written now.
-note "a listener that is code, not a name, is refused out loud"
-err ft_set ph1 onActivate='ph_one extra'
-check "code in a listener is refused" \
-      "$(case "$ERR" in *"must name a function"*) echo refused ;; *) echo "${ERR:-silent}" ;; esac)" "refused"
-PH=""; ft_activate ph1
-check "…and the working listener is untouched" "$PH" "one "
+# ── A listener holds code too ───────────────────────────────────────────────
+# It could not before: the store was a SPACE-SEPARATED list of "event=fn" tokens, so code with
+# a space in it split into two entries and _ft_hook then looked up a command literally called
+# "fn arg", failed its `declare -F` test and did nothing. Silently, for as long as the framework
+# has existed. The separator is US (\x1f) now — the byte set aside for exactly this.
+note "an on<Event>= handler takes code, like a key does"
+LIS=""
+lis() { LIS+="$* | "; }
+ft-form name=lapp width=50 height=8
+    ft-label  name=ltotal text="0"
+    ft-slider name=lsl value=3 min=0 max=10 onChange='ft_set ltotal text="$1 items"; lis "saw $1"'
+    ft-button name=lb text="Go" onActivate='lis one' onDeactivate='lis off'
+end_ft_form
+FT_ROOT=lapp; ft_layout lapp
+LIS=""; ft_slider_set lsl 7
+check "the code ran"                     "$LIS" "saw 7 | "
+check "…and the event DETAIL reached it" "$(ft_get ltotal text; printf '%s' "$FT_RET")" "7 items"
+LIS=""; ft_activate lb
+check "a plain call still works"         "$LIS" "one | "
+# Listeners ACCUMULATE — `onActivate=` twice is two listeners, as the DOM has it — so the
+# plain one above is still there and still first.
+ft_set lb onActivate=$'lis "a;b"\nlis "x=y"'
+LIS=""; ft_activate lb
+check "semicolons, quotes, = and a NEWLINE survive" "$LIS" 'one | a;b | x=y | '
+ft_add_listener lb activate='lis added'
+LIS=""; ft_activate lb
+check "ft_add_listener adds another, in order"      "$LIS" 'one | a;b | x=y | added | '
+ft_set lb onActivate=
+LIS=""; ft_activate lb
+check "onActivate= clears them all"                 "${LIS:-nothing}" "nothing"
+
+# A listener that CANCELS still cancels: nonzero from any of them, and every one still runs.
+note "a listener returning nonzero still cancels the action"
+ft_set lsl onChange='lis "veto $1"; false'
+ft_slider_set lsl 9
+check "the value was put back"           "$(ft_get lsl value; printf '%s' "$FT_RET")" "7"
+
+# ── Batching ────────────────────────────────────────────────────────────────
+# The engine always coalesced writes inside an input burst — three ft_set calls in a HANDLER
+# have always cost one reflow. Outside a handler, in setup code or a loop over rows, each write
+# reflowed on its own, which is the case the author was worried about and was right to be.
+# A batch SETTLES, which paints — so this section needs somewhere for the paint to go.
+exec {FT_TTY}>/dev/null
+note "a batch costs one reflow, however many writes it holds"
+ft-form name=bapp width=60 height=10
+    ft-label name=br1 text="one"; ft-label name=br2 text="two"; ft-label name=br3 text="three"
+end_ft_form
+FT_ROOT=bapp; ft_layout bapp
+FT_REFLOW_COUNT=0
+ft_set br1 text="a longer one"; ft_set br2 text="a longer two"; ft_set br3 text="a longer three"
+check "three loose writes reflow three times" "$FT_REFLOW_COUNT" "3"
+FT_REFLOW_COUNT=0
+ft_batch_begin
+ft_set br1 text="x1"; ft_set br2 text="x2"; ft_set br3 text="x3"
+check "…inside a batch, nothing reflows yet"  "$FT_REFLOW_COUNT" "0"
+ft_batch_end
+check "…and the batch settles to exactly one" "$FT_REFLOW_COUNT" "1"
+check "…with the writes really applied"       "$(ft_get br2 text; printf '%s' "$FT_RET")" "x2"
+FT_REFLOW_COUNT=0
+ft_batch_begin; for _i in 1 2 3 4 5 6 7 8 9 10; do ft_set br1 text="row $_i"; done; ft_batch_end
+check "ten writes in a loop: still one"       "$FT_REFLOW_COUNT" "1"
+
+# Nestable, and safe inside a handler: a batch that finds coalescing already on leaves the
+# settling to whoever turned it on, or the screen would be painted mid-burst.
+note "a batch inside a burst does not settle early"
+FT_COALESCING=1; FT_REFLOW_COUNT=0
+ft_batch_begin; ft_set br3 text="in a burst"; ft_batch_end
+check "the burst is still open"               "$FT_COALESCING" "1"
+check "…and nothing has reflowed"             "$FT_REFLOW_COUNT" "0"
+ft_reflow_flush; FT_COALESCING=0
+check "…until the burst itself settles"       "$FT_REFLOW_COUNT" "1"
+no "ft_batch_end with no open batch is refused" ft_batch_end
 
 summary

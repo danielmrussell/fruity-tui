@@ -23,7 +23,7 @@ FT_COLS=60; FT_ROWS=16
 ft-form name=app width=60 height=16 display=flex flexDirection=column gap=1
   ft-textfield name=f1 size=20 value="hello world foo"
   ft-textfield name=f2 size=20 value="second"
-  ft-button name=b1 text=OK onActivate=b1_on_activate
+  ft-button name=b1 text=OK onActivate='b1_on_activate "$@"'
 end_ft_form
 ft_layout app; FT_ROOT=app; FT_FOCUS=f2
 fx=${FT_ABSOLUTE_X[f1]}; fy=${FT_ABSOLUTE_Y[f1]}

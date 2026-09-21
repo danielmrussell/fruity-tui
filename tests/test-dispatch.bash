@@ -20,7 +20,7 @@ _hitplain() { HIT="plain:$1:$2"; }
 note "cascade: an unclaimed key bubbles from the focused control to the form"
 ft-form name=app width=40 height=10
     ft-div name=mid
-        ft-button name=btn text=" Go " onActivate=btn_on_activate
+        ft-button name=btn text=" Go " onActivate='btn_on_activate "$@"'
     end_ft_div
 end_ft_form
 FT_ROOT=app
@@ -44,7 +44,7 @@ ft_keymap_set sharedNav key=ENTER onKey='_hit ref $this $key'
 ft-form name=app2 width=40 height=10
     ft-button name=b2 text=" B " keymap=sharedNav key=ENTER onKey='_hit overlay $this $key'
     ft-button name=b3 text=" C " keymap=sharedNav
-    ft-button name=b4 text=" D " onActivate=b4_on_activate
+    ft-button name=b4 text=" D " onActivate='b4_on_activate "$@"'
 end_ft_form
 FT_ROOT=app2
 ft_focus b2; HIT=""
@@ -66,7 +66,7 @@ check "b3 sees the updated shared binding" "$HIT" "plain:b3:ENTER"
 
 note "a focused scrollbar shadows the form's arrow keys"
 ft-form name=app3 width=40 height=10
-    ft-scrollbar name=sb width=1 height=5 scrollHeight=20 onScroll=sb_on_scroll
+    ft-scrollbar name=sb width=1 height=5 scrollHeight=20 onScroll='sb_on_scroll "$@"'
     ft-button name=ok3 text=" OK "
 end_ft_form
 ft_layout app3          # the bar's track (and so its default clientHeight) needs real geometry
@@ -89,7 +89,7 @@ check "page-down scrolled by clientHeight" "$SCROLLED" "6"
 
 note "accessKey= sugar: an auto [Xx] binding on the ENCLOSING FORM"
 ft-form name=app4 width=40 height=10
-    ft-button name=bGrow text=" Grow " accessKey=G onActivate=bGrow_on_activate
+    ft-button name=bGrow text=" Grow " accessKey=G onActivate='bGrow_on_activate "$@"'
     ft-button name=bOther text=" Other "
 end_ft_form
 FT_ROOT=app4
@@ -120,8 +120,8 @@ check "ESC swallowed before the form could quit" "$QUITS" "0"
 
 note "\$this is per-hook and unwinds across NESTED hooks (no reentrancy hazard)"
 ft-form name=app6 width=40 height=8
-    ft-button name=outer text=Outer onActivate=outer_on_activate
-    ft-button name=inner text=Inner onActivate=inner_on_activate
+    ft-button name=outer text=Outer onActivate='outer_on_activate "$@"'
+    ft-button name=inner text=Inner onActivate='inner_on_activate "$@"'
 end_ft_form
 FT_ROOT=app6
 TB=""; TA=""; TI=""
@@ -254,28 +254,42 @@ LIS=0
 ka_listener() { LIS=1; }
 ft_remove kl 2>/dev/null
 ft-form name=kl width=40 height=8
-    ft-button name=klb text="Go" onActivate=ka_listener
+    ft-button name=klb text="Go" onActivate='ka_listener "$@"'
 end_ft_form
 ft_layout kl; FT_ROOT=kl; ft_focus klb
 ft_activate klb
 check "a real handler fires" "$LIS" "1"
+# A LISTENER HOLDS CODE, so a listener that runs a command RUNS IT. That is the bargain an
+# onclick attribute makes and the one this framework now makes: the string is code you wrote,
+# never built from untrusted data. It used to be a function NAME, and `onActivate="touch FILE"`
+# was stored, skipped at dispatch and never explained — which looked like safety and was really
+# silence.
 ft_remove kl2 2>/dev/null
 rm -f "$XDG_STATE_HOME/listener-ran"
 f=$XDG_STATE_HOME/ka3.err
 ft-form name=kl2 width=40 height=8
-    # `onActivate="touch FILE"` is CODE, and a listener holds a function NAME: the plist that
-    # stores them is space-separated, so this would split in two. It used to be stored and then
-    # silently skipped at dispatch (_ft_hook looks up a command literally called "touch FILE",
-    # which does not exist), so the command never ran and nothing ever said why. Refused where
-    # it is written now — and either way the command must never run.
-    ft-button name=klb2 text="Go" onActivate="touch $XDG_STATE_HOME/listener-ran" 2>"$f"
+    ft-button name=klb2 text="Go" onActivate="touch $XDG_STATE_HOME/listener-ran"
 end_ft_form
 ft_layout kl2; FT_ROOT=kl2
-ft_activate klb2 >/dev/null 2>&1
-check "a listener naming a COMMAND runs nothing" \
-      "$([[ -e "$XDG_STATE_HOME/listener-ran" ]] && echo RAN || echo no)" "no"
-check "…and it was refused where it was written, not on the screen" \
-      "$(case "$(<"$f")" in *"must name a function"*) echo refused ;; *) echo "${_x:-silent}" ;; esac)" "refused"
+ft_activate klb2 >/dev/null 2>"$f"
+check "a listener holding a command runs it" \
+      "$([[ -e "$XDG_STATE_HOME/listener-ran" ]] && echo RAN || echo no)" "RAN"
+check "…in silence — nothing on the screen the user is reading" "$(<"$f")" ""
+
+# A TYPO is the other half, and it must not be silent-but-invisible: nothing runs, nothing is
+# printed onto the alt screen, and the pair is recorded where a test (or ft_unresolved_actions)
+# can find it — the same guard a key binding gets.
+ft_remove kl3 2>/dev/null
+FT_UNRESOLVED_ACTIONS=()
+ft-form name=kl3 width=40 height=8
+    ft-button name=klb3 text="Go" onActivate='ka_no_such_handler "$@"'
+end_ft_form
+ft_layout kl3; FT_ROOT=kl3
+: > "$f"; ft_activate klb3 >/dev/null 2>"$f"
+check "a listener naming nothing callable says nothing on screen" "$(<"$f")" ""
+ft_unresolved_actions
+check "…but it IS recorded" \
+      "$(case "$FT_RET" in *"klb3 ka_no_such_handler"*) echo yes ;; *) echo "${FT_RET:-empty}" ;; esac)" "yes"
 
 note "LEAVING a control ends its activation — for every class, not just ones that opted in"
 # Runlevel decides what the arrows MEAN: at rest they move between controls, activated they

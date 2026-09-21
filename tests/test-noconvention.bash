@@ -52,7 +52,7 @@ LOG=""; ft_activate btnGo >/dev/null 2>&1
 check "now it fires" "$LOG" "convention "
 
 note "and a listener wired the documented way needs no special name"
-ft_set rowW onChange=rowW_changed
+ft_set rowW onChange='rowW_changed "$@"'
 LOG=""; _ft_hook rowW on_change 5 >/dev/null 2>&1
 check "the wired listener fires"                 "$LOG" "wired "
 check "…and the same-named convention one did not" \

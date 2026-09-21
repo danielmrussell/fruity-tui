@@ -13,7 +13,7 @@ _plain() { local s=$1; s=$(printf '%s' "$s" | sed -E 's/\x1b\[[0-9;?]*[A-Za-z]//
 
 note "tabs attach and reserve the header rows"
 ft-form name=app width=60 height=16
-ft-tabs name=tb width=44 height=12 onChange=tb_on_change
+ft-tabs name=tb width=44 height=12 onChange='tb_on_change "$@"'
     ft-tab title="One"
         ft-label name=b1 text="BODY-ONE"
     end_ft_tab
@@ -71,10 +71,10 @@ note "an accelerator switch never leaves focus on the panel it hid"
 ft-form name=facc width=60 height=16
     ft-tabs name=tab2 width=44 height=12
         ft-tab title="Alpha" accessKey=A
-            ft-button name=inAlpha text="Press me" onActivate=inAlpha_on_activate
+            ft-button name=inAlpha text="Press me" onActivate='inAlpha_on_activate "$@"'
         end_ft_tab
         ft-tab title="Beta" accessKey=B
-            ft-button name=inBeta text="Other" onActivate=inBeta_on_activate
+            ft-button name=inBeta text="Other" onActivate='inBeta_on_activate "$@"'
         end_ft_tab
     end_ft_tabs
 end_ft_form

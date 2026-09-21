@@ -26,7 +26,7 @@ _build() {
         ft-frame name=win title=" Samba Mago — pick a file " \
                  display=flex flexDirection=column gap=1 padding=1 alignItems=stretch \
                  borderStyle=double
-            ft-tree name=fs rows=12 onChange=fs_on_change onActivate=fs_on_activate
+            ft-tree name=fs rows=12 onChange='fs_on_change "$@"' onActivate='fs_on_activate "$@"'
                 ft-tree-node text="project/" id="project/" depth=0 expanded=true
                 ft-tree-node text="src/" id="project/src/" depth=1 expanded=true
                 ft-tree-node text="ft-core.bash" id="project/src/ft-core.bash" depth=2
@@ -44,7 +44,7 @@ _build() {
 
             ft-label name=status text="selected: project/" color=notice width=40
             ft-div name=btnrow display=flex gap=2 justifyContent=center
-                ft-button name=btnQuit text=Quit accessKey=Q onActivate=btnQuit_on_activate
+                ft-button name=btnQuit text=Quit accessKey=Q onActivate='btnQuit_on_activate "$@"'
             end_ft_div
         end_ft_frame
     end_ft_form

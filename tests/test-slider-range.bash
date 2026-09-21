@@ -138,7 +138,7 @@ _v=$(_prop); case "$_v" in 0|3|6|9) check "a click lands on the grid" 1 1 ;;
 note "a cancelled on_change restores the value the user was looking at"
 ft_set sl min=0 max=10 step=1 value=5
 _veto() { return 1; }
-ft_set sl onChange=_veto
+ft_set sl onChange='_veto "$@"'
 ft_slider_set sl 9
 _agree "the refusal put it back" "5"
 ft_unset sl onChange

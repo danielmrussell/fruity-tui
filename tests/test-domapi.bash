@@ -125,16 +125,24 @@ LOG=""
 h1() { LOG+="h1($this:$FT_EVENT_TYPE:$1) "; }
 h2() { LOG+="h2($1) "; }
 h3() { LOG+="h3 "; }
-ft-button name=evb parent=box onActivate=h1 onActivate=h2 text="Ev"
-ft_get evb eventListeners; check "two onActivate= args both registered" "$FT_RET" "activate=h1 activate=h2"
+ft-button name=evb parent=box onActivate='h1 "$@"' onActivate='h2 "$@"' text="Ev"
+# The store is US-separated (\x1f) so a listener may hold CODE — spaces, semicolons, newlines.
+_LS=$'\x1f'
+ft_get evb eventListeners
+check "two onActivate= args both registered" "$FT_RET" "activate=h1 \"\$@\"${_LS}activate=h2 \"\$@\""
 _ft_hook evb on_activate v1
 check "both listeners ran, in order, with \$this + event type + arg" "$LOG" "h1(evb:activate:v1) h2(v1) "
-LOG=""; ft_set evb onActivate=h1
-ft_get evb eventListeners; check "re-adding the same listener is a no-op (DOM)" "$FT_RET" "activate=h1 activate=h2"
+LOG=""; ft_set evb onActivate='h1 "$@"'
+ft_get evb eventListeners
+check "re-adding the same listener is a no-op (DOM)" "$FT_RET" "activate=h1 \"\$@\"${_LS}activate=h2 \"\$@\""
 ft_add_listener evb change=h3
-ft_get evb eventListeners; check "ft_add_listener (pair form) appends" "$FT_RET" "activate=h1 activate=h2 change=h3"
-ft_remove_listener evb activate h2                # two-arg DOM shape
-ft_get evb eventListeners; check "ft_remove_listener (two-arg form) removes" "$FT_RET" "activate=h1 change=h3"
+ft_get evb eventListeners
+check "ft_add_listener (pair form) appends" "$FT_RET" "activate=h1 \"\$@\"${_LS}activate=h2 \"\$@\"${_LS}change=h3"
+# A listener is identified by its CODE, the way removeEventListener needs the same function
+# reference — so removing one names exactly what was registered.
+ft_remove_listener evb activate 'h2 "$@"'         # two-arg DOM shape
+ft_get evb eventListeners
+check "ft_remove_listener (two-arg form) removes" "$FT_RET" "activate=h1 \"\$@\"${_LS}change=h3"
 ft_has_listener evb change;  check "has_listener change" "$?" "0"
 ft_has_listener evb next;    check "no next listener"    "$?" "1"
 ft_set evb onActivate=""

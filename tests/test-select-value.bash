@@ -121,12 +121,12 @@ check "…and the value with it"                "$(_val bare)" "bravo"
 note "an on_change handler reads the NEW value, and cancelling restores BOTH halves"
 _seen=""
 _watch() { _seen=$(ft_get bare value; printf %s "$FT_RET"); return 0; }
-ft_set bare onChange=_watch
+ft_set bare onChange='_watch "$@"'
 ft_set bare open=true cursor=2
 ft_select_key_commit bare
 check "the handler saw the new value" "$_seen" "charlie"
 _veto() { return 1; }                        # a handler that cancels the change
-ft_set bare onChange=_veto
+ft_set bare onChange='_veto "$@"'
 ft_set bare open=true cursor=0
 ft_select_key_commit bare
 check "a cancelled change restores the index" "$(_idx bare)" "2"

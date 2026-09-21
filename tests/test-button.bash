@@ -152,7 +152,7 @@ _ft_accel_target kapp K; check "K reaches the OK button"      "$FT_RET" "k_ok"
 _ft_accel_target kapp C; check "C reaches Cancel"             "$FT_RET" "k_cancel"
 _ft_accel_target kapp F; check "F reaches Forward"            "$FT_RET" "k_forward"
 KB=""; kb_hit() { KB=hit; }
-ft_set k_ok onActivate=kb_hit
+ft_set k_ok onActivate='kb_hit "$@"'
 _ft_accel_dispatch kapp K
 check "…and pressing it activates the button" "$KB" "hit"
 
@@ -165,7 +165,7 @@ ft_set k_no display=inline-block
 
 note "a kind is still a button: the app's text and handler win"
 ft-form name=kapp2 width=40 height=6
-    ft-button-save name=k_sa text="Save As…" onActivate=kb_hit
+    ft-button-save name=k_sa text="Save As…" onActivate='kb_hit "$@"'
 end_ft_form
 FT_ROOT=kapp2; ft_layout kapp2
 check "the app's text replaces the default" "$(ft_get k_sa text; printf '%s' "$FT_RET")" "Save As…"

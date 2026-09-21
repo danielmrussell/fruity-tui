@@ -54,11 +54,11 @@ Up/Down walk the wrapped lines. Tab moves between fields." width=66
 
             ft-div name=rowU display=flex gap=1 alignItems=center
                 ft-label name=lUser text="Username" width=9
-                ft-textfield name=fUser size=24 value="admin" placeholder="username" onChange=fUser_on_change onActivate=fUser_on_activate
+                ft-textfield name=fUser size=24 value="admin" placeholder="username" onChange='fUser_on_change "$@"' onActivate='fUser_on_activate "$@"'
             end_ft_div
             ft-div name=rowH display=flex gap=1 alignItems=center
                 ft-label name=lHost text="Hostname" width=9
-                ft-textfield name=fHost size=24 placeholder="e.g. dc1.example.com" onChange=fHost_on_change onActivate=fHost_on_activate
+                ft-textfield name=fHost size=24 placeholder="e.g. dc1.example.com" onChange='fHost_on_change "$@"' onActivate='fHost_on_activate "$@"'
             end_ft_div
             ft-div name=rowN display=flex gap=1 alignItems=start
                 ft-label name=lNote text="Notes" width=9
@@ -81,9 +81,9 @@ Up/Down walk the wrapped lines. Tab moves between fields." width=66
             ft-label name=status text="(nothing saved yet)" width=48 color=notice
 
             ft-div name=btnrow display=flex gap=2 justifyContent=center
-                ft-button name=btnSave text=Save accessKey=S onActivate=btnSave_on_activate
-                ft-button name=btnClear text=Clear accessKey=C onActivate=btnClear_on_activate
-                ft-button name=btnQuit text=Quit accessKey=Q onActivate=btnQuit_on_activate
+                ft-button name=btnSave text=Save accessKey=S onActivate='btnSave_on_activate "$@"'
+                ft-button name=btnClear text=Clear accessKey=C onActivate='btnClear_on_activate "$@"'
+                ft-button name=btnQuit text=Quit accessKey=Q onActivate='btnQuit_on_activate "$@"'
             end_ft_div
         end_ft_frame
     end_ft_form

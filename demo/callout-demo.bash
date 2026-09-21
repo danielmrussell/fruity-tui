@@ -317,7 +317,7 @@ _ann selProto   "A dropdown is targeted by its closed box. The arrow is the only
     5)  _ann badgeT  "number= stamps a circled ①..⑳ into the top border, drawn in the EDGE colour so it belongs to the frame. Here it is the step number — which is how a badge earns its place."
         _ann wrapT   "calloutWidth= is the TEXT wrap width: the callout comes out four columns wider than it. Ask for less and the same sentence gets taller and slimmer."
         _ann padT    "arrowPadding= is the blank gap the head keeps from the target (1 by default). The vertical gap is one less again, so ▲▼ never appear to float away."
-        _ann nextT   "onNext=fn draws the clickable ▶ in this callout's top-right border and wires its 'next' event to fn. That ▶ up there is live: click it. The ⊠ beside it is live too — it closes this callout."
+        _ann nextT   "onNext= draws the clickable ▶ in this callout's top-right border and wires its 'next' event to fn. That ▶ up there is live: click it. The ⊠ beside it is live too — it closes this callout."
         _ann outsetT "outset= inflates the rect the callout treats as the target, so the head stands that many cells further out — as though the control were a size bigger." ;;
     # PAGE 6 NAMES WHAT IS ON THE SCREEN, AND ONLY WHAT IS ON THE SCREEN. It used to keep a
     # halo, a dashed ghost and a stray circled ⑥ up on all five steps, on five different
@@ -801,13 +801,13 @@ _stage_controls() {
                     ft-checkbox name=chkDeep text="Deep" accessKey=D
                 end_ft_div
                 ft-div name=gridB display=flex gap=3 alignItems=center
-                    ft-select name=selProto size=1 onChange=selProto_on_change
+                    ft-select name=selProto size=1 onChange='selProto_on_change "$@"'
                         ft-option value=smb3 text="SMB3"
                         ft-option value=smb2 text="SMB2"
                         ft-option value=nfs text="NFS"
                     end_ft_select
                     ft-slider name=sldWorkers min=1 max=8 value=4 step=1 width=12 \
-                              variant=fill showValue=true onChange=sldWorkers_on_change
+                              variant=fill showValue=true onChange='sldWorkers_on_change "$@"'
                     ft-label name=lblStat color=notice text="4 workers"
                 end_ft_div
                 ft-table name=tblShares variant=lines striped=true
@@ -953,15 +953,15 @@ _show_page() {
 
             # ── STEP through THIS page's lesson (◀ ▶); the bottom buttons move PAGES ──
             ft-div name=stepnav display=flex gap=2 alignItems=center justifyContent=center
-                ft-button name=btnStepPrev text="◀" onActivate=btnStepPrev_on_activate
+                ft-button name=btnStepPrev text="◀" onActivate='btnStepPrev_on_activate "$@"'
                 ft-label name=stepcount color=accent text=" Step $STEP of $nsteps "
-                ft-button name=btnStepNext text="▶" onActivate=btnStepNext_on_activate
+                ft-button name=btnStepNext text="▶" onActivate='btnStepNext_on_activate "$@"'
             end_ft_div
 
             ft-div name=btnrow display=flex gap=2 justifyContent=center
-                ft-button name=btnBack text="Back" accessKey=B onActivate=btnBack_on_activate
-                ft-button name=btnOk text="$oktext" accessKey=K onActivate=btnOk_on_activate
-                ft-button name=btnQuit text="Quit" accessKey=Q onActivate=btnQuit_on_activate
+                ft-button name=btnBack text="Back" accessKey=B onActivate='btnBack_on_activate "$@"'
+                ft-button name=btnOk text="$oktext" accessKey=K onActivate='btnOk_on_activate "$@"'
+                ft-button name=btnQuit text="Quit" accessKey=Q onActivate='btnQuit_on_activate "$@"'
             end_ft_div
 
             _place_variants   # page 6's halo / ghost / badge specimens

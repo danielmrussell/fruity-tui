@@ -189,7 +189,7 @@ check "…and the callout is gone"                      "${FT_TYPE[cb]-gone}" "g
 # veto and left no way to observe-and-still-close.)
 CLOSE_FIRED=0
 cb2_on_close() { CLOSE_FIRED=1; return 0; }          # observes, does not cancel
-ft-beacon name=cb2 target=ctgt variant=callout text="a chip whose owner just watches" number=4 onClose=cb2_on_close
+ft-beacon name=cb2 target=ctgt variant=callout text="a chip whose owner just watches" number=4 onClose='cb2_on_close "$@"'
 ft_layout capp >/dev/null 2>&1
 FT_OUT=""; _ft_beacon_paint_callout cb2 beacon
 set -- ${FT_BEACON_CLOSE[cb2]}; _cr=$1; _cc=$2
@@ -199,7 +199,7 @@ check "…and did NOT veto the close"                   "${FT_TYPE[cb2]-gone}" "
 
 VETO_FIRED=0
 cb4_on_close() { VETO_FIRED=1; return 1; }           # cancels, the way preventDefault does
-ft-beacon name=cb4 target=ctgt variant=callout text="a chip that refuses to go" number=6 onClose=cb4_on_close
+ft-beacon name=cb4 target=ctgt variant=callout text="a chip that refuses to go" number=6 onClose='cb4_on_close "$@"'
 ft_layout capp >/dev/null 2>&1
 FT_OUT=""; _ft_beacon_paint_callout cb4 beacon
 set -- ${FT_BEACON_CLOSE[cb4]}; _cr=$1; _cc=$2

@@ -215,7 +215,7 @@ end_ft_form
 ft_layout app6; FT_ROOT=app6
 SB6_FIRED=""
 sb6_on_scroll() { SB6_FIRED="$1"; }
-ft_set sb6 onScroll=sb6_on_scroll
+ft_set sb6 onScroll='sb6_on_scroll "$@"'
 _offsets() {                    # → bar/target
     _ft_get_raw sb6 scrollTop; local b=${FT_RET:-unset}
     _ft_get_raw doc scrollTop; printf '%s/%s' "$b" "${FT_RET:-unset}"

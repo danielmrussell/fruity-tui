@@ -27,7 +27,7 @@ kid_on_activate() { fired=1; }
 
 ft-form name=app width="$FT_COLS" height="$FT_ROWS"
     ft-div name=holder
-        ft-button name=kid text="Go" onActivate=kid_on_activate
+        ft-button name=kid text="Go" onActivate='kid_on_activate "$@"'
     end_ft_div
     ft-div name=other
         ft-button name=free text="Free"

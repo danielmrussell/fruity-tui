@@ -74,7 +74,7 @@ check "checkmarkVariant is registered layout, not merely defaulted" \
 ft_prop_kind glyph;            check "glyph -> layout, for the same reason" "$FT_RET" "layout"
 
 note "multitoggle: a genuine 3-option cycle, value kept current with NO hook"
-ft-multitoggle name=priority parent=app text="Priority" accessKey=P onActivate=priority_on_activate
+ft-multitoggle name=priority parent=app text="Priority" accessKey=P onActivate='priority_on_activate "$@"'
     ft-option value=low    glyph="Low"
     ft-option value=medium glyph="Medium"
     ft-option value=high   glyph="High"

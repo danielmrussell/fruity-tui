@@ -11,9 +11,9 @@ exec {FT_TTY}>/dev/null
 
 note "checkbox: on_activate when CHECKED, on_deactivate when UNCHECKED"
 ft-form name=app width=60 height=20
-    ft-checkbox name=cb text="Beep" accessKey=P onActivate=cb_on_activate onDeactivate=cb_on_deactivate
+    ft-checkbox name=cb text="Beep" accessKey=P onActivate='cb_on_activate "$@"' onDeactivate='cb_on_deactivate "$@"'
     ft-radio name=r1 text="One" group=g disabled=true
-    ft-button name=go text=Submit onActivate=go_on_activate
+    ft-button name=go text=Submit onActivate='go_on_activate "$@"'
 end_ft_form
 ft_layout app
 FT_ROOT=app
@@ -65,7 +65,7 @@ note "slider: clamp, step keys, cancelable on_change"
 # stored verbatim, so the slider sat where its own arrow keys could never put it: Right gave 17,
 # 19, then 20. The fixture is left off-grid deliberately; it is the case worth pinning.
 ft-form name=app2 width=60 height=20
-    ft-slider name=sl min=10 max=20 value=15 step=2 width=12 onChange=sl_on_change
+    ft-slider name=sl min=10 max=20 value=15 step=2 width=12 onChange='sl_on_change "$@"'
 end_ft_form
 ft_layout app2
 ft_get sl value; check "an off-grid value snaps to the step" "$FT_RET" "16"
@@ -373,7 +373,7 @@ tf_noticed() { _tf_seen=$1; (( _tf_calls++ )); }
 _tf_fresh() {                   # value caret
     ft_remove tfapp 2>/dev/null
     ft-form name=tfapp width=90 height=14
-        ft-textfield name=tf size=30 value="$1" onChange=tf_noticed
+        ft-textfield name=tf size=30 value="$1" onChange='tf_noticed "$@"'
     end_ft_form
     ft_layout tfapp; FT_ROOT=tfapp; ft_focus tf
     ft_textfield_activate tf >/dev/null 2>&1

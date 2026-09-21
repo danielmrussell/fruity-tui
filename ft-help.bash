@@ -276,8 +276,8 @@ _ft_help_build() {
                 done
             end_ft_tabs
             ft-div name=__helpbtns display=flex gap=2 justifyContent=center width="$tabw"
-                ft-button name=__helpabout accessKey=A text=About onActivate=__helpabout_on_activate
-                ft-button name=__helpquit accessKey=Q text=Quit onActivate=__helpquit_on_activate
+                ft-button name=__helpabout accessKey=A text=About onActivate='__helpabout_on_activate "$@"'
+                ft-button name=__helpquit accessKey=Q text=Quit onActivate='__helpquit_on_activate "$@"'
             end_ft_div
         end_ft_frame
     end_ft_form

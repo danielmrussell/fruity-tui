@@ -393,7 +393,7 @@ ft_prototype_wired() { ft_prototype extends=button defaults="onActivate=p_handle
 ft-wired() { ft_new wired "$@"; }
 ft-form name=plapp width=40 height=8
     ft-wired name=pl1
-    ft-wired name=pl2 onActivate=a_handler
+    ft-wired name=pl2 onActivate='a_handler "$@"'
 end_ft_form
 FT_ROOT=plapp; ft_layout plapp
 PSEQ=""; ft_activate pl1

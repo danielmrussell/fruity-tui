@@ -162,7 +162,7 @@ FT_TEXTFIELD_CARET[tfnl]=11; ft_textfield_kill_word tfnl
 ft_get tfnl value; check "Ctrl+W kills one word, not through the newline" "$FT_RET" $'alpha\n'
 
 note "maxLength caps insertion"
-ft-textfield name=tf4 size=6 value="" maxLength=3 onChange=tf4_on_change
+ft-textfield name=tf4 size=6 value="" maxLength=3 onChange='tf4_on_change "$@"'
 ft_layout app; FT_FOCUS=tf4
 ft_textfield_insert_char tf4 "a"; ft_textfield_insert_char tf4 "b"
 ft_textfield_insert_char tf4 "c"; ft_textfield_insert_char tf4 "d"
@@ -262,7 +262,7 @@ _ft_focus_skippable tf && s=yes || s=no
 check "an enabled field is focusable" "$s" "no"
 SUBMIT=""
 btn_on_activate() { ft_get tf value; SUBMIT="$FT_RET"; }
-ft-button name=btn text=Submit onActivate=btn_on_activate; ft_activate btn
+ft-button name=btn text=Submit onActivate='btn_on_activate "$@"'; ft_activate btn
 check "a button's handler reads the field value" "$SUBMIT" "Jello!"
 
 note "selection: Shift+motion extends, plain motion collapses, edits replace it"
@@ -697,7 +697,7 @@ ft_textfield_deactivate eh2
 note "on_deactivate fires on leaving edit (commit-on-leave), with the final value visible"
 _DEACT=""
 eh3_on_deactivate() { ft_get eh3 value; _DEACT=$FT_RET; }
-ft-textfield name=eh3 value="start" parent=app onDeactivate=eh3_on_deactivate
+ft-textfield name=eh3 value="start" parent=app onDeactivate='eh3_on_deactivate "$@"'
 ft_textfield_activate eh3
 printf -v _ftp_eh3_value '%s' "committed text"
 ft_textfield_deactivate eh3
@@ -856,9 +856,9 @@ FT_FOCUS=""
 # The demos never saw it because they both name their handlers <name>_on_activate AND wire them.
 note "Enter fires the field's activate LISTENER, whatever the listener is called"
 ft-form name=enterapp width=44 height=10
-    ft-textfield name=fWired size=10 value="one"   onActivate=submit_the_form
+    ft-textfield name=fWired size=10 value="one"   onActivate='submit_the_form "$@"'
     ft-textfield name=fConv  size=10 value="two"
-    ft-textfield name=fBoth  size=10 value="three" onActivate=fBoth_on_activate
+    ft-textfield name=fBoth  size=10 value="three" onActivate='fBoth_on_activate "$@"'
 end_ft_form
 ft_layout enterapp
 ELOG=""
@@ -886,7 +886,7 @@ ELOG=""; ft_textfield_enter fBoth
 check "wired and convention-named fires once" "$ELOG" "both "
 
 # A textarea is unaffected: Enter is a newline there, listener or no listener.
-ft-textfield name=fArea rows=3 size=16 value="ab" parent=enterapp onActivate=submit_the_form
+ft-textfield name=fArea rows=3 size=16 value="ab" parent=enterapp onActivate='submit_the_form "$@"'
 ft_layout enterapp
 FT_FOCUS=fArea; ft_textfield_activate fArea; FT_TEXTFIELD_CARET[fArea]=2
 ELOG=""; ft_textfield_enter fArea

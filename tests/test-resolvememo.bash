@@ -176,7 +176,7 @@ _warm leaf style
 ft_set leaf style="color: 46"
 _agree "the inline style string"                        leaf style
 _warm leaf eventListeners
-ft_set leaf onActivate=_memo_probe_handler
+ft_set leaf onActivate='_memo_probe_handler "$@"'
 _agree "the listener plist"                             leaf eventListeners
 
 # ── the one control that writes a property variable directly ─────────────────

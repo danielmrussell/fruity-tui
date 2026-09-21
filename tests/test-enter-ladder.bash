@@ -33,14 +33,14 @@ tree_activated()   { TREE_ACTIVATIONS=$(( TREE_ACTIVATIONS + 1 )); }
 
 ft-form name=app width=70 height=26
     ft-slider name=sl  min=0 max=10 value=5
-    ft-slider name=sla min=0 max=10 value=5 onActivate=slider_activated
+    ft-slider name=sla min=0 max=10 value=5 onActivate='slider_activated "$@"'
     ft-label  name=lb  text=$'one\ntwo\nthree\nfour\nfive\nsix' width=12 maxHeight=2
     ft-button name=bt text="Press"
     # A real tree with a branch: Enter INSIDE it toggles that branch, which is the whole point
     # of the companion. An empty ft-tree is also focus-skipped, so the companion would silently
     # not run. (ft-tree opens a scope — end_ft_tree closes it, and leaving it to end_ft_form
     # warns on stderr, which tests/run-all.bash counts as a failure.)
-    ft-tree   name=tr  rows=4 onActivate=tree_activated
+    ft-tree   name=tr  rows=4 onActivate='tree_activated "$@"'
         ft-tree-node text="branch" id=br depth=0 expanded=true
         ft-tree-node text="leaf" id=lf depth=1
     end_ft_tree

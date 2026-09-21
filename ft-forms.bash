@@ -281,6 +281,31 @@ _ft_stamp_prop() {              # name prop value
 # CONTRIBUTING §3 says "bump a version, never unset it"; this is how the unset stays harmless.
 # The same one statement per bump as before — only the source of the number changed.
 _FT_GENERATION_CLOCK=0
+# _ft_listener_store NAME EVENT CODE — the ONE place listeners are added or cleared. An empty
+# CODE drops every listener for that event (like `el.onactivate = null`); an identical one twice
+# is once, as the DOM has it. ft_add_listener used to build a property name by hand and got it
+# subtly wrong — "on" + "activate" is `onactivate`, which does not match the `on[A-Z]*` branch
+# at all, so runtime-added listeners were written nowhere and never ran.
+_ft_listener_store() {          # name event code
+    local __n=$1 __ev=$2 __code=$3
+    local __lk="_ftp_${__n}_eventListeners"               # NB: separate line — same-statement local
+    local __cur=${!__lk-} __tok __out="" __US=$'\x1f'
+    if [[ -z "$__code" ]]; then
+        local __oldIFS=$IFS; IFS=$__US
+        for __tok in $__cur; do
+            [[ -n "$__tok" && "${__tok%%=*}" != "$__ev" ]] && __out+="${__out:+$__US}$__tok"
+        done
+        IFS=$__oldIFS
+        printf -v "$__lk" '%s' "$__out"
+    else
+        case "$__US$__cur$__US" in *"$__US$__ev=$__code$__US"*) : ;;
+            *) printf -v "$__lk" '%s' "${__cur:+$__cur$__US}$__ev=$__code" ;; esac
+    fi
+    local __cp=${FT_PROPS[$__n]:-}
+    case " $__cp " in *" eventListeners "*) : ;; *) FT_PROPS[$__n]="${__cp:+$__cp }eventListeners" ;; esac
+    _ft_resolve_forget "$__n" eventListeners
+    return 0
+}
 _ft_setprop() {                 # name prop value
     local name=$1 prop val=$3
     # onEvent=fn SUGAR: `onActivate=fn` (constructor or ft_set) registers fn as an event
@@ -379,28 +404,17 @@ _ft_setprop() {                 # name prop value
             __ch=${__e:__i:1}
             if [[ $__ch == [A-Z] ]]; then (( __i )) && __ev+=_; __ev+=${__ch,,}; else __ev+=$__ch; fi
         done
-        local __lk="_ftp_${name}_eventListeners"          # NB: separate line — same-statement local
-        local __cur=${!__lk-} __tok __out=""
-        # A LISTENER IS A FUNCTION NAME HERE, NOT CODE — yet. The plist below is SPACE-SEPARATED
-        # ("activate=fn change=g"), so `onActivate='fn arg'` would split into two tokens and the
-        # second would be read as another listener. Refused out loud rather than stored and
-        # silently skipped at dispatch, which is what happened until now: _ft_hook invokes the
-        # value as a command, so `fn arg` looked up a command literally called "fn arg", failed
-        # the `declare -F` test, and did nothing at all.
-        # Keys already take code (onKey='ft_activate $this'); listeners should too, and that is
-        # a change to how the plist stores them, not a thing to fake here.
-        if [[ "$val" == *[[:space:]]* ]]; then
-            printf 'ft: %s: %s must name a function, not code — `%s` would never run\n' \
-                   "$name" "$2" "$val" >&2
-            return 1
-        fi
-        if [[ -z "$val" ]]; then                          # onX="" → drop all listeners for X
-            for __tok in $__cur; do [[ ${__tok%%=*} == "$__ev" ]] || __out+="${__out:+ }$__tok"; done
-            printf -v "$__lk" '%s' "$__out"
-        else
-            case " $__cur " in *" $__ev=$val "*) : ;;     # identical listener twice = once (DOM)
-                *) printf -v "$__lk" '%s' "${__cur:+$__cur }$__ev=$val" ;; esac
-        fi
+        # A LISTENER HOLDS CODE, exactly as a key binding does — `onChange='ft_set total
+        # text="$1 items"'`. It could not before: the store was a SPACE-SEPARATED list of
+        # "event=fn" tokens, so code with a space in it split into two entries and _ft_hook then
+        # looked up a command literally called "fn arg", failed its `declare -F` test and did
+        # nothing. Silently, for as long as this framework has existed.
+        #
+        # The separator is US (\x1f), the byte ASCII set aside for exactly this and the one
+        # thing that cannot appear in shell code you would ever write. Entries stay `event=code`
+        # with the FIRST `=` splitting, so a code value may contain `=`, spaces, semicolons,
+        # tabs and newlines.
+        _ft_listener_store "$name" "$__ev" "$val"
         local __cp=${FT_PROPS[$name]:-}                   # register the plist prop for cleanup
         case " $__cp " in *" eventListeners "*) : ;; *) FT_PROPS[$name]="${__cp:+$__cp }eventListeners" ;; esac
         _ft_resolve_forget "$name" eventListeners         # this exit writes a property and returns
@@ -4654,6 +4668,48 @@ FT_DEFER_ROOT=""
 # harmless no-op flag.
 FT_INVALIDATED=0
 ft_invalidate() { FT_INVALIDATED=1; return 0; }
+# ── Batching ────────────────────────────────────────────────────────────────
+# ft_batch_begin … ft_batch_end — every property write between them costs ONE reflow and ONE
+# paint, no matter how many controls or how many calls.
+#
+#     ft_batch_begin
+#     for i in "${!rows[@]}"; do ft_set "row$i" text="${rows[$i]}"; done
+#     ft_batch_end
+#
+# THE ENGINE ALWAYS HAD THIS; app code just could not reach it. The run loop turns coalescing on
+# around an input burst, so three writes inside a HANDLER have always cost one reflow — and
+# outside a handler, in setup code or a loop over rows, each write reflowed on its own. Measured
+# on three labels: 3 writes in a handler = 1 reflow, the same 3 at file scope = 3, and thirty
+# rows in a loop = 30. That gap is why the author asked for a lazy setter; this is the same
+# request answered without a second way to write a property, and without any way to leave a
+# stale screen — the end of the batch settles, it does not merely stop deferring.
+#
+# NESTABLE, and safe inside a handler: a batch that finds coalescing already on restores it and
+# leaves the settling to whoever turned it on. Only the outermost batch settles.
+_FT_BATCH_DEPTH=0
+_FT_BATCH_OWNED=0
+ft_batch_begin() {
+    if (( _FT_BATCH_DEPTH++ == 0 )) && (( ! FT_COALESCING )); then
+        FT_COALESCING=1; _FT_BATCH_OWNED=1
+    fi
+    return 0
+}
+ft_batch_end() {
+    (( _FT_BATCH_DEPTH > 0 )) || { printf 'ft: ft_batch_end with no open batch\n' >&2; return 1; }
+    (( --_FT_BATCH_DEPTH == 0 )) || return 0
+    (( _FT_BATCH_OWNED )) || return 0           # someone else owns the burst; they will settle
+    _FT_BATCH_OWNED=0; FT_COALESCING=0
+    ft_reflow_flush                             # one layout for everything the batch touched…
+    if [[ -n "$FT_DEFER_ROOT" ]]; then          # …and one paint (ft_refresh inside a batch
+        ft_layout "$FT_DEFER_ROOT"              #   defers to here, exactly as it does to the
+        ft_repaint_all "$FT_DEFER_ROOT"         #   run loop's settle)
+        FT_DEFER_ROOT=""
+    else
+        ft_redraw_dirty
+    fi
+    return 0
+}
+
 ft_refresh() {                  # [root]
     local root=${1:-$FT_ROOT}
     [[ -z "$root" ]] && return 1
@@ -4999,7 +5055,7 @@ declare -A FT_PROTO_FILLS_BACKGROUND=()
 # Per-prototype property RECONCILER: <fn> NAME PROP VALUE, run by _ft_setprop after the property is
 # stored, for prototypes whose real state lives in another property (see the checkbox note there).
 declare -A FT_PROTO_SETPROP=()
-declare -A FT_PROTO_LISTENERS=()    # type → "onActivate=fn onChange=g …" from its defaults
+declare -A FT_PROTO_LISTENERS=()    # type → "onActivate=… onChange=… …" from its defaults
 # A keys=auto keylegend derives its caps from the FOCUSED control (and its current state —
 # edit mode, an active selection, …), so it must be repainted whenever any of that changes —
 # otherwise the legend freezes on the first control's keys and looks dead. Cheap: normally a
@@ -8409,26 +8465,69 @@ _ft_hook() {                    # name on_<event> [value...] → nonzero iff any
     local __lk="_ftp_${__name}_eventListeners"            # NB: separate line — same-statement local
     local __ls=${!__lk-}
     [[ -z "$__ls" ]] && return 0                          # no listeners (hot path)
-    local __ev=${__hook#on_} __rc=0 __tok
+    local __ev=${__hook#on_} __rc=0 __tok __code
     local _prev_this=${this-} _prev_evt=${FT_EVENT_TYPE-}
     this=$__name; FT_EVENT_TYPE=$__ev
-    for __tok in $__ls; do
+    local __oldIFS=$IFS; IFS=$'\x1f'
+    local -a __entries=($__ls); IFS=$__oldIFS
+    for __tok in "${__entries[@]}"; do
         [[ "${__tok%%=*}" == "$__ev" ]] || continue
-        declare -F "${__tok#*=}" >/dev/null 2>&1 || continue
-        "${__tok#*=}" "$@" || __rc=1
+        __code=${__tok#*=}
+        # THE EVENT DETAIL IS IN "$@", and this eval inherits it — so `onChange='set_total "$1"'`
+        # sees the new value, and so does a bare `fn "$@"`. Same bargain as a key's onKey=.
+        _ft_run_code "$__code" "$__name" "$@" || __rc=1
     done
     this=$_prev_this; FT_EVENT_TYPE=$_prev_evt
     return $__rc
 }
+# _ft_run_code CODE NAME DETAIL… — evaluate one handler's code, with the same typo guard a key binding
+# gets: when the first word is a plain command word it must name something callable, or the
+# pair is RECORDED rather than printed (stderr in a TUI is the screen the user is reading) and
+# the handler is skipped. That check used to be `declare -F` on the whole value, which is why a
+# listener holding code was skipped in silence.
+_ft_run_code() {                # code name detail…  (the detail lands in the code's $1, $2 …)
+    local __c=$1 __n=$2
+    [[ -z "$__c" ]] && return 0
+    local __first=${__c%%[ 	]*}
+    if [[ "$__first" =~ ^[A-Za-z_][A-Za-z0-9_-]*$ ]] && ! type -t "$__first" >/dev/null 2>&1; then
+        local __pair="$__n $__first" __seen
+        for __seen in "${FT_UNRESOLVED_ACTIONS[@]}"; do [[ "$__seen" == "$__pair" ]] && return 0; done
+        FT_UNRESOLVED_ACTIONS+=("$__pair")
+        return 0
+    fi
+    shift 2
+    eval "$__c"
+}
 # Explicit listener management (the DOM's addEventListener/removeEventListener, on the
 # `eventListeners` plist). Pair form, variadic: ft_add_listener NAME activate=fn [change=g …];
 # the two-arg DOM shape `ft_add_listener NAME activate fn` works too.
-ft_add_listener()    { local __n=$1; shift; [[ "$1" != *=* ]] && set -- "$1=$2"; ft_tokenlist_add    "$__n" eventListeners "$@"; }
-ft_remove_listener() { local __n=$1; shift; [[ "$1" != *=* ]] && set -- "$1=$2"; ft_tokenlist_remove "$__n" eventListeners "$@"; }
+# They no longer go through ft_tokenlist_add: that splits on SPACES, which is the whole reason
+# a listener could not hold code.
+ft_add_listener() {             # NAME event=code… | NAME event code
+    local __n=$1; shift; [[ "$1" != *=* ]] && set -- "$1=$2"
+    local __p
+    for __p in "$@"; do _ft_listener_store "$__n" "${__p%%=*}" "${__p#*=}"; done
+}
+ft_remove_listener() {          # NAME event=code… | NAME event code
+    local __n=$1; shift; [[ "$1" != *=* ]] && set -- "$1=$2"
+    local __lk="_ftp_${__n}_eventListeners"               # NB: separate line — same-statement local
+    local __US=$'\x1f' __p __tok __out
+    local __oldIFS=$IFS
+    for __p in "$@"; do
+        __out=""; IFS=$__US
+        for __tok in ${!__lk-}; do
+            [[ -n "$__tok" && "$__tok" != "$__p" ]] && __out+="${__out:+$__US}$__tok"
+        done
+        IFS=$__oldIFS
+        printf -v "$__lk" '%s' "$__out"
+    done
+}
 ft_has_listener() {             # NAME EVENT → 0 iff a listener is registered for it
     local __lk="_ftp_${1}_eventListeners"                 # NB: separate line — same-statement local
     local __ls=${!__lk-} __tok
-    for __tok in $__ls; do [[ "${__tok%%=*}" == "$2" ]] && return 0; done
+    local __oldIFS=$IFS; IFS=$'\x1f'
+    for __tok in $__ls; do IFS=$__oldIFS; [[ "${__tok%%=*}" == "$2" ]] && return 0; IFS=$'\x1f'; done
+    IFS=$__oldIFS
     return 1
 }
 

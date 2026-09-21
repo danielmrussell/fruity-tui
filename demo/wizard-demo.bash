@@ -70,15 +70,15 @@ _build_dialog() {                # step
 
         case "$EXTRA" in
             confirm)
-                ft-checkbox name=cbDontShow text="Don't show this again" onActivate=cbDontShow_on_activate \
+                ft-checkbox name=cbDontShow text="Don't show this again" onActivate='cbDontShow_on_activate "$@"' \
                             accessKey=W checked="$WIZ_DONTSHOW" margin=1
                 ;;
             options)
                 ft-div name=themeGrp display=flex flexDirection=column gap=0 margin=1 alignItems=start
                     ft-label name=themeHdr text="Theme:"
-                    ft-radio name=rLight text="Light" group=theme accessKey=L onActivate=rLight_on_activate
-                    ft-radio name=rDark  text="Dark"  group=theme accessKey=D onActivate=rDark_on_activate
-                    ft-radio name=rAuto  text="Auto"  group=theme accessKey=U onActivate=rAuto_on_activate
+                    ft-radio name=rLight text="Light" group=theme accessKey=L onActivate='rLight_on_activate "$@"'
+                    ft-radio name=rDark  text="Dark"  group=theme accessKey=D onActivate='rDark_on_activate "$@"'
+                    ft-radio name=rAuto  text="Auto"  group=theme accessKey=U onActivate='rAuto_on_activate "$@"'
                 end_ft_div
                 case "$WIZ_THEME" in
                     Light) ft_radio_select rLight ;;
@@ -86,7 +86,7 @@ _build_dialog() {                # step
                     *)     ft_radio_select rDark  ;;
                 esac
                 ft-div name=optGrp display=flex flexDirection=column gap=0 margin=1 alignItems=start
-                    ft-checkbox name=cbNotify text="Enable notifications" onActivate=cbNotify_on_activate \
+                    ft-checkbox name=cbNotify text="Enable notifications" onActivate='cbNotify_on_activate "$@"' \
                                 accessKey=N checked="$WIZ_NOTIFY"
                 end_ft_div
                 ;;
@@ -94,11 +94,11 @@ _build_dialog() {                # step
 
         ft-div name=btnrow display=flex gap=2 justifyContent=center
             if (( step > 1 )); then
-                ft-button name=btnBack text=Back accessKey=B onActivate=btnBack_on_activate
+                ft-button name=btnBack text=Back accessKey=B onActivate='btnBack_on_activate "$@"'
             fi
             local oklabel=OK
             (( step == LAST_STEP )) && oklabel=Finish
-            ft-button name=btnOk text="$oklabel" accessKey=K onActivate=btnOk_on_activate
+            ft-button name=btnOk text="$oklabel" accessKey=K onActivate='btnOk_on_activate "$@"'
         end_ft_div
     end_ft_frame
     end_ft_form

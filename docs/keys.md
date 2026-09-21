@@ -97,9 +97,24 @@ It reports what it can see, and it does not pretend to fix what it cannot:
 * Two handlers that both take the focus are not refused. That is unspecified behaviour and it
   belongs to you; the last write wins, and which one runs last is not a promise.
 
-One thing a listener cannot do yet: hold code. `onActivate=` takes a FUNCTION NAME, because the
-listener store is a space-separated list and `onActivate='fn arg'` would split in two. Writing
-one is refused out loud rather than stored and silently skipped. Keys take code; listeners will.
+## Every on<Event> takes code
+
+A key is an event the keymap engine raises, and it is not special: `onKey=`, `onActivate=`,
+`onChange=` and the rest all hold CODE, evaluated the same way.
+
+```bash
+ft-slider name=vol min=0 max=10 onChange='ft_set label text="$1 of 10"; save_pref "$1"'
+ft-button name=ok text="OK" onActivate='ft_close $this' key=ENTER onKey='ft_activate $this'
+```
+
+`$this` is the control and `$FT_EVENT_TYPE` the event name; the event's DETAIL arrives in `$1`,
+`$2` … (a slider's new value, a select's chosen option). Listeners accumulate — two
+`onActivate=` arguments are two listeners, as the DOM has it — and run in the order they were
+added. Any of them returning nonzero CANCELS the action, and all of them still run.
+`onActivate=""` clears that event's listeners, like `el.onactivate = null`.
+
+A handler whose first word names nothing callable is RECORDED, not printed: stderr in a TUI is
+the screen the user is reading. `ft_unresolved_actions` reports them.
 
 ## Handling, eating and passing on
 
@@ -159,3 +174,20 @@ end_ft_keymap
 | `ft_keymap_clear MAP` | empty it, keeping it declared |
 | `ft_keymap_dump MAP` | its bindings, for debugging |
 | `ft_keymap_default MAP bubble\|drop` | what an unmatched key does |
+
+## One reflow for many writes
+
+Every property write schedules exactly the invalidation it needs, and the run loop settles once
+per input burst — so three `ft_set` calls inside a handler cost ONE reflow and ONE paint. Outside
+a handler, in setup code or a loop over rows, each write settles on its own. `ft_batch_begin` …
+`ft_batch_end` gives that code the same deal:
+
+```bash
+ft_batch_begin
+for i in "${!rows[@]}"; do ft_set "row$i" text="${rows[$i]}"; done
+ft_batch_end                 # one layout, one paint, however many writes
+```
+
+Measured on three labels: three loose writes reflow three times, the same three in a batch
+reflow once, and ten rows in a loop reflow once. Batches nest, and one inside an event handler
+leaves the settling to the run loop rather than painting mid-burst.
