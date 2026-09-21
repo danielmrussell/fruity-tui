@@ -2460,12 +2460,51 @@ ft_prototype_screen() {
     # navigation keymap — Tab, Shift-Tab, the arrows, Esc and `.`.
     ft_prototype extends=form
 }
+# THROUGH setProp=, NOT the ft_set route alone. `currentScreen` names the state, so writing it
+# must SWITCH the screen — and it can arrive three ways: ft_set, the construction DSL
+# (`ft-app name=a currentScreen=help`), and a STATE RESTORE. ft-tabs learned this the hard way
+# with activeTab, where a reloaded app came back with the number restored and the first tab on
+# screen. Same rule, written down in CONTRIBUTING §1: prefer setProp= whenever a route other
+# than ft_set can produce the bad state.
+_ft_app_setprop() {             # name prop value
+    [[ "$2" == currentScreen ]] || return 0
+    [[ "${FT_TYPE[$1]:-}" == app ]] || return 0
+    local want=$3
+    [[ -n "$want" ]] || return 0
+    [[ "${_FT_APP_SCREEN[$1]:-}" == "$want" ]] && return 0      # already there: no work, no loop
+    # STILL BEING BUILT: `ft-app name=x currentScreen=second` names a screen that is two lines
+    # further down the file and does not exist yet. Store it and let app_on_children_complete
+    # apply it — refusing here threw the author's choice away and opened on the first screen,
+    # which is the one thing they had said they did not want.
+    #
+    # The test is "has it any screens yet", not "is it on the nest stack": the args are applied
+    # inside ft_new, which runs BEFORE ft-app pushes anything.
+    local _kid _has=0
+    for _kid in ${FT_KIDS[$1]:-}; do [[ "${FT_TYPE[$_kid]:-}" == screen ]] && { _has=1; break; }; done
+    (( _has )) || return 0
+    # PUT THE HONEST VALUE BACK if the screen does not exist. The property is written before
+    # this hook runs, so a refused navigation would otherwise leave the app pointing at a
+    # screen that is not there, and everything that asks "which screen is current?" — the ring,
+    # the resize, a modal coming back — gets a name that answers nothing.
+    if ! _ft_app_show "$1" "$want"; then
+        _ft_setprop "$1" currentScreen "${_FT_APP_SCREEN[$1]:-}"
+        # _ft_setprop RETURNS 0 WHATEVER A RECONCILER SAYS, and teaching it to propagate would
+        # change the status of every property write in the framework on the word of hooks that
+        # never meant to report one. So the refusal is left here for ft_set to pick up — the
+        # caller still learns that its write did not take.
+        _FT_APP_REFUSED=$1
+        return 1
+    fi
+    return 0
+}
 ft_prototype_app() {
     # The app paints NOTHING of its own: the current screen fills the terminal, and a screen
     # already knows how. An app that filled its box too would just erase the screen underneath
     # it on every repair (that is the bug fillsBackground exists to describe).
     ft_prototype extends=ft_control draw=none fillsBackground=false \
+        setProp=_ft_app_setprop \
         defaults="display=block"
+    ft_prop_kind_set currentScreen layout   # switching re-lays the screen that appears
 }
 # _ft_fit_to_terminal NAME — size a screen (or a legacy root form) to the terminal. An app
 # passes it on to every screen it holds, so a resize while screen B is hidden still finds B the
@@ -2480,6 +2519,7 @@ _ft_fit_to_terminal() {         # name
     esac
 }
 declare -A _FT_APP_SCREEN=()    # app → the current screen, as last set SUCCESSFULLY
+_FT_APP_REFUSED=""              # the app whose last currentScreen= write was refused
 # _ft_app_show NAME SCREEN — make SCREEN the one that is visible, and give it the ring.
 _ft_app_show() {                # app screen
     local app=$1 want=$2 kid
@@ -2490,8 +2530,11 @@ _ft_app_show() {                # app screen
         if [[ "$kid" == "$want" ]]; then _ft_setprop "$kid" display flex
         else                             _ft_setprop "$kid" display none; fi
     done
-    _ft_setprop "$app" currentScreen "$want"
+    # BEFORE the write, not after: _ft_setprop fires the setProp hook, which calls back into
+    # here, and a guard that is only set afterwards never stops the second trip. (Found by the
+    # test hanging, which is the honest way to find an infinite loop.)
     _FT_APP_SCREEN[$app]=$want          # the last screen that really existed — see the repair
+    _ft_setprop "$app" currentScreen "$want"
     _ft_fit_to_terminal "$want"
     ft_focus_ring_build "$want"      # each screen has its own ring, and its own last focus
     ft_dirty_subtree "$app"
@@ -2674,21 +2717,9 @@ _ft_prop_owed() {               # name key → 1 if the change is refused (the p
         # NAVIGATION IS A PROPERTY. `ft_set app currentScreen=help` is the whole API for moving
         # between screens — there is no ft_show_screen verb, the way there is no verb for
         # changing a label's text.
-        currentScreen)
-            if [[ "${FT_TYPE[$name]:-}" == app ]]; then
-                _ft_get_raw "$name" currentScreen        # the value ft_set has already stored
-                local _want=$FT_RET
-                # PUT THE HONEST VALUE BACK if the screen does not exist — the property is
-                # written before this hook runs, so a refused navigation would otherwise leave
-                # the app pointing at a screen that is not there, and everything that asks
-                # "which screen is current?" (the ring, the resize, a modal coming back) gets a
-                # name that answers nothing. Same repair the `parent` arm makes.
-                if ! _ft_app_show "$name" "$_want"; then
-                    _ft_setprop "$name" currentScreen "${_FT_APP_SCREEN[$name]:-}"
-                    return 1
-                fi
-            fi
-            _ft_owed+=" reflow" ;;
+        currentScreen)                          # the switch itself is _ft_app_setprop's, below
+            _ft_owed+=" reflow"
+            [[ "$_FT_APP_REFUSED" == "$name" ]] && { _FT_APP_REFUSED=""; return 1; } ;;
         draw) _ft_get_raw "$name" draw; FT_DRAW[$name]=$FT_RET; _ft_owed+=" paint" ;;
         # `focusable` has a TABLE behind it, exactly as `draw` does, and the ring is built
         # from that table rather than from the property. Writing only the property left

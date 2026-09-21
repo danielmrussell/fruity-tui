@@ -82,7 +82,7 @@ fi
 # state and is not added here turns that file red. `activeTab` was the standing proof that it was
 # needed — a tabbed pane SAVED which tab you were on (the record is in the file) and the restore
 # read it and threw it away, so an app left on its Settings tab came back on the first one.
-: "${FT_STATE_RESTORE_PROPS:=value scrollTop scrollLeft selectedIndex checked cursor expanded activeTab parkedTop parkedLeft}"
+: "${FT_STATE_RESTORE_PROPS:=value scrollTop scrollLeft selectedIndex checked cursor expanded activeTab currentScreen currentPage parkedTop parkedLeft}"
 : "${FT_STATE_RESTORE_ALL:=0}"
 _ft_state_wanted() {            # prop → 0 if a restore should apply it
     (( FT_STATE_RESTORE_ALL )) && return 0

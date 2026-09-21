@@ -117,6 +117,26 @@ check "…and is still its own scope"     "$(_ft_is_focus_scope legacy && echo s
 # `${ASSOC[""]}` IS A BASH ERROR, not an empty lookup, and stderr in a TUI is the screen the
 # user is reading. FT_ROOT is legitimately empty in plenty of moments — before ft_run, inside a
 # test that has not set one — and the file dialog found this the day it was written.
+# `currentScreen` NAMES THE STATE, so writing it must SWITCH — and it arrives three ways:
+# ft_set, the construction DSL, and a STATE RESTORE. ft-tabs learned this with activeTab, where
+# a reloaded app came back with the number restored and the first tab still on screen. Driving
+# it the way a restore does — straight through _ft_setprop, which ft_set's own route never
+# touches — is the only way to tell the two apart.
+note "every route that writes currentScreen switches the screen"
+ft_set a currentScreen=main
+_ft_setprop a currentScreen help          # exactly what a state restore does
+check "the restore switched screens"  "$(ft_get help display; printf '%s' "$FT_RET")" "flex"
+check "…and hid the other"            "$(ft_get main display; printf '%s' "$FT_RET")" "none"
+check "…and moved the ring"           "${FT_FOCUS_RING[*]}" "back"
+ft_set a currentScreen=main
+# The construction DSL is the third route.
+ft-app name=ctor currentScreen=second
+    ft-screen name=first;  ft-button name=f1 text="1"; end_ft_screen
+    ft-screen name=second; ft-button name=f2 text="2"; end_ft_screen
+end_ft_app
+check "the DSL chose the screen too" "$(ft_get second display; printf '%s' "$FT_RET")" "flex"
+ft_remove ctor
+
 note "asking which scope is live before there is one says nothing"
 _sv_root=$FT_ROOT
 _e=$(mktemp "${TMPDIR:-/tmp}/ft-scope.XXXXXX")
