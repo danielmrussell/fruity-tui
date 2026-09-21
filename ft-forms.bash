@@ -381,6 +381,19 @@ _ft_setprop() {                 # name prop value
         done
         local __lk="_ftp_${name}_eventListeners"          # NB: separate line — same-statement local
         local __cur=${!__lk-} __tok __out=""
+        # A LISTENER IS A FUNCTION NAME HERE, NOT CODE — yet. The plist below is SPACE-SEPARATED
+        # ("activate=fn change=g"), so `onActivate='fn arg'` would split into two tokens and the
+        # second would be read as another listener. Refused out loud rather than stored and
+        # silently skipped at dispatch, which is what happened until now: _ft_hook invokes the
+        # value as a command, so `fn arg` looked up a command literally called "fn arg", failed
+        # the `declare -F` test, and did nothing at all.
+        # Keys already take code (onKey='ft_activate $this'); listeners should too, and that is
+        # a change to how the plist stores them, not a thing to fake here.
+        if [[ "$val" == *[[:space:]]* ]]; then
+            printf 'ft: %s: %s must name a function, not code — `%s` would never run\n' \
+                   "$name" "$2" "$val" >&2
+            return 1
+        fi
         if [[ -z "$val" ]]; then                          # onX="" → drop all listeners for X
             for __tok in $__cur; do [[ ${__tok%%=*} == "$__ev" ]] || __out+="${__out:+ }$__tok"; done
             printf -v "$__lk" '%s' "$__out"
@@ -1250,7 +1263,7 @@ ft_key_delve() {                # name token
 ft_key_undelve() {              # name token
     local n=$1
     if ft_runlevel_out "$n"; then ft_dirty "$n"; _ft_legend_dirty; return 0; fi
-    FT_KEY_BUBBLE=1; return 1
+    ft_bubble; return 1
 }
 
 # _ft_runlevel_active_sgr NAME FALLBACK → FT_RET — the colours for "the item the keyboard
@@ -1535,6 +1548,12 @@ _ft_is_assignment() {           # 0 iff "$1" is a property assignment, not conte
     [[ "$1" =~ ^(--[A-Za-z][A-Za-z0-9-]*|[A-Za-z_][A-Za-z0-9_]*(\[[A-Za-z0-9_]+\])?)= ]] || return 1
     local k=${1%%=*}
     [[ "$k" == --* ]] && return 0                     # a custom property (--x): unambiguous, value may hold spaces
+    # AN EVENT HANDLER'S VALUE IS CODE, and code has spaces in it: `onActivate='ft_set status
+    # text="Saved"'`. `on<Event>=` is not in the property-kind table — _ft_setprop intercepts it
+    # and appends to the listener plist instead — so the single-word fallback was the only thing
+    # keeping it alive, and every handler that took an argument was read as loose content. It
+    # went unnoticed while loose content was silently accepted as text; it is a refusal now.
+    [[ "$k" == on[A-Z]* ]] && return 0
     _ft_propkey "$k"
     [[ -v "FT_PROP_KIND[$FT_RET]" ]] && return 0     # a real property: value may hold spaces
     [[ "$1" != *[[:space:]]* ]]                       # else only a bare word=word token is a prop
@@ -2154,8 +2173,27 @@ _ft_accel_target() {            # form letter → FT_RET
     done
     FT_RET=""; return 1
 }
+# PEERS ALL RESPOND. Controls that share a letter have no ancestral relationship, so there is
+# no cascade to pick a winner between them — each one is a subscriber, and each gets the event.
+# Five pages that all claim `s` for their own Save still behave as before, because only one of
+# them is on screen; two VISIBLE claimants now both act, which is the whole point of calling a
+# key an event. It is the author's job to keep their effects disjoint: two handlers that both
+# take the focus, or both write the same variable, are unspecified behaviour and the last one
+# wins (docs/keys.md states the rule in full).
+#
+# Each claimant is activated independently, so each decides for itself — via its own handlers —
+# what happens next; bubbling is per control, from that control upward.
 _ft_accel_dispatch() {          # form letter
-    _ft_accel_target "$1" "$2" && ft_activate "$FT_RET"
+    local akey="${1}"$'\x1f'"${2}" n
+    for n in ${FT_ACCEL_LIST[$akey]:-}; do
+        [[ -n "${FT_TYPE[$n]:-}" ]] || continue
+        if [[ "${FT_TYPE[$n]}" == tab ]]; then
+            _ft_hidden_anywhere "${FT_PARENT[$n]:-}" && continue
+        else
+            _ft_focus_skippable "$n" && continue
+        fi
+        ft_activate "$n"
+    done
     return 0
 }
 
@@ -7813,7 +7851,7 @@ _ft_keymap_layers() {           # name → FT_KEYMAP_LAYERS, in precedence order
     local _r; for _r in $refkm; do FT_KEYMAP_LAYERS=("${FT_KEYMAP_LAYERS[0]}" "$_r" "${FT_KEYMAP_LAYERS[@]:1}"); done
     # `defaultKeys=false` silences THE KEYS THE PROTOTYPE PROVIDES — its own map and the map
     # for the runlevel it is in — and leaves every key the app wrote. It is the blunt
-    # instrument; `onKey=bubble` on one key is the scalpel. It INHERITS, so it silences a
+    # instrument; `onKey='ft_bubble'` on one key is the scalpel. It INHERITS, so it silences a
     # subtree.
     #
     # Asked only when there is something to silence. Reading it costs a cascade resolve, and
@@ -7862,11 +7900,15 @@ declare -a FT_KEYMAP_LAYERS=()
 FT_UNRESOLVED_ACTIONS=()        # deduped "control action" pairs — see ft_unresolved_actions
 _ft_run_action() {              # code name token
     local _code=$1 _name=$2 _tok=$3
-    case "$_code" in
-        '')     return 1 ;;                     # legend-only cap — advertised, not bound
-        bubble) return 1 ;;                     # documented: decline, let an ancestor have it
-        drop)   return 0 ;;                     # documented: swallow it here
-    esac
+    # NO RESERVED WORDS ANY MORE. `bubble` and `drop` were two words the action parser had to
+    # know about, which is two ways for an action not to be code. Both are ordinary now:
+    #   · to keep the event travelling, a handler CALLS ft_bubble — and it may do that after
+    #     doing its own work, which is a thing "decline the key" could never express;
+    #   · to swallow it and do nothing, write `onKey=''`, which the field parser stores as the
+    #     shell's own no-op. Code that runs and does nothing is a control eating the event.
+    # A binding with NO onKey at all is still not a binding: it is a legend-only cap, advertised
+    # here and handled by whoever really owns the key.
+    [[ -z "$_code" ]] && return 1
     local _first=${_code%%[ 	]*}
     if [[ "$_first" =~ ^[A-Za-z_][A-Za-z0-9_-]*$ ]] && ! type -t "$_first" >/dev/null 2>&1; then
         # Recorded rather than printed: this fires on every press of the key.
@@ -7875,12 +7917,25 @@ _ft_run_action() {              # code name token
         FT_UNRESOLVED_ACTIONS+=("$_pair")
         return 1                                # unhandled → bubble; never claim a key we dropped
     fi
-    FT_KEY_BUBBLE=0
+    # THE EVENT STATE, set up before the code runs and torn down after: $this, $key, and the
+    # bubble flag this event's handlers may set. Saved and restored because a handler may
+    # dispatch another event (a key that opens a dialog which handles its own keys), and the
+    # inner event must not answer the outer one's question.
+    local _sv_bubble=$_FT_EVENT_BUBBLE
+    _FT_EVENT_BUBBLE=0
     local this=$_name key=$_tok
     eval "$_code"
-    (( FT_KEY_BUBBLE )) && return 1             # handler declined → let it bubble to the parent
+    local _bubbled=$_FT_EVENT_BUBBLE
+    _FT_EVENT_BUBBLE=$_sv_bubble
+    (( _bubbled )) && return 1                  # ft_bubble: pass it on to this control's ancestors
     return 0
 }
+# ft_bubble — from inside a key handler: let this event keep travelling outward after you are
+# done with it. The control still HANDLED it; bubbling is a separate decision, and the old flag
+# could only say "I declined", which is why a control that wanted to act AND pass the key on had
+# no way to say so. A control that says nothing eats the event.
+_FT_EVENT_BUBBLE=0
+ft_bubble() { _FT_EVENT_BUBBLE=1; }
 # Every binding whose action could not be resolved, as "CONTROL ACTION" lines — a keymap
 # pointing at a function that was renamed, or never written. Each pair is reported once.
 ft_unresolved_actions() {       # → FT_RET (empty when every action resolved)
@@ -7898,7 +7953,6 @@ _ft_try_keymaps() {             # name token
     for km in "${layers[@]}"; do
         [[ -z "$km" ]] && continue
         if _ft_keymap_lookup "$km" "$tok"; then
-            FT_KEY_BUBBLE=0
             _ft_run_action "$FT_RET" "$name" "$tok" && return 0
             return 1                            # declined or unresolvable → keep bubbling
         fi
@@ -7911,10 +7965,9 @@ _ft_try_keymaps() {             # name token
 # ft_dispatch_event TOKEN — cascade from the focused control (or the root if
 # nothing is focused) up through its ancestors. Returns 1 if nothing matched.
 FT_ROOT=""
-# A key handler normally CLAIMS its key. To let a handler conditionally decline
-# (so the key keeps bubbling — e.g. a text field's Esc cancels a selection if there
-# is one, else lets Esc reach the app's command menu), it sets FT_KEY_BUBBLE=1.
-FT_KEY_BUBBLE=0
+# A key handler normally CLAIMS its key; calling ft_bubble lets the event keep travelling —
+# e.g. a text field's Esc cancels a selection if there is one and bubbles if there is not, so
+# Esc reaches the app's command menu.
 ft_dispatch_event() {           # token
     local tok=$1
     local n=${FT_FOCUS:-}
@@ -7936,7 +7989,6 @@ ft_dispatch_keymap() {          # name token
     for km in "${layers[@]}"; do
         [[ -z "$km" ]] && continue
         if _ft_keymap_lookup "$km" "$tok"; then
-            FT_KEY_BUBBLE=0
             _ft_run_action "$FT_RET" "$name" "$tok"     # the SAME resolver as the cascade
             return $?
         fi

@@ -51,23 +51,23 @@ ft_get s scrollbar; check "scrollbar defaults to false" "$FT_RET" "false"
 
 note "a CLOSED dropdown does not open on an arrow — it declines so focus can move"
 ft_set s open=false
-FT_KEY_BUBBLE=0; ft_select_key_down s
+_FT_EVENT_BUBBLE=0; ft_select_key_down s
 check "Down on a closed dropdown does NOT open it" "$(ft_resolved_prop s open false; echo "$FT_RET")" "false"
-check "…and it declines (bubbles to focus nav)"    "$FT_KEY_BUBBLE" "1"
-FT_KEY_BUBBLE=0; ft_select_key_up s
-check "Up on a closed dropdown also declines"      "$FT_KEY_BUBBLE" "1"
+check "…and it declines (bubbles to focus nav)"    "$_FT_EVENT_BUBBLE" "1"
+_FT_EVENT_BUBBLE=0; ft_select_key_up s
+check "Up on a closed dropdown also declines"      "$_FT_EVENT_BUBBLE" "1"
 
 note "ENTER / SPACE is what opens a closed dropdown"
-FT_KEY_BUBBLE=0; ft_select_key_commit s
+_FT_EVENT_BUBBLE=0; ft_select_key_commit s
 check "Enter opens the closed dropdown" "$(ft_resolved_prop s open false; echo "$FT_RET")" "true"
 
 note "in an OPEN dropdown, Up at the very top COLLAPSES it; a further Up then moves focus"
 _ft_select_cursor_to s 0
-FT_KEY_BUBBLE=0; ft_select_key_up s          # cursor already at top → close, keep focus
+_FT_EVENT_BUBBLE=0; ft_select_key_up s          # cursor already at top → close, keep focus
 check "Up at the top closes the dropdown" "$(ft_resolved_prop s open false; echo "$FT_RET")" "false"
-check "…and does NOT bubble (it consumed the key to close)" "$FT_KEY_BUBBLE" "0"
-FT_KEY_BUBBLE=0; ft_select_key_up s          # now closed → declines so focus moves back
-check "the next Up (now closed) bubbles to focus nav" "$FT_KEY_BUBBLE" "1"
+check "…and does NOT bubble (it consumed the key to close)" "$_FT_EVENT_BUBBLE" "0"
+_FT_EVENT_BUBBLE=0; ft_select_key_up s          # now closed → declines so focus moves back
+check "the next Up (now closed) bubbles to focus nav" "$_FT_EVENT_BUBBLE" "1"
 
 note "Down inside an open dropdown still moves the cursor (does not collapse)"
 ft_set s open=true; _ft_select_cursor_to s 0

@@ -161,17 +161,17 @@ _ka_err() {                     # → FT_RET: whatever dispatch wrote to stderr
     FT_RET=$(<"$f")
 }
 
-note "…the reserved words the keymap docs promise"
-# "An ACTION is a function name, or the reserved words bubble / drop." Neither was
-# implemented: `bubble` announced "bubble: command not found" on the alt screen and then
-# SWALLOWED the key — the exact opposite of what it says on the tin.
-ft_keymap ka_bub; ft_keymap_set ka_bub key=X onKey=bubble
+note "…passing an event on, and eating it"
+# These were once the reserved words `bubble` and `drop`, and neither was implemented: `bubble`
+# announced "bubble: command not found" on the alt screen and then SWALLOWED the key, the exact
+# opposite of what it said. They are ordinary code now — a function you call, and no code at all.
+ft_keymap ka_bub; ft_keymap_set ka_bub key=X onKey='ft_bubble'
 _ka_build ka_bub; _ka_err
-check "bubble declines, so the ancestor gets the key" "$KA_OUTER" "1"
+check "ft_bubble passes it on, so the ancestor gets it" "$KA_OUTER" "1"
 check "…in silence"                                   "${FT_RET:-clean}" "clean"
-ft_keymap ka_drop; ft_keymap_set ka_drop key=X onKey=drop
+ft_keymap ka_drop; ft_keymap_set ka_drop key=X onKey=''
 _ka_build ka_drop; _ka_err
-check "drop swallows it here"                         "$KA_OUTER" "0"
+check "onKey='' eats it here"                          "$KA_OUTER" "0"
 check "…in silence"                                   "${FT_RET:-clean}" "clean"
 
 note "…an action naming a function that is not there"
@@ -263,10 +263,11 @@ ft_remove kl2 2>/dev/null
 rm -f "$XDG_STATE_HOME/listener-ran"
 f=$XDG_STATE_HOME/ka3.err
 ft-form name=kl2 width=40 height=8
-    # `onActivate="touch FILE"` has a SPACE in its value and `onActivate` is not a registered
-    # property, so this is not an assignment at all — it is loose content, which is refused now
-    # rather than quietly becoming the button's text. It is refused at the door instead of
-    # reaching the listener plist, and either way the command must never run.
+    # `onActivate="touch FILE"` is CODE, and a listener holds a function NAME: the plist that
+    # stores them is space-separated, so this would split in two. It used to be stored and then
+    # silently skipped at dispatch (_ft_hook looks up a command literally called "touch FILE",
+    # which does not exist), so the command never ran and nothing ever said why. Refused where
+    # it is written now — and either way the command must never run.
     ft-button name=klb2 text="Go" onActivate="touch $XDG_STATE_HOME/listener-ran" 2>"$f"
 end_ft_form
 ft_layout kl2; FT_ROOT=kl2
@@ -274,7 +275,7 @@ ft_activate klb2 >/dev/null 2>&1
 check "a listener naming a COMMAND runs nothing" \
       "$([[ -e "$XDG_STATE_HOME/listener-ran" ]] && echo RAN || echo no)" "no"
 check "…and it was refused where it was written, not on the screen" \
-      "$(case "$(<"$f")" in *"is not a property"*) echo refused ;; *) echo "${_x:-silent}" ;; esac)" "refused"
+      "$(case "$(<"$f")" in *"must name a function"*) echo refused ;; *) echo "${_x:-silent}" ;; esac)" "refused"
 
 note "LEAVING a control ends its activation — for every class, not just ones that opted in"
 # Runlevel decides what the arrows MEAN: at rest they move between controls, activated they

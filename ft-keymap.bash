@@ -153,22 +153,23 @@ end_ft_keymap() { _FT_KEYMAP_BLOCK=""; }
 # key is a legend that lies.
 _ft_keyfields() {               # map field…
     local map=$1; shift
-    local f pat="" cap="" imp="" code="" open=0 bad=0
+    local f pat="" cap="" imp="" code="" open=0 bad=0 hascode=0
     for f in "$@"; do
         case $f in
             key=*)
-                (( open )) && [[ -n "$pat" ]] && { _ft_keyfield_put "$map" "$pat" "$code" "$imp" "$cap" || bad=1; }
-                pat=${f#key=}; cap=""; imp=""; code=""; open=1
+                (( open )) && [[ -n "$pat" ]] && { _ft_keyfield_put "$map" "$pat" "$code" "$imp" "$cap" "$hascode" || bad=1; }
+                pat=${f#key=}; cap=""; imp=""; code=""; hascode=0; open=1
                 # A patternless key= still OPENS a group, so its modifiers are absorbed rather
                 # than each reported as an orphan: one mistake, one message.
                 [[ -z "$pat" ]] && { printf 'ft: %s: key= with no pattern\n' "$map" >&2; bad=1; } ;;
             keyCap=*)  if (( open )); then cap=${f#keyCap=};  else _ft_keyfield_orphan "$map" "$f"; bad=1; fi ;;
             keyImp=*)  if (( open )); then imp=${f#keyImp=};  else _ft_keyfield_orphan "$map" "$f"; bad=1; fi ;;
-            onKey=*) if (( open )); then code=${f#onKey=}; else _ft_keyfield_orphan "$map" "$f"; bad=1; fi ;;
+            onKey=*) if (( open )); then code=${f#onKey=}; hascode=1
+                     else _ft_keyfield_orphan "$map" "$f"; bad=1; fi ;;
             *) printf 'ft: %s: "%s" is not a key field\n' "$map" "$f" >&2; bad=1 ;;
         esac
     done
-    (( open )) && [[ -n "$pat" ]] && { _ft_keyfield_put "$map" "$pat" "$code" "$imp" "$cap" || bad=1; }
+    (( open )) && [[ -n "$pat" ]] && { _ft_keyfield_put "$map" "$pat" "$code" "$imp" "$cap" "$hascode" || bad=1; }
     return $bad
 }
 _ft_keyfield_orphan() {
@@ -184,12 +185,20 @@ _ft_keyfield_orphan() {
 # corrupted whatever the caller had in flight. Measured, when this was missing: the
 # scrollbar's arrow bindings silently stopped dispatching while the importance values
 # themselves were perfectly correct. Borrow FT_RET and give it back.
-_ft_keyfield_put() {            # map pattern code importance cap
-    local map=$1 pat=$2 code=$3 imp=${4:-} cap=${5:-}
-    if [[ -z "$code" && -z "$cap" ]]; then
+_ft_keyfield_put() {            # map pattern code importance cap hascode
+    local map=$1 pat=$2 code=$3 imp=${4:-} cap=${5:-} hascode=${6:-0}
+    if [[ -z "$code" ]] && (( ! hascode )) && [[ -z "$cap" ]]; then
         printf 'ft: %s: key=%s has neither onKey= nor keyCap=\n' "$map" "$pat" >&2
         return 1
     fi
+    # `onKey=''` IS A BINDING — the one that eats the event. It is stored as the shell's own
+    # no-op, which is exactly what it means: code that runs and does nothing, so the control
+    # handled the key and, having not called ft_bubble, keeps it. That is what the reserved
+    # word `drop` used to say, said in the language everything else here is written in.
+    #
+    # NO onKey= at all is a different thing and must stay different: a legend-only cap, which
+    # advertises a key somebody else handles and must not swallow it.
+    [[ -z "$code" ]] && (( hascode )) && code=':'      # `:` is the shell's no-op
     case $imp in
         '') imp=0 ;;
         crucial|important|normal|minor)

@@ -101,7 +101,7 @@ ok "…and a good call still succeeds"    ft_keymap_set g4 key=P onKey='saw p'
 # silently stopped dropping.
 note "the reserved default entry survives being written as a group"
 ft_keymap gd
-ft_keymap_set gd key=default onKey=drop
+ft_keymap_set gd key=default onKey=drop   # the DEFAULT entry is a policy word, not an action
 _ft_keymap_default gd
 check "the default reads back as exactly drop" "$FT_RET" "drop"
 ft_keymap gd2
@@ -135,8 +135,8 @@ note "an action is code, with \$this and \$key in scope"
 ft_keymap kd
 ft_keymap_set kd key=UP    onKey='saw up $this $key' \
                  key=ENTER onKey='saw "a;b" $this' \
-                 key=DROP  onKey=drop \
-                 key=BUB   onKey=bubble \
+                 key=EAT   onKey='' \
+                 key=BUB   onKey='ft_bubble' \
                  key=CAPONLY keyCap="Someone else handles this"
 ft-form name=app width=40 height=10
     ft-button name=btn text="Go" keymap=kd
@@ -147,11 +147,11 @@ SAW=""; ft_dispatch_event UP
 check "the code ran with the control and the token" "$SAW" "up btn UP"
 SAW=""; ft_dispatch_event ENTER
 check "a quoted argument stays one word"            "$SAW" "a;b btn"
-SAW=""; ft_dispatch_event DROP
-check "onKey=drop claims the key"                 "$?" "0"
+SAW=""; ft_dispatch_event EAT
+check "onKey='' claims the key"                     "$?" "0"
 check "…and runs nothing"                           "$SAW" ""
 ft_dispatch_event BUB
-check "onKey=bubble declines it"                  "$?" "1"
+check "ft_bubble passes it on"                      "$?" "1"
 ft_dispatch_event CAPONLY
 check "a cap with no code is advertised, not bound" "$?" "1"
 
@@ -209,7 +209,7 @@ SAW=""; ft_dispatch_event ENTER
 check "ENTER runs the instance code, not activate" "$SAW" "mine b4"
 
 # ── defaultKeys ─────────────────────────────────────────────────────────────
-# The blunt instrument. `onKey=bubble` drops one key; this drops everything the PROTOTYPE
+# The blunt instrument. `onKey='ft_bubble'` passes one key on; this silences everything the PROTOTYPE
 # provides — its own map and the map for the runlevel it is in — and touches nothing the app
 # wrote. It INHERITS, because the thing you want to say is "not in here", not "not on this one,
 # and this one, and this one".
@@ -265,5 +265,86 @@ check "…and names the control and what beat it" \
 FT_DEBUG_KEYS=
 _ft_report_key_conflicts 2>"$_ERR"
 check "…and says nothing at all unless asked"       "$(wc -c < "$_ERR")" "0"
+
+# ── The event model ─────────────────────────────────────────────────────────
+# A key is an EVENT and a control that binds it is a SUBSCRIBER. Three things follow, and none
+# of them needs a word the action parser has to know about:
+#   · a handler that does its work and calls ft_bubble passes the event on ANYWAY — something
+#     "decline the key" could never express, because declining meant you had not acted;
+#   · `onKey=''` is code that runs and does nothing, so the control ate the event (what the
+#     reserved word `drop` used to say);
+#   · no onKey= at all is not a binding — a legend-only cap, advertised and left to its owner.
+note "a control may handle an event AND pass it on"
+EV=""
+ev() { EV+="$* "; }
+ft_keymap inner; ft_keymap_set inner \
+    key=A onKey='' \
+    key=B keyCap="not mine" \
+    key=C onKey='ev inner-c; ft_bubble' \
+    key=D onKey='ev inner-d'
+ft_keymap outer; ft_keymap_set outer \
+    key=A onKey='ev outer-a' key=B onKey='ev outer-b' key=C onKey='ev outer-c' \
+    key=D onKey='ev outer-d' key=N onKey='ev outer-n'
+ft-form name=evapp width=40 height=8 keymap=outer
+    ft-button name=evb text="Go" keymap=inner
+end_ft_form
+FT_ROOT=evapp; ft_layout evapp; ft_focus evb
+EV=""; ft_dispatch_event A; check "onKey='' eats it: the ancestor never sees it" "${EV:-nothing}" "nothing"
+EV=""; ft_dispatch_event B; check "a legend-only cap is not a binding"           "$EV" "outer-b "
+EV=""; ft_dispatch_event C; check "handled AND bubbled: both ran, in order"      "$EV" "inner-c outer-c "
+EV=""; ft_dispatch_event D; check "handled and kept: only the control ran"       "$EV" "inner-d "
+
+# THE STATE IS PER EVENT. A handler may dispatch another event — a key that opens a dialog
+# which handles keys of its own — and the inner one must not answer the outer one's question.
+note "a nested event does not decide the outer one"
+# The inner event BUBBLES and the outer one does not. Sharing one flag between them made the
+# outer key look bubbled too, so it went on to the ancestor as well — the nested dispatch
+# answering a question it was never asked.
+# Z is bound ONLY on the control and it bubbles, and NOTHING above binds it — so the nested
+# dispatch ends with the flag still raised. That is the only shape in which sharing one flag
+# shows: an inner event that finishes bubbling leaves its answer lying around for the outer one.
+ft_keymap nest; ft_keymap_set nest \
+    key=Z onKey='ev inner-z; ft_bubble' \
+    key=N onKey='ev nest-n; ft_dispatch_event Z'
+ft_set evb keymap="inner nest"
+EV=""; ft_dispatch_event N
+check "the nested dispatch ran and bubbled out"  "$EV" "nest-n inner-z "
+check "…and N itself was still claimed"          "$?" "0"
+EV=""; ft_dispatch_event N
+check "…so the ancestor's N never ran" \
+      "$(case "$EV" in *outer-n*) echo leaked ;; *) echo clean ;; esac)" "clean"
+
+# ── Peers ───────────────────────────────────────────────────────────────────
+# Controls that share a shortcut letter have no ancestral relationship, so there is no cascade
+# to pick a winner between them: each is a subscriber and each responds. Five pages can all
+# claim `s` for their own Save because only one is ever on screen; two VISIBLE claimants both
+# act, and keeping their effects disjoint is the author's job.
+note "every visible, enabled claimant of a shortcut responds"
+PH=""
+ph_one() { PH+="one "; }; ph_two() { PH+="two "; }; ph_three() { PH+="three "; }
+ft-form name=phapp width=50 height=8
+    ft-button name=ph1 text="Save file"  accessKey=s onActivate=ph_one
+    ft-button name=ph2 text="Save state" accessKey=s onActivate=ph_two
+    ft-button name=ph3 text="Sleep"      accessKey=s onActivate=ph_three
+end_ft_form
+FT_ROOT=phapp; ft_layout phapp
+PH=""; _ft_accel_dispatch phapp S
+check "all three respond"                "$PH" "one two three "
+ft_set ph2 display=none
+PH=""; _ft_accel_dispatch phapp S
+check "…a hidden one does not"           "$PH" "one three "
+ft_set ph2 display=inline-block; ft_set ph3 disabled=true
+PH=""; _ft_accel_dispatch phapp S
+check "…nor a disabled one"              "$PH" "one two "
+
+# A listener's value is a FUNCTION NAME, not code — the plist holding them is space-separated,
+# so `onActivate='fn arg'` would split in two. It used to be stored and then silently skipped
+# at dispatch; it is refused where it is written now.
+note "a listener that is code, not a name, is refused out loud"
+err ft_set ph1 onActivate='ph_one extra'
+check "code in a listener is refused" \
+      "$(case "$ERR" in *"must name a function"*) echo refused ;; *) echo "${ERR:-silent}" ;; esac)" "refused"
+PH=""; ft_activate ph1
+check "…and the working listener is untouched" "$PH" "one "
 
 summary

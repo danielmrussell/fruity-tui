@@ -245,7 +245,7 @@ _ft_label_scroll_by() {
     ft_resolved_prop "$1" scrollTop 0
     ft_label_scroll_set "$1" $(( FT_RET + $2 ))
 }
-# A label that has nothing left to scroll DECLINES the key (FT_KEY_BUBBLE=1) instead of
+# A label that has nothing left to scroll DECLINES the key (ft_bubble) instead of
 # swallowing it, so it reaches whatever encloses the label — an overflow=auto pane, or the
 # app. This is what the wheel already did via FT_PROTO_WHEEL_PROBE ("chains to the enclosing
 # scroll pane — browser-style") and what a textfield already did for the same six keys
@@ -262,27 +262,27 @@ _ft_label_can_scroll() {        # name direction(-1 up | 1 down) → 0 if this l
     if (( $2 < 0 )); then (( at > 0 )); else (( at < LBL_MAXSCROLL )); fi
 }
 ft_label_key_up() {
-    _ft_label_can_scroll "$1" -1 || { FT_KEY_BUBBLE=1; return 1; }
+    _ft_label_can_scroll "$1" -1 || { ft_bubble; return 1; }
     _ft_label_scroll_by "$1" -1
 }
 ft_label_key_down() {
-    _ft_label_can_scroll "$1" 1 || { FT_KEY_BUBBLE=1; return 1; }
+    _ft_label_can_scroll "$1" 1 || { ft_bubble; return 1; }
     _ft_label_scroll_by "$1" 1
 }
 ft_label_key_pgup() {
-    _ft_label_can_scroll "$1" -1 || { FT_KEY_BUBBLE=1; return 1; }
+    _ft_label_can_scroll "$1" -1 || { ft_bubble; return 1; }
     _ft_label_metrics "$1"; _ft_label_scroll_by "$1" $(( -LBL_ROWS ))
 }
 ft_label_key_pgdn() {
-    _ft_label_can_scroll "$1" 1 || { FT_KEY_BUBBLE=1; return 1; }
+    _ft_label_can_scroll "$1" 1 || { ft_bubble; return 1; }
     _ft_label_metrics "$1"; _ft_label_scroll_by "$1" "$LBL_ROWS"
 }
 ft_label_key_home() {
-    _ft_label_can_scroll "$1" -1 || { FT_KEY_BUBBLE=1; return 1; }
+    _ft_label_can_scroll "$1" -1 || { ft_bubble; return 1; }
     ft_label_scroll_set "$1" 0
 }
 ft_label_key_end() {
-    _ft_label_can_scroll "$1" 1 || { FT_KEY_BUBBLE=1; return 1; }
+    _ft_label_can_scroll "$1" 1 || { ft_bubble; return 1; }
     _ft_label_metrics "$1"; ft_label_scroll_set "$1" "$LBL_MAXSCROLL"
 }
 

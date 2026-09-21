@@ -116,9 +116,9 @@ themePick_on_change dark;  check "…and back to ft-dark"                 "$FT_A
 note "the dropdown navigation the demo relies on: closed arrows move focus, Enter opens"
 PAGE=1; _show_page >/dev/null 2>&1
 settle >/dev/null 2>&1   # ft_run settles the burst; a gate must too
-FT_KEY_BUBBLE=0; ft_select_key_down inhColor
+_FT_EVENT_BUBBLE=0; ft_select_key_down inhColor
 check "Down on the CLOSED colour dropdown does not open it" "$(ft_resolved_prop inhColor open false; echo "$FT_RET")" false
-check "…it declines so focus can move on"                    "$FT_KEY_BUBBLE" 1
+check "…it declines so focus can move on"                    "$_FT_EVENT_BUBBLE" 1
 ft_select_key_commit inhColor
 check "Enter opens it"                                       "$(ft_resolved_prop inhColor open false; echo "$FT_RET")" true
 

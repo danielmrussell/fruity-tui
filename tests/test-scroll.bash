@@ -148,20 +148,20 @@ note "…and so do the KEYS — a label with nothing to scroll declines them, li
 # unconditionally, so a log inside a scrolling pane could be scrolled by wheel and by nothing
 # else. A textfield already declined these six (ft_textfield_idle_*); a label now does too.
 FT_ROOT=app; ft_layout app; ft_scroll_set pane 0
-FT_KEY_BUBBLE=0; ft_label_key_down L2
+_FT_EVENT_BUBBLE=0; ft_label_key_down L2
 check "the key is declined"                    "$?" "1"
-check "…and marked to bubble to the pane"      "$FT_KEY_BUBBLE" "1"
+check "…and marked to bubble to the pane"      "$_FT_EVENT_BUBBLE" "1"
 ft_get L2 scrollTop; check "the label did not scroll itself" "${FT_RET:-0}" "0"
 
 # A label that CAN scroll still keeps the key — declining is direction-aware, as in a browser.
 ft-label name=tall parent=pane text="$(printf 'row %s\n' 1 2 3 4 5 6 7 8 9 10)" height=3
 ft_layout app; FT_OUT=""; _ft_redraw_walk app
-FT_KEY_BUBBLE=0; ft_label_key_down tall
+_FT_EVENT_BUBBLE=0; ft_label_key_down tall
 check "an overflowing label handles the key itself" "$?" "0"
-check "…and does not bubble"                        "$FT_KEY_BUBBLE" "0"
+check "…and does not bubble"                        "$_FT_EVENT_BUBBLE" "0"
 ft_get tall scrollTop; check "it scrolled its own text" "${FT_RET:-0}" "1"
-FT_KEY_BUBBLE=0; ft_label_key_up tall; ft_label_key_up tall
-check "at the top it declines again"                "$FT_KEY_BUBBLE" "1"
+_FT_EVENT_BUBBLE=0; ft_label_key_up tall; ft_label_key_up tall
+check "at the top it declines again"                "$_FT_EVENT_BUBBLE" "1"
 ft_remove tall; ft_layout app
 
 note "the gutter is GRABBABLE — press and drag it like any scrollbar"

@@ -333,7 +333,7 @@ _ft_textfield_publish_metrics() {      # name total visible
 # ── Idle-mode movement (a READ-ONLY field scrolls; editable bubbles to nav) ──
 # Merely focused, a read-only field scrolls its VIEW directly with the arrows —
 # every press moves the content by one line (no hidden caret to chase, so it never
-# feels stuck). An editable field declines (FT_KEY_BUBBLE=1) so the same key moves
+# feels stuck). An editable field declines (ft_bubble) so the same key moves
 # focus instead. Enter is what turns an editable field into an editor / RO cursor.
 _ft_textfield_view_maxv() {            # name → FT_RET = max vertical scroll (total - visible)
     local n=$1
@@ -1957,7 +1957,7 @@ ft_textfield_esc() {                   # ESC (edit mode) — clear a selection/m
     # so its Esc bubbles (to cancel a dialog); everyone else drops to plain focus.
     if ! _ft_textfield_ro "$n"; then
         ft_resolved_prop "$n" activateToEdit true
-        [[ "$FT_RET" == false ]] && { FT_KEY_BUBBLE=1; return 1; }
+        [[ "$FT_RET" == false ]] && { ft_bubble; return 1; }
     fi
     ft_textfield_deactivate "$n"; return 0
 }

@@ -39,16 +39,19 @@ Two axes, and they are different questions.
 **Within one control**, the cascade picks exactly one action per key: your binding replaces the
 prototype's, the way an inline style replaces a stylesheet's. One control, one answer.
 
-**Across controls**, several may listen for the same key. A screen can have five Save buttons on
-five pages all claiming `s`; a dialog's Cancel and a list's Escape can both hear `ESC`. This is
-where the event model earns its name, and where the rule below applies.
+**Between PEERS** — controls with no ancestral relationship — several may listen for the same
+key, and every one of them responds. A screen can have five Save buttons on five pages all
+claiming `s`; only one page is on screen, so only one answers. Two claimants that are *both*
+visible both act. This is where the event model earns its name, and where the rule below applies.
 
-> **Where the engine is today.** Across controls it currently delivers to ONE: a key travels from
-> the focused control outward and stops at the first binding that claims it, and a shortcut
-> letter activates the first claimant that is visible and enabled. Full multicast — every
-> subscribed control responding — is the model this document describes and the direction agreed
-> for 0.1; the rule below is what will make it safe, and is worth writing your handlers to now
-> whether or not it has landed.
+**Between a control and its ANCESTORS** it is propagation, not multicast. An event reaches an
+ancestor only if the control lets it: handling a key keeps it unless the handler calls
+`ft_bubble`. That is not a special case, it is the only thing that could work — a form binds the
+arrows to move focus and a focused text field binds them to move its caret, so "both respond"
+would move the caret *and* jump the focus out of the field on every keystroke.
+
+Each origin propagates independently. Two peers that both receive an event each decide, on their
+own, whether their own ancestors see it.
 
 ### The rule, in the vocabulary of the field
 
@@ -87,18 +90,42 @@ It reports what it can see, and it does not pretend to fix what it cannot:
 * `FT_DEBUG_KEYS=1` prints, at startup, every advertised shortcut that cannot fire — a letter
   claimed by controls *and* bound to something else that wins outright, so the controls go on
   drawing an underline for a key that does something different.
-* Shortcut letters already keep a LIST of claimants and activate the first that is **visible and
-  enabled**. That is how five pages share `s`: only one of them is on screen, so the ambiguity
-  never arises.
+* Shortcut letters keep a LIST of claimants and activate **every** one that is visible and
+  enabled. That is how five pages share `s`: only one of them is on screen, so the ambiguity
+  never arises — and when two really are on screen, both act, which is what you asked for by
+  giving them the same letter.
 * Two handlers that both take the focus are not refused. That is unspecified behaviour and it
-  belongs to you; the last write wins.
+  belongs to you; the last write wins, and which one runs last is not a promise.
 
-## Silencing keys
+One thing a listener cannot do yet: hold code. `onActivate=` takes a FUNCTION NAME, because the
+listener store is a space-separated list and `onActivate='fn arg'` would split in two. Writing
+one is refused out loud rather than stored and silently skipped. Keys take code; listeners will.
 
-* `onKey=bubble` — this control declines this one key; it keeps travelling outward.
-* `onKey=drop` — swallow it here and do nothing.
-* `defaultKeys=false` — silence every key the PROTOTYPE provides, for this control and
+## Handling, eating and passing on
+
+A control that handles a key KEEPS it. Everything else is ordinary code — there are no reserved
+words in an action, because a word the parser has to recognise is a word that is not code:
+
+* **`ft_bubble`** — call it from a handler to let the event keep travelling outward *after* you
+  have done your work. Handling and passing on are separate decisions, which is why this is a
+  verb and not a return value: "I acted, and my ancestors should see this too" is a sentence the
+  old "decline the key" could not say.
+* **`onKey=''`** — code that runs and does nothing, so the control handled the key and, having
+  not called `ft_bubble`, ate it.
+* **no `onKey=` at all** — not a binding. A legend-only cap: advertised here, handled by whoever
+  really owns the key.
+* **`defaultKeys=false`** — silence every key the PROTOTYPE provides, for this control and
   everything inside it. It inherits, so one word covers a subtree. The keys the app wrote stay.
+
+```bash
+ft-button name=save text="Save" key=CTRL+s onKey='save_now $this'           # handles, keeps
+ft-div    name=log  key=CTRL+s onKey='note_it $this; ft_bubble'             # handles, passes on
+ft-label  name=quiet key=CTRL+s onKey=''                                    # eats it
+ft-label  name=hint  key=TAB keyCap="Next field"                            # advertises only
+```
+
+Event state is per event. A handler may dispatch another one — a key that opens a dialog which
+handles keys of its own — and the inner event does not answer the outer one's question.
 
 ## Writing bindings
 
@@ -110,7 +137,8 @@ key=<pattern> [keyCap="<label>"] [keyImp=crucial|important|normal|minor|0-255] [
 ```
 
 `key=` opens a group; the fields after it describe it until the next `key=`. A group with a
-`keyCap` and no `onKey` is legend-only: advertised, handled by somebody else. `EQUALS` is the
+`keyCap` and no `onKey` is legend-only: advertised, handled by somebody else. `onKey=''` is
+different — that is a binding that eats the event. `EQUALS` is the
 pattern for the `=` key. They are accepted on any tag, in `ft_keymap_set`, in `ft_set` (which
 rebinds a live control), and as `ft-key` rows inside a block:
 

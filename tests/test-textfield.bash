@@ -408,10 +408,10 @@ ft_get aie value; check "value unchanged by Tab" "$FT_RET" "ab"
 FT_FOCUS=tj; ft_textfield_activate tj; ft_set tj value="copyme"
 FT_TEXTFIELD_CARET[tj]=6; ft_textfield_select_home tj; FT_KILL_RING=(); ft_textfield_ctrl_c tj
 check "Ctrl+C copied the selection to the ring" "${FT_KILL_RING[0]:-}" "copyme"
-_ft_textfield_sel_clear tj; FT_KILL_RING=(); FT_KEY_BUBBLE=0
+_ft_textfield_sel_clear tj; FT_KILL_RING=(); _FT_EVENT_BUBBLE=0
 _STATUS_WAS=""; ft_emit_status() { _STATUS_WAS=$1; return 0; }
 ft_textfield_ctrl_c tj
-check "Ctrl+C with no selection does NOT bubble to the quit path" "$FT_KEY_BUBBLE" "0"
+check "Ctrl+C with no selection does NOT bubble to the quit path" "$_FT_EVENT_BUBBLE" "0"
 check "…copies nothing"                                           "${FT_KILL_RING[0]:-none}" "none"
 check "…and hints instead"                                        "$_STATUS_WAS" "copyNothing"
 ft_textfield_deactivate tj
@@ -462,24 +462,24 @@ FT_FOCUS=ml
 ft_textfield_idle_down ml; check "multiline Down SCROLLS" "$(_voff ml)" "1"
 check "scrolling did NOT enter edit mode" "$(ft_get ml runlevel; printf %s "$FT_RET")" "unfocused"
 _ft_textfield_view_maxv ml; _ft_setprop ml scrollTop $FT_RET
-FT_KEY_BUBBLE=0; ft_textfield_idle_down ml
-check "at the bottom edge Down is CONSUMED, not an ejection" "$?/$FT_KEY_BUBBLE" "0/0"
-FT_KEY_BUBBLE=0; _ft_setprop ml scrollTop 0; ft_textfield_idle_up ml
-check "…and at the top edge Up likewise"                     "$?/$FT_KEY_BUBBLE" "0/0"
+_FT_EVENT_BUBBLE=0; ft_textfield_idle_down ml
+check "at the bottom edge Down is CONSUMED, not an ejection" "$?/$_FT_EVENT_BUBBLE" "0/0"
+_FT_EVENT_BUBBLE=0; _ft_setprop ml scrollTop 0; ft_textfield_idle_up ml
+check "…and at the top edge Up likewise"                     "$?/$_FT_EVENT_BUBBLE" "0/0"
 # The case that made it obvious: a WRAPPING box has no sideways to go, so Left/Right can
 # never scroll — and must still not eject you.
-FT_KEY_BUBBLE=0; ft_textfield_idle_right ml
-check "a wrapping box consumes Right (no horizontal axis at all)" "$?/$FT_KEY_BUBBLE" "0/0"
-FT_KEY_BUBBLE=0; ft_textfield_idle_left ml
-check "…and Left"                                                 "$?/$FT_KEY_BUBBLE" "0/0"
+_FT_EVENT_BUBBLE=0; ft_textfield_idle_right ml
+check "a wrapping box consumes Right (no horizontal axis at all)" "$?/$_FT_EVENT_BUBBLE" "0/0"
+_FT_EVENT_BUBBLE=0; ft_textfield_idle_left ml
+check "…and Left"                                                 "$?/$_FT_EVENT_BUBBLE" "0/0"
 # A single-line field never reaches this rung (ft_textfield_engage skips it), but if it is
 # driven here directly the same rule holds — no key at this runlevel ejects you.
 ft-textfield name=sl rows=1 size=10 value="hi"; ft_layout tabapp; FT_FOCUS=sl
-FT_KEY_BUBBLE=0; ft_textfield_idle_down sl
-check "single-line Down is consumed too" "$?/$FT_KEY_BUBBLE" "0/0"
+_FT_EVENT_BUBBLE=0; ft_textfield_idle_down sl
+check "single-line Down is consumed too" "$?/$_FT_EVENT_BUBBLE" "0/0"
 for k in up down pgup pgdn home end left right; do
-    FT_KEY_BUBBLE=0; "ft_textfield_idle_$k" ml >/dev/null 2>&1
-    check "…nor does $k at this runlevel" "$?/$FT_KEY_BUBBLE" "0/0"
+    _FT_EVENT_BUBBLE=0; "ft_textfield_idle_$k" ml >/dev/null 2>&1
+    check "…nor does $k at this runlevel" "$?/$_FT_EVENT_BUBBLE" "0/0"
 done
 
 note "a non-wrapping overflowing READ-ONLY viewer pans sideways (horizontal scroll), clamped"

@@ -286,7 +286,7 @@ _ft_select_move() {             # name delta
     if (( size <= 1 )) && [[ "$open" != true ]]; then
         # A CLOSED dropdown does NOT open on an arrow — the arrows belong to focus
         # navigation. Decline so the key bubbles to the form (ENTER/SPACE opens it).
-        FT_KEY_BUBBLE=1; return 1
+        ft_bubble; return 1
     fi
     ft_resolved_prop "$name" cursor 0; local cur=$FT_RET
     # An OPEN dropdown: Up while the cursor is ALREADY at the top COLLAPSES it
