@@ -25,7 +25,7 @@ source "$_FT_LIBRARY_DIR/ft-markdown.bash"     # rich-text renderer (markdown=tr
 source "$_FT_LIBRARY_DIR/ft-wtfix.bash"        # Windows Terminal key-grab fixer (opt-in)
 
 # Bundled controls (order-independent among themselves; all depend on core).
-for _ft_ctl in frame boxheader heading label keylegend statusbar button multitoggle checkbox radio scrollbar slider select textfield tree table tabs beacon; do
+for _ft_ctl in frame boxheader heading label keylegend statusbar button multitoggle checkbox radio scrollbar slider select textfield tree table tabs binder beacon; do
     source "$_FT_LIBRARY_DIR/controls/ft-${_ft_ctl}.bash"
 done
 unset _ft_ctl

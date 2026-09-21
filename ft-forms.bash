@@ -2492,7 +2492,7 @@ _ft_app_setprop() {             # name prop value
         # change the status of every property write in the framework on the word of hooks that
         # never meant to report one. So the refusal is left here for ft_set to pick up — the
         # caller still learns that its write did not take.
-        _FT_APP_REFUSED=$1
+        _FT_SETPROP_REFUSED="$1 currentScreen"
         return 1
     fi
     return 0
@@ -2519,7 +2519,12 @@ _ft_fit_to_terminal() {         # name
     esac
 }
 declare -A _FT_APP_SCREEN=()    # app → the current screen, as last set SUCCESSFULLY
-_FT_APP_REFUSED=""              # the app whose last currentScreen= write was refused
+# _FT_SETPROP_REFUSED — "NAME PROP" when a prototype's setProp= hook REFUSED a write and put
+# the old value back. _ft_setprop returns 0 whatever a reconciler says, and teaching it to
+# propagate would change the status of every property write in the framework on the word of
+# hooks that never meant to report one. This is the narrow channel instead: a hook that
+# genuinely refused says so, and ft_set reports it to the caller. Any prototype may use it.
+_FT_SETPROP_REFUSED=""
 # _ft_app_show NAME SCREEN — make SCREEN the one that is visible, and give it the ring.
 _ft_app_show() {                # app screen
     local app=$1 want=$2 kid
@@ -2705,6 +2710,13 @@ form_on_children_complete() {
 _ft_prop_owed() {               # name key → 1 if the change is refused (the property is put back)
     local name=$1 key=$2
     _ft_owed_keys+="$key "
+    # A prototype's setProp= hook may have refused this write and restored the old value; it
+    # cannot report that through _ft_setprop, so it leaves the fact here. Checked for EVERY
+    # property rather than in a per-property arm, because any prototype may refuse.
+    if [[ "$_FT_SETPROP_REFUSED" == "$name $key" ]]; then
+        _FT_SETPROP_REFUSED=""
+        return 1
+    fi
     case "$key" in
         left|top|position) _ft_owed+=" moved" ;;
         # A `keys=auto` legend is DERIVED from the focused control's keys, so changing which
@@ -2717,9 +2729,7 @@ _ft_prop_owed() {               # name key → 1 if the change is refused (the p
         # NAVIGATION IS A PROPERTY. `ft_set app currentScreen=help` is the whole API for moving
         # between screens — there is no ft_show_screen verb, the way there is no verb for
         # changing a label's text.
-        currentScreen)                          # the switch itself is _ft_app_setprop's, below
-            _ft_owed+=" reflow"
-            [[ "$_FT_APP_REFUSED" == "$name" ]] && { _FT_APP_REFUSED=""; return 1; } ;;
+        currentScreen|currentPage) _ft_owed+=" reflow" ;;   # the switch is the setProp hook's
         draw) _ft_get_raw "$name" draw; FT_DRAW[$name]=$FT_RET; _ft_owed+=" paint" ;;
         # `focusable` has a TABLE behind it, exactly as `draw` does, and the ring is built
         # from that table rather than from the property. Writing only the property left

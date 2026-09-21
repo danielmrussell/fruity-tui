@@ -52,7 +52,7 @@ _INC_ROWS=22 _INC_COLS=70
 
 _INC_DOC=$(for i in $(seq 1 14); do printf 'line %s\n' "$i"; done)
 _INC_TYPES=(label textfield textviewer button checkbox radio multitoggle slider select table tree
-            tabs scrollbar frame div heading boxheader keylegend statusbar beacon)
+            tabs binder scrollbar frame div heading boxheader keylegend statusbar beacon)
 # The teeth below re-run this file on the one fixture that shows each injected defect.
 [[ -n "${FT_INCREMENTAL_TYPES:-}" ]] && read -r -a _INC_TYPES <<< "$FT_INCREMENTAL_TYPES"
 
@@ -67,6 +67,7 @@ declare -A _INC_SAMPLE=(
     [borderWidth]=2            [boxSizing]=content-box    [capStyle]=boxed
     [checkmarkVariant]=unicode [class]=hot                [colLines]='!'
     [color]=red                [currentLineHighlight]='!' [cursor]=3
+    [currentPage]=sub_p2       [navigator]=tabs           [navigatorSide]=top
     [cursorStyle]=bar          [depth]=1                  [disabled]=true
     [display]=none             [editHint]="edit hint"     [expanded]='!'
     [flexBasis]=8              [flexDirection]=column     [flexGrow]=1
@@ -106,7 +107,8 @@ declare -A _INC_EXEMPT=(
     [draw]="names a paint FUNCTION; what that function paints is the app's"
     [eventListeners]="listener bookkeeping; paints nothing"
     [keymap]="key bindings; paints nothing (the legend follows keys=, which is written)"
-    [currentScreen]="which screen an app shows; it paints by hiding one subtree and showing another, which the display= cases already drive"
+    [currentScreen]="which screen an app shows; the app is not in this corpus, and the hiding it does is display=, which IS driven"
+    [startPage]="where a binder OPENS; it is read once when the pages are complete, so writing it later is not a paint"
     [defaultKeys]="changes which keys the control HAS, not what it draws — the same ground as keymap= above, including the same open question about whether an auto legend repaints when keys change"
     [keymode]="reserved (emacs|vi) and read by no painter"
     [states]="declares the runlevel ladder at construction"
@@ -249,6 +251,16 @@ if [[ "${1:-}" == --fixture ]]; then
                                      ft-label name=body2 text="second body"
                                  end_ft_tab
                              end_ft_tabs ;;
+                # A binder hides one subtree and shows another, and BUILDS its chrome out of
+                # ordinary controls — two ways to leave the screen disagreeing with the tree.
+                binder)      ft-binder name=sub navigator=pager navigatorSide=bottom width=30 height=7
+                                 ft-page name=sub_p1 title=One
+                                     ft-label name=body1 text="first page"
+                                 end_ft_page
+                                 ft-page name=sub_p2 title=Two
+                                     ft-label name=body2 text="second page"
+                                 end_ft_page
+                             end_ft_binder ;;
                 scrollbar)   ft-label name=doc text="$_INC_DOC" width=20 height=4 overflowY=auto
                              ft-scrollbar name=sub for=doc height=4
                              _INC_SUBJECTS="sub doc" ;;
