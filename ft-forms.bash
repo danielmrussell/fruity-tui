@@ -1429,6 +1429,7 @@ _ft_pk paint color backgroundColor borderColor overflowY \
        selectedIndex group keymap draw focusable name parent for \
        borderRadius borderGlyph \
        value disabled defaultKeys type min max step style multiple open visibility \
+       currentScreen \
        autofocus wrapIndicator textAlign \
        animation animationDuration animationTimingFunction animationDelay \
        eventListeners variant importance
@@ -2221,6 +2222,11 @@ _ft_accel_dispatch() {          # form letter
 # control that has since been hidden or disabled must drop out of the bar entirely.
 # Importance is deliberately NORMAL: accelerators are always live, so at a higher tier a
 # six-button form would bury the focused control's own keys.
+# THE SCOPE ADVERTISES ITS ACCELERATORS, and the legend reaches this by TYPE
+# (`_ft_caps_<type>`), so every kind of scope needs its own name on the same body. A screen
+# that silently advertised nothing was the first thing ft-screen broke: the keys fired, the
+# underlines were drawn, and the bar said nothing about either.
+_ft_caps_screen() { _ft_caps_form "$@"; }
 _ft_caps_form() {               # name
     local form=$1 akey letter target textprop label _tty
     for akey in "${!FT_ACCEL_LIST[@]}"; do
@@ -2286,6 +2292,22 @@ _ft_focus_scope_of() {          # name → FT_RET (its screen, else its outermos
         n=${FT_PARENT[$n]:-}
     done
     FT_RET=$outerform
+}
+# _ft_current_scope → FT_RET: the scope whose ring is live. With an app at the root that is its
+# CURRENT SCREEN, not the app — an app holds several screens and _ft_focus_collect stops at each
+# one, so collecting from the app yields an empty ring and collecting across them would put
+# hidden controls on the keyboard.
+_ft_current_scope() {
+    local r=${FT_ROOT:-}
+    # `${ASSOC[""]}` IS A BASH ERROR, not an empty lookup — and stderr in a TUI is the screen the
+    # user is reading. FT_ROOT is empty in plenty of honest moments (before ft_run, inside a test
+    # that has not set one), so the name is checked before it is ever a subscript.
+    if [[ -n "$r" && "${FT_TYPE[$r]:-}" == app ]]; then
+        _ft_get_raw "$r" currentScreen
+        local _cs=$FT_RET
+        [[ -n "$_cs" && -n "${FT_TYPE[$_cs]:-}" ]] && { FT_RET=$_cs; return 0; }
+    fi
+    FT_RET=$r
 }
 # _ft_is_focus_scope NAME → 0 if NAME itself owns a ring.
 _ft_is_focus_scope() {          # name
@@ -2420,6 +2442,89 @@ _ft_draw_form() {               # name
     done
 }
 # div: a plain undrawn ft_control container — no prototype-constructor needed.
+
+# ── ft-app and ft-screen ─────────────────────────────────────────────────────
+# A SCREEN is one whole terminal view. It owns the focus ring, carries the navigation keys, and
+# fills the background — the three jobs a root form has been doing under another name, which is
+# why `extends=form` is not a shortcut here but the literal truth: every app ever written with
+# this framework opens `ft-form name=app width="$FT_COLS" height="$FT_ROWS"`, and that form IS a
+# screen. A screen simply knows it, so the size and the resize handling leave app code.
+#
+# An APP holds screens and shows ONE at a time — `ft_set app currentScreen=help`. The screens
+# that are not current are display=none, so they keep every bit of their state: no rebuild, no
+# globals to stash a value in, no `[[ -n "${FT_TYPE[x]:-}" ]]` guards around a page that may or
+# may not exist. The same mechanism ft-tabs has always used for its panels.
+ft_prototype_screen() {
+    # Everything a root form does, because that is what a screen has always been: the same draw
+    # (fills its box with the screen colour), the same fillsBackground contract, and the same
+    # navigation keymap — Tab, Shift-Tab, the arrows, Esc and `.`.
+    ft_prototype extends=form
+}
+ft_prototype_app() {
+    # The app paints NOTHING of its own: the current screen fills the terminal, and a screen
+    # already knows how. An app that filled its box too would just erase the screen underneath
+    # it on every repair (that is the bug fillsBackground exists to describe).
+    ft_prototype extends=ft_control draw=none fillsBackground=false \
+        defaults="display=block"
+}
+# _ft_fit_to_terminal NAME — size a screen (or a legacy root form) to the terminal. An app
+# passes it on to every screen it holds, so a resize while screen B is hidden still finds B the
+# right size when it is shown.
+_ft_fit_to_terminal() {         # name
+    local n=$1 kid
+    [[ -n "$n" ]] || return 0
+    case ${FT_TYPE[$n]:-} in
+        app) for kid in ${FT_KIDS[$n]:-}; do _ft_fit_to_terminal "$kid"; done
+             _ft_setprop "$n" width "$FT_COLS"; _ft_setprop "$n" height "$FT_ROWS" ;;
+        *)   _ft_setprop "$n" width "$FT_COLS"; _ft_setprop "$n" height "$FT_ROWS" ;;
+    esac
+}
+declare -A _FT_APP_SCREEN=()    # app → the current screen, as last set SUCCESSFULLY
+# _ft_app_show NAME SCREEN — make SCREEN the one that is visible, and give it the ring.
+_ft_app_show() {                # app screen
+    local app=$1 want=$2 kid
+    [[ -n "$want" && -n "${FT_TYPE[$want]:-}" ]] || {
+        printf 'ft: %s: no screen named %s\n' "$app" "${want:-<nothing>}" >&2; return 1; }
+    for kid in ${FT_KIDS[$app]:-}; do
+        [[ "${FT_TYPE[$kid]:-}" == screen ]] || continue
+        if [[ "$kid" == "$want" ]]; then _ft_setprop "$kid" display flex
+        else                             _ft_setprop "$kid" display none; fi
+    done
+    _ft_setprop "$app" currentScreen "$want"
+    _FT_APP_SCREEN[$app]=$want          # the last screen that really existed — see the repair
+    _ft_fit_to_terminal "$want"
+    ft_focus_ring_build "$want"      # each screen has its own ring, and its own last focus
+    ft_dirty_subtree "$app"
+    return 0
+}
+# The first screen is the one you see, unless the app named another.
+app_on_children_complete() {    # app
+    local app=$1 kid first=""
+    for kid in ${FT_KIDS[$app]:-}; do
+        [[ "${FT_TYPE[$kid]:-}" == screen ]] || continue
+        [[ -z "$first" ]] && first=$kid
+    done
+    [[ -n "$first" ]] || { printf 'ft: %s: an app holds screens, and this one holds none\n' "$app" >&2; return 0; }
+    _ft_get_raw "$app" currentScreen; local want=$FT_RET
+    [[ -n "$want" && -n "${FT_TYPE[$want]:-}" ]] || want=$first
+    _ft_app_show "$app" "$want"
+    return 0
+}
+screen_on_children_complete() { ft_focus_ring_build "$1"; return 0; }
+ft-app()    { ft_new app    "$@" && FT_NEST_STACK+=("$FT_RET"); }
+end_ft_app() { ft_end app; }
+ft-screen() {
+    ft_new screen "$@" || return 1
+    local n=$FT_RET
+    # A SCREEN IS THE TERMINAL, so it does not ask to be told how big that is. An explicit
+    # width= or height= still wins — a test drives a screen at a fixed size, and so does anyone
+    # who wants one.
+    _ft_get_raw "$n" width;  [[ -n "$FT_RET" ]] || _ft_setprop "$n" width  "$FT_COLS"
+    _ft_get_raw "$n" height; [[ -n "$FT_RET" ]] || _ft_setprop "$n" height "$FT_ROWS"
+    FT_NEST_STACK+=("$n")
+    FT_RET=$n
+}
+end_ft_screen() { ft_end screen; }
 
 ft-form()  { ft_new form  "$@" && FT_NEST_STACK+=("$FT_RET"); }
 ft-frame() { ft_new frame "$@" && FT_NEST_STACK+=("$FT_RET"); }
@@ -2566,6 +2671,24 @@ _ft_prop_owed() {               # name key → 1 if the change is refused (the p
         # key fields, and defaultKeys can silence a prototype), and the legend went on
         # advertising keys the control no longer had until something else repainted it.
         keymap|defaultKeys) _ft_legend_dirty ;;
+        # NAVIGATION IS A PROPERTY. `ft_set app currentScreen=help` is the whole API for moving
+        # between screens — there is no ft_show_screen verb, the way there is no verb for
+        # changing a label's text.
+        currentScreen)
+            if [[ "${FT_TYPE[$name]:-}" == app ]]; then
+                _ft_get_raw "$name" currentScreen        # the value ft_set has already stored
+                local _want=$FT_RET
+                # PUT THE HONEST VALUE BACK if the screen does not exist — the property is
+                # written before this hook runs, so a refused navigation would otherwise leave
+                # the app pointing at a screen that is not there, and everything that asks
+                # "which screen is current?" (the ring, the resize, a modal coming back) gets a
+                # name that answers nothing. Same repair the `parent` arm makes.
+                if ! _ft_app_show "$name" "$_want"; then
+                    _ft_setprop "$name" currentScreen "${_FT_APP_SCREEN[$name]:-}"
+                    return 1
+                fi
+            fi
+            _ft_owed+=" reflow" ;;
         draw) _ft_get_raw "$name" draw; FT_DRAW[$name]=$FT_RET; _ft_owed+=" paint" ;;
         # `focusable` has a TABLE behind it, exactly as `draw` does, and the ring is built
         # from that table rather than from the property. Writing only the property left
@@ -4767,7 +4890,11 @@ ft_batch_end() {
 ft_refresh() {                  # [root]
     local root=${1:-$FT_ROOT}
     [[ -z "$root" ]] && return 1
-    [[ -n "${FT_PENDING_FOCUS[$root]:-}" ]] && ft_focus_ring_build "$root"
+    # FT_PENDING_FOCUS is keyed by SCOPE, and the root is only the scope when the app is one
+    # old-style form. Ask for the scope.
+    local _scope=$root
+    [[ "$root" == "${FT_ROOT:-}" ]] && { _ft_current_scope; _scope=$FT_RET; }
+    [[ -n "${FT_PENDING_FOCUS[$_scope]:-}" ]] && ft_focus_ring_build "$_scope"
     # Mid-burst, DON'T lay out either — the settle does it once for the final state, right
     # before it repaints. An app calling ft_refresh from a key handler used to pay a full
     # ft_layout per keystroke for a frame nobody was going to see.
@@ -7917,7 +8044,8 @@ ft_modal_pop() {
     # ft_focus_ring_build are deliberately NOT used, so a dialog's autofocus cannot steal focus
     # from the app on the way out.
     FT_FOCUS_RING=()
-    [[ -n "${FT_ROOT:-}" ]] && _ft_focus_collect "$FT_ROOT"
+    _ft_current_scope                       # the screen we came back to, not the whole app
+    [[ -n "$FT_RET" ]] && _ft_focus_collect "$FT_RET"
     FT_FOCUS_INDEX=0
     local _i
     for _i in "${!FT_FOCUS_RING[@]}"; do
@@ -8758,6 +8886,14 @@ _ft_report_key_conflicts() {
 ft_run() {
     local root=$1 setup=${2:-} resize=${3:-} fallback=${4:-} render=${5:-}
     FT_ROOT=$root
+    # AN APP IS WHAT YOU RUN. A bare form or screen still works — every app written before
+    # ft-app exists passes its root form here, and they are not being rewritten to prove a
+    # point. What a form cannot do is hold a second screen, which is the reason to have an app.
+    case ${FT_TYPE[${root:-__none}]:-} in
+        app|screen|form|'') : ;;
+        *) printf 'ft: ft_run %s: you run an app (or a single screen), not a %s\n' \
+                  "$root" "${FT_TYPE[$root]}" >&2 ;;
+    esac
     _ft_batch_reset_stale
     _ft_report_key_conflicts
     ft_enter_tty
@@ -8783,8 +8919,10 @@ ft_run() {
             if [[ -n "$resize" ]]; then
                 "$resize"
             else
-                _ft_setprop "$root" width "$FT_COLS"
-                _ft_setprop "$root" height "$FT_ROWS"
+                # An app hands the new size to every screen it holds, so the one that is hidden
+                # is already the right size when it is shown. A screen or a legacy root form is
+                # sized directly — the same two writes this always did.
+                _ft_fit_to_terminal "$root"
                 ft_layout "$root"
                 ft_repaint_all "$root"
             fi
