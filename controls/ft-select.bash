@@ -438,7 +438,7 @@ ft_select_close() {             # name — close the dropdown, repaint what it c
     [[ "$was" == true ]] && (( FT_OVERLAY_DEPTH > 0 )) && (( FT_OVERLAY_DEPTH-- ))
     [[ "${FT_OPEN_SELECT:-}" == "$name" ]] && FT_OPEN_SELECT=""
     [[ -n "${FT_KEYMAP[$name]:-}" ]] && ft_keymap_unset "${FT_KEYMAP[$name]}" ESC
-    _ft_enclosing_form_of "$name"; local form=${FT_RET:-$FT_ROOT}
+    _ft_focus_scope_of "$name"; local form=${FT_RET:-$FT_ROOT}
     (( n > 0 )) && _ft_erase_rect "$col" "$etop" "$cols" "$evis" "$form"
     ft_dirty_subtree "$form"
     return 0
@@ -496,7 +496,7 @@ _ft_draw_select() {                      # name
             # The overlay escapes this control's small box on purpose —
             # widen the clip to the enclosing form (still never off-screen).
             local s0=$FT_CLIP_R0 s1=$FT_CLIP_R1 s2=$FT_CLIP_C0 s3=$FT_CLIP_C1
-            _ft_enclosing_form_of "$name"; local form=${FT_RET:-$FT_ROOT}
+            _ft_focus_scope_of "$name"; local form=${FT_RET:-$FT_ROOT}
             if [[ -n "$form" ]]; then
                 FT_CLIP_R0=${FT_ABSOLUTE_Y[$form]:-0}
                 FT_CLIP_R1=$(( ${FT_ABSOLUTE_Y[$form]:-0} + ${FT_MEASURED_HEIGHT[$form]:-0} - 1 ))

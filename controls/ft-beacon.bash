@@ -685,7 +685,7 @@ _ft_beacon_rect() {             # name
 # transient locator wipes clean over exactly the controls it framed), else root.
 _ft_beacon_ground() {           # name → FT_RET (a subtree root to redraw)
     local n=$1 t; ft_resolved_prop "$n" target ""; t=$FT_RET
-    if [[ -n "$t" ]]; then _ft_enclosing_form_of "$t"; [[ -n "$FT_RET" ]] && return; fi
+    if [[ -n "$t" ]]; then _ft_focus_scope_of "$t"; [[ -n "$FT_RET" ]] && return; fi
     FT_RET=${FT_ROOT:-}
 }
 

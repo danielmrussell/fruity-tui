@@ -203,8 +203,8 @@ check "the next click still activates"        "$FIRED" "last "
 ft_remove mp 2>/dev/null
 
 note "the tree cannot be made to contain a ring"
-# Every upward walk (_ft_enclosing_form_of, inheritance, _ft_hidden_anywhere) follows FT_PARENT
-# to the root. A ring makes them spin forever — the app HANGS, and _ft_enclosing_form_of runs
+# Every upward walk (_ft_focus_scope_of, inheritance, _ft_hidden_anywhere) follows FT_PARENT
+# to the root. A ring makes them spin forever — the app HANGS, and _ft_focus_scope_of runs
 # during construction of every focusable control, so it hangs before drawing anything. The DOM
 # raises HierarchyRequestError for exactly this; here the reparent is simply refused.
 ft_remove ap 2>/dev/null
@@ -223,7 +223,7 @@ FT_PARENT[outer]=inner                  # forced, bypassing the API
 _walked=$( timeout 5 bash -c "
     cd '$here'; source ./fruity-tui.bash; ft_init; exec {FT_TTY}>/dev/null
     FT_TYPE[a]=div; FT_TYPE[b]=div; FT_PARENT[a]=b; FT_PARENT[b]=a
-    _ft_enclosing_form_of a; printf 'returned'" 2>&1 )
+    _ft_focus_scope_of a; printf 'returned'" 2>&1 )
 check "a hand-made ring still terminates" "${_walked:-HUNG}" "returned"
 ft_remove cy 2>/dev/null
 

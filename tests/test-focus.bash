@@ -93,4 +93,45 @@ ft_focus afC
 ft_set afC visibility=hidden
 check "focus left the hidden control" "$([[ "$FT_FOCUS" != afC ]] && echo moved)" "moved"
 
+
+# ── The focus scope ─────────────────────────────────────────────────────────
+# A FOCUS SCOPE owns a ring: the controls Tab walks between, and the letters an accessKey is
+# scoped to. It used to be "the nearest FORM", which made a form three things at once — the
+# root of an app, the owner of the ring, and a group of fields — and GROUPING TWO FIELDS
+# TOGETHER REMOVED THEM FROM THE KEYBOARD: the ring walk refused to descend into a nested form,
+# and that form's own end_ft_form then rebuilt the one global ring out of just its own fields.
+note "a form inside a form is a GROUP: its fields stay on the keyboard"
+ft-form name=nf width=40 height=10
+    ft-button name=nf_a text="A"
+    ft-form name=nf_group
+        ft-button name=nf_b text="B"
+        ft-button name=nf_c text="C"
+    end_ft_form
+    ft-button name=nf_d text="D"
+end_ft_form
+ft_layout nf; FT_ROOT=nf
+check "every field is in the one ring"  "${FT_FOCUS_RING[*]}" "nf_a nf_b nf_c nf_d"
+check "…and the outer form still owns it" "$(_ft_focus_scope_of nf_b; printf '%s' "$FT_RET")" "nf"
+check "…and the group owns nothing"       "$(_ft_is_focus_scope nf_group && echo scope || echo group)" "group"
+_seq=""; ft_focus nf_a
+for _i in 1 2 3 4; do ft_focus_next; _seq+="$FT_FOCUS "; done
+check "Tab reaches the grouped fields"  "$_seq" "nf_b nf_c nf_d nf_a "
+
+# Adding a group to an ALREADY-BUILT scope is where the clobber shows: during construction the
+# outer end_ft_form rebuilt the ring afterwards and hid it, so the damage only surfaced for an
+# app that grouped some fields later — which is exactly when it is hardest to explain.
+note "a group added later joins the ring instead of replacing it"
+ft-form name=nf_late parent=nf
+    ft-button name=nf_e text="E"
+    ft-button name=nf_f text="F"
+end_ft_form
+check "the ring GAINED them"        "${FT_FOCUS_RING[*]}" "nf_a nf_b nf_c nf_d nf_e nf_f"
+check "…and focus was not yanked"   "$FT_FOCUS" "nf_a"
+
+# The outermost form is the scope, not every form on the way up — so a control deep inside two
+# groups still answers with the one container that owns the ring.
+note "the scope is the OUTERMOST form when there is no screen"
+check "a doubly-grouped field finds the root" "$(_ft_focus_scope_of nf_c; printf '%s' "$FT_RET")" "nf"
+check "the root form IS a scope"              "$(_ft_is_focus_scope nf && echo scope || echo group)" "scope"
+
 summary

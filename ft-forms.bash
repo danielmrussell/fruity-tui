@@ -72,7 +72,7 @@
 #  the root. First match runs `action [args…] name token`; a `drop` default
 #  stops the walk. ENTER/SPACE on activatable prototypes run ft_activate, which
 #  calls onActivate=fn if defined. accessKey=G is sugar: underline + an auto
-#  [Gg]→"ft_activate <name>" binding on the enclosing form.
+#  [Gg]→"ft_activate <name>" binding on the enclosing focus scope.
 #
 #  Depends on ft-core.bash and ft-keymap.bash.
 # ─────────────────────────────────────────────────────────────────────────────
@@ -2106,7 +2106,7 @@ _ft_keymap_of() {               # name → FT_RET (keymap name)
 declare -A FT_PENDING_FOCUS=() FT_ACCEL_FORM=() FT_ACCEL_LIST=()
 
 # ── An accelerator is REGISTERED, not just declared ──────────────────────────
-# `accessKey` has a registry behind it — FT_ACCEL_LIST plus a binding on the enclosing form's
+# `accessKey` has a registry behind it — FT_ACCEL_LIST plus a binding on the enclosing scope's
 # keymap — and the underline the control draws comes from the PROPERTY. Registering at
 # construction and nowhere else meant `ft_set btn accessKey=K` moved the underline and left
 # the binding on S: an underlined letter that does nothing, and an un-underlined one that still
@@ -2150,8 +2150,8 @@ _ft_accel_register() {          # name — bind NAME's accelerators from its cur
     # route that function cannot see because no binding was ever made.
     ft_resolved_prop "$name" accessKey
     [[ -n "$FT_RET" ]] || return 0
-    local letters=$FT_RET ac       # save it: _ft_enclosing_form_of overwrites FT_RET
-    _ft_enclosing_form_of "$name"
+    local letters=$FT_RET ac       # save it: _ft_focus_scope_of overwrites FT_RET
+    _ft_focus_scope_of "$name"
     [[ -n "$FT_RET" ]] || return 0
     local form=$FT_RET
     _ft_keymap_of "$form"; local km=$FT_RET
@@ -2248,7 +2248,7 @@ _ft_caps_form() {               # name
 
 # _ft_is_ancestor ANCESTOR NODE → 0 if ANCESTOR is at or above NODE in the tree.
 # Used to refuse a reparent that would make a ring; the walk is depth-capped for the same
-# reason every upward walk here is (see _ft_enclosing_form_of).
+# reason every upward walk here is (see _ft_focus_scope_of).
 _ft_is_ancestor() {             # ancestor node
     local want=$1 n=$2 hops=0
     while [[ -n "$n" ]] && (( hops++ < 1000 )); do
@@ -2257,17 +2257,43 @@ _ft_is_ancestor() {             # ancestor node
     done
     return 1
 }
-_ft_enclosing_form_of() {       # name → FT_RET (nearest form ancestor or "")
-    local n=${FT_PARENT[$1]:-} hops=0
+# ── The focus scope ──────────────────────────────────────────────────────────
+# A FOCUS SCOPE is the thing that owns a focus ring: the controls Tab walks between, the
+# letters an accessKey is scoped to, and the container the navigation keys live on. There is
+# exactly one per visible view.
+#
+# It used to be "the nearest FORM", which made a form three things at once — the root of an
+# app, the owner of the ring, and a group of fields — and the three fought. A form INSIDE a
+# form was silently ruinous: _ft_focus_collect refused to descend into it, so its fields were
+# unreachable by Tab, and its own end_ft_form then rebuilt the single global ring out of just
+# that group. Grouping two fields together removed them from the keyboard.
+#
+# So the rule is: A SCREEN IS A SCOPE. A form is a scope only when there is no screen above it,
+# which is what every app written before ft-screen existed looks like — its outermost form IS
+# its screen in all but name. Inside a screen, a form is what its name says: a group of fields.
+_ft_focus_scope_of() {          # name → FT_RET (its screen, else its outermost form, else "")
+    local n=$1 hops=0 outerform=""
     # DEPTH-CAPPED. A ring in FT_PARENT makes this spin forever, and it runs during
     # construction of every focusable control — so a malformed tree hung the app before it
     # drew anything. ft_append/_ft_insert_at refuse to build a ring in the first place; this
     # is the belt to that pair of braces, and no real tree is 1000 deep.
+    n=${FT_PARENT[$n]:-}
     while [[ -n "$n" ]] && (( hops++ < 1000 )); do
-        [[ "${FT_TYPE[$n]:-}" == form ]] && { FT_RET=$n; return; }
+        case ${FT_TYPE[$n]:-} in
+            screen) FT_RET=$n; return ;;        # the nearest screen wins outright
+            form)   outerform=$n ;;             # …remember the OUTERMOST form, and keep looking
+        esac
         n=${FT_PARENT[$n]:-}
     done
-    FT_RET=""
+    FT_RET=$outerform
+}
+# _ft_is_focus_scope NAME → 0 if NAME itself owns a ring.
+_ft_is_focus_scope() {          # name
+    case ${FT_TYPE[$1]:-} in
+        screen) return 0 ;;
+        form)   _ft_focus_scope_of "$1"; [[ -z "$FT_RET" ]] ;;   # …only with no scope above it
+        *)      return 1 ;;
+    esac
 }
 
 # ── Instance construction ────────────────────────────────────────────────────
@@ -2329,7 +2355,7 @@ ft_new() {                      # TYPE args...
     fi
     _ft_get_raw "$name" parent
     # NOTHING MAY BE ITS OWN PARENT. That is a CYCLE in the tree, and every walk up it —
-    # _ft_enclosing_form_of, the inheritance chain, _ft_hidden_anywhere — then spins forever:
+    # _ft_focus_scope_of, the inheritance chain, _ft_hidden_anywhere — then spins forever:
     # the app HANGS at construction, before it has drawn anything, and the user has to kill it.
     # It is one keystroke away in ordinary authoring, because the DSL takes the parent from the
     # nesting stack: giving a control the same name as the container it sits in is enough.
@@ -2350,11 +2376,11 @@ ft_new() {                      # TYPE args...
         FT_KIDS[$p]="${FT_KIDS[$p]}${FT_KIDS[$p]:+ }$name"
     fi
     if [[ "${FT_FOCUSABLE[$name]}" == 1 ]]; then
-        _ft_enclosing_form_of "$name"
+        _ft_focus_scope_of "$name"
         [[ -n "$FT_RET" ]] && FT_PENDING_FOCUS[$FT_RET]="${FT_PENDING_FOCUS[$FT_RET]:-}${FT_PENDING_FOCUS[$FT_RET]:+ }$name"
     fi
     # accessKey sugar: underline is the prototype draw fn's job; the BEHAVIOR is a
-    # keymap binding on the enclosing form. Several controls MAY share one
+    # keymap binding on the enclosing focus scope. Several controls MAY share one
     # accelerator letter — the key activates the first of them (in declaration
     # order) that is currently enabled AND visible, so e.g. a "Hide" and an
     # "Unhide" button can both own H and the right one always responds.
@@ -2493,7 +2519,18 @@ ft_end() {                      # expected-type
 end_ft_form()  { ft_end form; }
 end_ft_frame() { ft_end frame; }
 
-form_on_children_complete() { ft_focus_ring_build "$1"; }
+# A completed form refreshes THE SCOPE'S ring — its own when it is the scope, and the one above
+# it when it is a group. Building its own ring while nested is what used to throw every other
+# control out the moment somebody grouped two fields; building NOTHING while nested is the
+# opposite mistake, and leaves a group added to a finished form off the keyboard until something
+# else happens to rebuild. ft_focus_ring_build keeps the current focus when it is still in the
+# ring, so refreshing the scope does not yank the caret out of whatever the user was in.
+form_on_children_complete() {
+    if _ft_is_focus_scope "$1"; then ft_focus_ring_build "$1"; return 0; fi
+    _ft_focus_scope_of "$1"
+    [[ -n "$FT_RET" ]] && ft_focus_ring_build "$FT_RET"
+    return 0
+}
 
 # ft_set NAME prop=value ... — THE way to change properties after
 # construction. Consults FT_PROP_KIND per property: paint-only changes just
@@ -2576,7 +2613,7 @@ _ft_prop_owed() {               # name key → 1 if the change is refused (the p
             _ft_owed+=" focus"
             # The ring is a list of names, so a control joining or leaving it needs the
             # ring rebuilt — the same signal a newly declared control raises.
-            _ft_enclosing_form_of "$name"
+            _ft_focus_scope_of "$name"
             [[ -n "$FT_RET" ]] && FT_PENDING_FOCUS[$FT_RET]="${FT_PENDING_FOCUS[$FT_RET]:-}${FT_PENDING_FOCUS[$FT_RET]:+ }$name"
             ;;
         visibility)
@@ -2815,7 +2852,7 @@ ft_clone() {                    # SRC DST [deep] → FT_RET=DST
 }
 # parent.append(child) — to the end of PARENT. Refused when the child is the parent, or an
 # ANCESTOR of it: either makes a ring, and every upward walk then spins forever (see
-# _ft_enclosing_form_of). The DOM raises HierarchyRequestError for the same move.
+# _ft_focus_scope_of). The DOM raises HierarchyRequestError for the same move.
 ft_append()       { _ft_is_ancestor "$2" "$1" && return 1
                     _ft_detach "$2"; FT_PARENT[$2]=$1; FT_KIDS[$1]="${FT_KIDS[$1]:+${FT_KIDS[$1]} }$2"
                     _ft_reparented "$2"; }
@@ -6734,7 +6771,9 @@ _ft_focus_collect() {           # node
     for kid in ${FT_KIDS[$1]:-}; do
         [[ -n "${FT_TYPE[$kid]:-}" ]] || continue
         [[ "${FT_FOCUSABLE[$kid]:-}" == 1 ]] && FT_FOCUS_RING+=("$kid")
-        [[ "${FT_TYPE[$kid]}" == form ]] && continue
+        # Descend through a nested FORM — it is a group of fields, and its fields belong to
+        # this ring. Only another SCOPE has a ring of its own to stop at.
+        [[ "${FT_TYPE[$kid]}" == screen ]] && continue
         _ft_focus_collect "$kid"
     done
 }
@@ -7831,7 +7870,7 @@ ft_focus() {                # name → 1 if the control can't be focused
     # pending, then retry once, so focusing a freshly-added control just works. (Was a
     # gotcha: ft_focus silently no-op'd on such a control and focus stayed put.)
     [[ -z "${FT_TYPE[$name]:-}" ]] && return 1
-    local form; _ft_enclosing_form_of "$name"; form=$FT_RET
+    local form; _ft_focus_scope_of "$name"; form=$FT_RET
     [[ -z "$form" && "${FT_TYPE[$name]}" == form ]] && form=$name
     if [[ -n "$form" && -n "${FT_PENDING_FOCUS[$form]:-}" ]]; then
         ft_focus_ring_build "$form"
