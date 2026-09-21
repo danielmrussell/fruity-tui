@@ -513,7 +513,7 @@ _show_page() {
                 end_ft_div ;;
             2)  ft-textfield name=spec value="$SPEC" size=44 rows=2 wrap=true class="${SEL_CLASS/none/}"
                 ft-div name=ctl2 display=flex gap=1 alignItems=center
-                    ft-label "#spec class ="
+                    ft-label text="#spec class ="
                     ft-select name=selClass size=1 onChange='selClass_on_change "$@"'
                         ft-option value=none text="(none)"
                         ft-option value=warning text=".warning"
@@ -530,11 +530,11 @@ _show_page() {
             4)  ft-textfield name=spec value="$SPEC" size=44 rows=2 wrap=true
                 ft-div name=ctl4 display=flex gap=2 alignItems=center
                     ft-checkbox name=stDisabled text="Disable the box" accessKey=D onActivate='stDisabled_on_activate "$@"' onDeactivate='stDisabled_on_deactivate "$@"'
-                    ft-label color=muted "· Tab = :focus · Enter = :editing"
+                    ft-label color=muted text="· Tab = :focus · Enter = :editing"
                 end_ft_div ;;
             5)  ft-textfield name=spec value="$SPEC" size=44 rows=2 wrap=true --accent="$VAR_ACCENT"
                 ft-div name=ctl5 display=flex gap=1 alignItems=center
-                    ft-label "--accent ="
+                    ft-label text="--accent ="
                     ft-select name=varPick size=1 onChange='varPick_on_change "$@"'
                         ft-option value=crimson text="crimson"
                         ft-option value=dodgerblue text="dodgerblue"

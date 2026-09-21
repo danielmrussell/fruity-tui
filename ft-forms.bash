@@ -641,6 +641,10 @@ _ft_setprop() {                 # name prop value
 # (--x) via _ft_propkey, and invalidates the cascade when the property could affect a style.
 ft_unset() {         # NAME PROP
     local name=$1
+    # `on<Event>` IS NOT A PROPERTY — _ft_setprop intercepts it and the listeners live on the
+    # eventListeners plist — so unsetting one removed nothing and said nothing, which is the
+    # obvious way to try to drop a handler. It means the same thing `ft_set NAME onX=` means.
+    if [[ "$2" == on[A-Z]* ]]; then _ft_setprop "$name" "$2" ""; return 0; fi
     _ft_propkey "$2"; local pk=$FT_RET
     local _rpv="_ftp_${name}_${pk}" _rprev; _rprev=${!_rpv-}   # what the reconciler is replacing
     unset "_ftp_${name}_${pk}" "FT_COERCED[${name}_${pk}]"
@@ -4694,6 +4698,19 @@ ft_batch_begin() {
     fi
     return 0
 }
+# _ft_batch_reset_stale — a batch left open at FILE SCOPE freezes the screen: coalescing stays
+# on, every write is deferred, and nothing settles because nothing was going to until
+# ft_batch_end. Inside a handler the run loop's own settle rescues it; before the loop starts,
+# nothing does. ft_run says so and clears it, rather than starting an app that will not paint.
+_ft_batch_reset_stale() {
+    (( _FT_BATCH_DEPTH > 0 )) || return 0
+    printf 'ft: %d batch(es) left open — ft_batch_begin without ft_batch_end\n' \
+           "$_FT_BATCH_DEPTH" >&2
+    _FT_BATCH_DEPTH=0
+    (( _FT_BATCH_OWNED )) && FT_COALESCING=0
+    _FT_BATCH_OWNED=0
+    return 1
+}
 ft_batch_end() {
     (( _FT_BATCH_DEPTH > 0 )) || { printf 'ft: ft_batch_end with no open batch\n' >&2; return 1; }
     (( --_FT_BATCH_DEPTH == 0 )) || return 0
@@ -8028,9 +8045,18 @@ ft_dispatch_event() {           # token
     local tok=$1
     local n=${FT_FOCUS:-}
     [[ -z "$n" || -z "${FT_TYPE[$n]:-}" ]] && n=$FT_ROOT
-    while [[ -n "$n" ]]; do
+    # THE PROPAGATION PATH IS DECIDED BEFORE ANY HANDLER RUNS, exactly as the DOM decides an
+    # event's path at dispatch. Walking FT_PARENT as we went read the tree a handler had just
+    # changed: a handler that removes its own control and then calls ft_bubble left the walk
+    # standing on a node with no parent any more, so the event stopped there and the ancestor
+    # that was supposed to receive it never did. Rebuilding a container from inside one of its
+    # own keys is an ordinary thing to do.
+    local -a path=()
+    local hops=0
+    while [[ -n "$n" ]] && (( hops++ < 1000 )); do path+=("$n"); n=${FT_PARENT[$n]:-}; done
+    for n in "${path[@]}"; do
+        [[ -n "${FT_TYPE[$n]:-}" ]] || continue     # removed while the event was in flight
         _ft_try_keymaps "$n" "$tok" && return 0
-        n=${FT_PARENT[$n]:-}
     done
     return 1
 }
@@ -8467,6 +8493,12 @@ _ft_hook() {                    # name on_<event> [value...] → nonzero iff any
     [[ -z "$__ls" ]] && return 0                          # no listeners (hot path)
     local __ev=${__hook#on_} __rc=0 __tok __code
     local _prev_this=${this-} _prev_evt=${FT_EVENT_TYPE-}
+    # AND THE BUBBLE FLAG, because an event's propagation is decided by handlers OF THAT EVENT.
+    # Without this a button's `onActivate='…; ft_bubble'` made the KEY that activated it bubble
+    # to the form as well — spooky action from one event onto another. Only key events propagate
+    # today, so ft_bubble in a listener is simply inert; it is not a lever on somebody else's
+    # event.
+    local _prev_bubble=$_FT_EVENT_BUBBLE
     this=$__name; FT_EVENT_TYPE=$__ev
     local __oldIFS=$IFS; IFS=$'\x1f'
     local -a __entries=($__ls); IFS=$__oldIFS
@@ -8477,7 +8509,7 @@ _ft_hook() {                    # name on_<event> [value...] → nonzero iff any
         # sees the new value, and so does a bare `fn "$@"`. Same bargain as a key's onKey=.
         _ft_run_code "$__code" "$__name" "$@" || __rc=1
     done
-    this=$_prev_this; FT_EVENT_TYPE=$_prev_evt
+    this=$_prev_this; FT_EVENT_TYPE=$_prev_evt; _FT_EVENT_BUBBLE=$_prev_bubble
     return $__rc
 }
 # _ft_run_code CODE NAME DETAIL… — evaluate one handler's code, with the same typo guard a key binding
@@ -8639,8 +8671,27 @@ ft_esc_action() { return 0; }
 # declares is.
 # Behind FT_DEBUG_KEYS=1 rather than always on: sharing a letter is a deliberate feature, so this
 # is a thing you go looking for, like FT_DEBUG_NOALT.
+# A `keymap=` naming a map nobody declared binds NOTHING, in silence: dispatch simply finds an
+# empty list. A typo there costs every key the map was meant to carry, and the control goes on
+# looking exactly as it should.
+_ft_report_missing_keymaps() {
+    local n refs km bad=""
+    for n in "${!FT_TYPE[@]}"; do
+        _ft_get_raw "$n" keymap; refs=$FT_RET
+        [[ -n "$refs" ]] || continue
+        for km in $refs; do
+            [[ -n "${FT_KEYMAP_DEFINED[$km]:-}" ]] && continue
+            bad+="      $n → $km"$'\n'
+        done
+    done
+    [[ -n "$bad" ]] || return 0
+    printf 'ft: keymap= names a map that was never declared, so it binds nothing:\n' >&2
+    printf '%s' "$bad" >&2
+    return 1
+}
 _ft_report_key_conflicts() {
     [[ -n "${FT_DEBUG_KEYS:-}" ]] || return 0
+    _ft_report_missing_keymaps
     ft_accesskey_conflicts && return 0
     local line
     printf 'ft: accessKey conflicts — each of these letters is claimed by more than one\n' >&2
@@ -8656,6 +8707,7 @@ _ft_report_key_conflicts() {
 ft_run() {
     local root=$1 setup=${2:-} resize=${3:-} fallback=${4:-} render=${5:-}
     FT_ROOT=$root
+    _ft_batch_reset_stale
     _ft_report_key_conflicts
     ft_enter_tty
     ft_install_traps

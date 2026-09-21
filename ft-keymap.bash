@@ -129,6 +129,11 @@ ft_keymap() {
 # the same rule every tag in this framework follows.
 _FT_KEYMAP_BLOCK=""
 ft-keymap() {
+    # A block opened INSIDE a block means the first one lost its end_ft_keymap. The rows written
+    # after that point still landed somewhere sensible, which is exactly why it was worth saying:
+    # nothing about the result told you a `end_ft_keymap` was missing.
+    [[ -n "$_FT_KEYMAP_BLOCK" ]] && \
+        printf 'ft: ft-keymap %s: %s is still open — missing end_ft_keymap\n' "$1" "$_FT_KEYMAP_BLOCK" >&2
     ft_keymap "$1" || return 1
     _FT_KEYMAP_BLOCK=$1
 }
@@ -199,6 +204,22 @@ _ft_keyfield_put() {            # map pattern code importance cap hascode
     # NO onKey= at all is a different thing and must stay different: a legend-only cap, which
     # advertises a key somebody else handles and must not swallow it.
     [[ -z "$code" ]] && (( hascode )) && code=':'      # `:` is the shell's no-op
+    # `default` IS THE RESERVED PATTERN for "what an unmatched key does", and what it stores is
+    # a POLICY word that _ft_keymap_default reads, not an action dispatch ever runs. Written as
+    # a field it has to mean the same thing it means on a real key, or `onKey=''` would eat a
+    # key here and pass one on there: an empty handler is "eat it" (drop), ft_bubble is "pass it
+    # on" (bubble). The two words stay readable in the store, where the only reader is looking
+    # for exactly them.
+    if [[ "$pat" == default ]]; then
+        case $code in
+            ''|':')      code=drop ;;
+            ft_bubble)   code=bubble ;;
+            bubble|drop) : ;;                      # written out; the store's own vocabulary
+            *) printf 'ft: %s: key=default takes onKey='"''"' (eat) or onKey=ft_bubble (pass on), not %s\n' \
+                      "$map" "$code" >&2
+               return 1 ;;
+        esac
+    fi
     case $imp in
         '') imp=0 ;;
         crucial|important|normal|minor)

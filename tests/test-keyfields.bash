@@ -410,4 +410,93 @@ ft_reflow_flush; FT_COALESCING=0
 check "…until the burst itself settles"       "$FT_REFLOW_COUNT" "1"
 no "ft_batch_end with no open batch is refused" ft_batch_end
 
+# A batch left open at FILE SCOPE would freeze the screen — coalescing on, every write deferred,
+# and nothing to settle it because nothing was going to until the missing ft_batch_end. Inside a
+# handler the run loop rescues it; before the loop starts nothing does, so ft_run clears it and
+# says so rather than starting an app that will not paint.
+note "a batch left open is reported and cleared before the app runs"
+ft_batch_begin; ft_set br1 text="orphaned"
+check "coalescing is on while it is open"   "$FT_COALESCING" "1"
+err _ft_batch_reset_stale
+check "…the leak is named"                  "$ERR" "1 batch(es) left open — ft_batch_begin without ft_batch_end"
+check "…and coalescing is released"         "$FT_COALESCING" "0"
+ok "…and a clean slate says nothing"        _ft_batch_reset_stale
+
+# An event's propagation is decided by handlers OF THAT EVENT. Without that, a button's
+# onActivate calling ft_bubble made the KEY that activated it bubble to the form as well.
+note "ft_bubble in a listener does not steer the key that caused it"
+EV=""
+ft_keymap acc; ft_keymap_set acc key=Z onKey='ft_activate $this'
+ft_keymap accup; ft_keymap_set accup key=Z onKey='ev ancestor'
+ft-form name=accapp width=40 height=8 keymap=accup
+    ft-button name=accb text="Go" keymap=acc onActivate='ev listener; ft_bubble'
+end_ft_form
+FT_ROOT=accapp; ft_layout accapp; ft_focus accb
+EV=""; ft_dispatch_event Z
+check "the listener ran and the key stayed claimed" "$EV" "listener "
+
+# ── Things that used to fail in silence ─────────────────────────────────────
+note "a keymap= that names nothing is reported, not silently empty"
+ft-form name=tyapp width=40 height=6
+    ft-button name=tyb text="g" keymap=no_such_map key=K onKey='ev own'
+end_ft_form
+FT_ROOT=tyapp; ft_layout tyapp; ft_focus tyb
+EV=""; ft_dispatch_event K
+check "the control's own keys still work" "$EV" "own "
+err _ft_report_missing_keymaps
+check "…and the dangling reference is named" \
+      "$(case "$ERR$(cat "$_ERR")" in *"tyb → no_such_map"*) echo named ;; *) echo "${ERR:-silent}" ;; esac)" "named"
+
+note "a block left open is named when the next one opens"
+err ft-keymap blkA
+ft-key key=A onKey='ev a'
+err ft-keymap blkB
+check "the missing end_ft_keymap is named" "$ERR" "ft-keymap blkB: blkA is still open — missing end_ft_keymap"
+ft-key key=B onKey='ev b'
+end_ft_keymap
+check "…and the rows still went to the right maps" \
+      "$(ft_keymap_dump blkA | cut -f1)/$(ft_keymap_dump blkB | cut -f1)" "A/B"
+
+# `on<Event>` is not a property — the listeners live on the eventListeners plist — so unsetting
+# one removed nothing and said nothing, which is the obvious way to try to drop a handler.
+note "ft_unset clears a listener, like ft_set onX= does"
+UN=""
+ft-form name=unapp width=40 height=6
+    ft-button name=unb text="u" onActivate='UN=fired'
+end_ft_form
+FT_ROOT=unapp; ft_layout unapp
+UN=""; ft_activate unb; check "the listener fires"          "$UN" "fired"
+ft_unset unb onActivate
+UN=""; ft_activate unb; check "…and ft_unset really drops it" "${UN:-cleared}" "cleared"
+
+# THE PROPAGATION PATH IS DECIDED BEFORE ANY HANDLER RUNS, as the DOM decides an event's path
+# at dispatch. Walking the tree as we went read a tree the handler had just changed: rebuilding
+# a container from inside one of its own keys — an ordinary thing to do — left the walk standing
+# on a node with no parent, and the ancestor never saw the event it was passed.
+note "a handler may rebuild the tree under itself and still bubble"
+EV=""
+ft_keymap selfrm; ft_keymap_set selfrm key=X onKey='ev gone; ft_remove rmdiv; ft_bubble'
+ft_keymap rmup;   ft_keymap_set rmup   key=X onKey='ev ancestor'
+ft-form name=rmapp width=40 height=8 keymap=rmup
+    ft-div name=rmdiv keymap=selfrm
+        ft-button name=rmb text="i"
+    end_ft_div
+end_ft_form
+FT_ROOT=rmapp; ft_layout rmapp; ft_focus rmdiv
+EV=""; ft_dispatch_event X
+check "the ancestor still received it" "$EV" "gone ancestor "
+check "…and the control really is gone" "${FT_TYPE[rmdiv]:-gone}" "gone"
+
+# `default` is the pattern for "what an unmatched key does", and it has to mean the same thing a
+# real key does: an empty handler eats, ft_bubble passes on.
+note "key=default speaks the same grammar as any other key"
+ft_keymap dfa; ft_keymap_set dfa key=default onKey=''
+_ft_keymap_default dfa; check "onKey='' on default means eat"        "$FT_RET" "drop"
+ft_keymap dfb; ft_keymap_set dfb key=default onKey='ft_bubble'
+_ft_keymap_default dfb; check "ft_bubble on default means pass on"   "$FT_RET" "bubble"
+ft_keymap dfc
+err ft_keymap_set dfc key=default onKey='do_something $this'
+check "…and anything else is refused" \
+      "$(case "$ERR" in *"key=default takes"*) echo refused ;; *) echo "${ERR:-silent}" ;; esac)" "refused"
+
 summary
