@@ -422,6 +422,25 @@ check "…the leak is named"                  "$ERR" "1 batch(es) left open — 
 check "…and coalescing is released"         "$FT_COALESCING" "0"
 ok "…and a clean slate says nothing"        _ft_batch_reset_stale
 
+# A batch a HANDLER opens and never closes would sit at depth>0 for the rest of the session:
+# every later ft_batch_begin nests inside the ghost, so its ft_batch_end never settles and
+# batching quietly stops working — ten writes, ten reflows. The end of every input burst clears
+# it, which is where the run loop already puts everything that must not outlive a burst.
+note "a batch leaked inside a handler does not poison the next one"
+FT_COALESCING=1; ft_batch_begin          # a handler opens one and returns early
+FT_COALESCING=0; ft_reflow_flush         # …the run loop's settle, minus the reset
+check "the ghost is still open"          "$_FT_BATCH_DEPTH" "1"
+FT_REFLOW_COUNT=0
+ft_batch_begin; for _i in 1 2 3 4 5; do ft_set br1 text="r$_i"; done; ft_batch_end
+check "…and batching has stopped working" "$FT_REFLOW_COUNT" "5"
+err _ft_batch_reset_stale
+FT_REFLOW_COUNT=0
+ft_batch_begin; for _i in 1 2 3 4 5; do ft_set br1 text="s$_i"; done; ft_batch_end
+check "…until the reset, after which it works again" "$FT_REFLOW_COUNT" "1"
+# …and the run loop really does that reset, at the end of every burst.
+check "the burst settle clears a leaked batch" \
+      "$(declare -f ft_run | grep -c '_ft_batch_reset_stale')" "2"
+
 # An event's propagation is decided by handlers OF THAT EVENT. Without that, a button's
 # onActivate calling ft_bubble made the KEY that activated it bubble to the form as well.
 note "ft_bubble in a listener does not steer the key that caused it"
@@ -498,5 +517,25 @@ ft_keymap dfc
 err ft_keymap_set dfc key=default onKey='do_something $this'
 check "…and anything else is refused" \
       "$(case "$ERR" in *"key=default takes"*) echo refused ;; *) echo "${ERR:-silent}" ;; esac)" "refused"
+
+# ── The wheel ───────────────────────────────────────────────────────────────
+# A DECLINE HAS TO TRAVEL. The wheel path returned "handled" whatever the action said, so a
+# control with nothing left to scroll — which is exactly what ft-label reports by calling
+# ft_bubble — ATE the event. Wheeling past the end of an inner list left the list it sits in
+# perfectly still, the one thing every other program in the terminal gets right.
+note "the wheel keeps travelling when a control has nothing left to scroll"
+OUT=0
+ft-form name=wapp width=40 height=10 keymap=wouter
+    ft-label name=wlab text=$'one\ntwo\nthree\nfour\nfive\nsix' height=3 overflowY=auto
+end_ft_form
+ft_keymap wouter; ft_keymap_set wouter key=DOWN onKey='OUT=$(( OUT + 1 ))'
+ft_set wapp keymap=wouter
+FT_ROOT=wapp; ft_layout wapp; ft_focus wlab
+ft_set wlab scrollTop=0
+OUT=0; _ft_wheel_dispatch wlab DOWN
+check "with room to scroll, the inner keeps it"  "$OUT" "0"
+ft_set wlab scrollTop=99                          # parked at the very bottom
+OUT=0; _ft_wheel_dispatch wlab DOWN
+check "at the end, the container scrolls instead" "$OUT" "1"
 
 summary

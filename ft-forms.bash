@@ -8051,6 +8051,12 @@ ft_dispatch_event() {           # token
     # standing on a node with no parent any more, so the event stopped there and the ancestor
     # that was supposed to receive it never did. Rebuilding a container from inside one of its
     # own keys is an ordinary thing to do.
+    _ft_dispatch_from "$n" "$tok"
+}
+# _ft_dispatch_from NODE TOKEN — the same walk, from any node. The WHEEL needs it too: the
+# control under the pointer is not the focused one.
+_ft_dispatch_from() {           # node token
+    local n=$1 tok=$2
     local -a path=()
     local hops=0
     while [[ -n "$n" ]] && (( hops++ < 1000 )); do path+=("$n"); n=${FT_PARENT[$n]:-}; done
@@ -8328,11 +8334,17 @@ _ft_wheel_dispatch() {          # name token
     if _ft_runlevel_first_rung "$n"; then
         _ft_runlevel_keymap_of "$n" "$FT_RET"; local km=$FT_RET
         if [[ -n "$km" ]] && _ft_keymap_lookup "$km" "$tok"; then
-            _ft_run_action "$FT_RET" "$n" "$tok"
+            # A DECLINE HAS TO TRAVEL. This returned 0 whatever the action said, so a control
+            # that had nothing left to scroll — which is exactly what ft-label reports by calling
+            # ft_bubble — ate the wheel event instead of passing it on. Wheeling past the end of
+            # an inner list left the list it sits in perfectly still, which is the one thing
+            # every other program in the terminal gets right.
+            _ft_run_action "$FT_RET" "$n" "$tok" && return 0
+            _ft_dispatch_from "${FT_PARENT[$n]:-}" "$tok"
             return 0
         fi
     fi
-    ft_dispatch_keymap "$n" "$tok"
+    _ft_dispatch_from "$n" "$tok"
 }
 _ft_dispatch_mouse() {
     local x=$(( FT_MOUSE_X - 1 )) y=$(( FT_MOUSE_Y - 1 )) b=$FT_MOUSE_BUTTON act=$FT_MOUSE_ACTION tgt
@@ -8811,6 +8823,11 @@ ft_run() {
             ft_poll_event || break         # no more queued input → done coalescing
         done
         FT_COALESCING=0
+        # A batch a handler opened and never closed would otherwise sit at depth>0 FOR THE REST
+        # OF THE SESSION: every later ft_batch_begin nests inside the ghost, so its ft_batch_end
+        # never settles and batching quietly stops working — ten writes, ten reflows. The burst
+        # is over; nothing may still be open.
+        _ft_batch_reset_stale
         if [[ -n "${FT_BURST_LOG:-}" ]]; then
             ft_now_ms; printf 'SETTLE-BEGIN %s\n' "$FT_RET" >> "$FT_BURST_LOG"
         fi
