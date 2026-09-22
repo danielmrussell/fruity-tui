@@ -207,7 +207,7 @@ ft_tabs_prev()  { ft_resolved_prop "$1" activeTab 0; _ft_tabs_set "$1" $(( FT_RE
 ft_tabs_first() { _ft_tabs_set "$1" 0; }
 ft_tabs_last()  { _ft_tabs_tabs "$1"; _ft_tabs_set "$1" $(( ${#FT_TABS[@]} - 1 )); }
 # ft_tabs_select NAME IDX — for instance accelerators (e.g. keys 1..9). Clamps.
-ft_tabs_select() { _ft_tabs_set "$1" "$2"; }
+ft_tabs_select() { _ft_ctl "${1-}" || return 1; _ft_tabs_set "$FT_RET" "$2"; }
 
 # Paints the folder tabs + the content box, then repaints the active body. That
 # last step is essential: a repaint of the tabs node alone (a focus change

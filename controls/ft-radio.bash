@@ -147,6 +147,7 @@ _ft_draw_radio() {                       # name
 }
 
 ft_radio_select() {                      # name — selects it, deselects group siblings
+    _ft_ctl "${1-}" || return 1; set -- "$FT_RET" "${@:2}"    # a path, a tail of one, or a plain name
     local name=$1
     _ft_radio_group "$name"; local grp=$FT_RET
     local prev=${FT_RADIO_SELECTED[$grp]:-}

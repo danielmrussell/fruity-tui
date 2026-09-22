@@ -53,6 +53,8 @@ _ft_binder_pages() {            # name
 # _ft_binder_show BINDER PAGE — make PAGE the one on screen.
 _ft_binder_show() {             # binder page
     local b=$1 want=$2 p
+    # `startPage=login` names a page that a scope has since qualified to `main__login`.
+    _ft_ctl "$want"; want=$FT_RET
     [[ -n "$want" && "${FT_TYPE[$want]:-}" == page ]] || {
         printf 'ft: %s: no page named %s\n' "$b" "${want:-<nothing>}" >&2; return 1; }
     _ft_binder_pages "$b"
@@ -89,6 +91,7 @@ _ft_binder_show() {             # binder page
 # turn a page without naming it. They CLAMP: a binder is not a carousel, and arriving back at
 # page one from page five is never what the person pressing ▶ meant.
 ft_binder_go() {                # binder delta
+    _ft_ctl "${1-}" || return 1; set -- "$FT_RET" "${@:2}"    # a path, a tail of one, or a plain name
     local b=$1 d=$2 i
     _ft_binder_pages "$b"
     local n=${#FT_BINDER_PAGES[@]}
@@ -164,6 +167,7 @@ _ft_binder_setprop() {          # name prop value  (see ft-app's: every route mu
     [[ "${FT_TYPE[$1]:-}" == binder ]] || return 0
     local want=$3
     [[ -n "$want" ]] || return 0
+    _ft_ctl "$want" 2>/dev/null; want=$FT_RET
     [[ "${_FT_BINDER_PAGE[$1]:-}" == "$want" ]] && return 0
     # No pages yet — `ft-binder name=w currentPage=login` names one further down the file.
     # Store it; binder_on_children_complete applies it.
@@ -201,6 +205,10 @@ binder_on_children_complete() { # binder
     # startPage names where to open; currentPage is where you are. An app may write either.
     _ft_get_raw "$b" currentPage; local want=$FT_RET
     [[ -n "$want" ]] || { _ft_get_raw "$b" startPage; want=$FT_RET; }
+    # RESOLVE BEFORE VALIDATING. `startPage=login` names a page a scope has qualified to
+    # `main__login`, so checking the raw value found no page and fell straight through to the
+    # first one — the binder opened somewhere the author had not asked for, in silence.
+    [[ -n "$want" ]] && { _ft_ctl "$want"; want=$FT_RET; }
     [[ -n "$want" && "${FT_TYPE[$want]:-}" == page ]] || want="${FT_BINDER_PAGES[0]}"
     _ft_binder_show "$b" "$want"
     return 0

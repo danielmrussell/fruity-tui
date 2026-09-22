@@ -40,7 +40,9 @@ end_ft_app
 FT_ROOT=installer; ft_layout installer
 
 note "one page at a time, and startPage says which"
-check "it opened where it was told"  "$(ft_get wizard currentPage; printf '%s' "$FT_RET")" "login"
+# A page inside a screen is `main__login`, and currentPage answers with the REAL name — the
+# one you can hand straight back to any verb. `startPage=login` still NAMES it the short way.
+check "it opened where it was told"  "$(ft_get wizard currentPage; printf '%s' "$FT_RET")" "main__login"
 check "…that page is shown"          "$(ft_get login display; printf '%s' "$FT_RET")" "flex"
 check "…and the others are not"      "$(ft_get welcome display; printf '%s' "$FT_RET")/$(ft_get fin display; printf '%s' "$FT_RET")" "none/none"
 
@@ -60,30 +62,32 @@ ft_set wizard currentPage=login
 note "the pager says where you are, and clamps at the ends"
 check "it counts"                    "$(ft_get wizard__nav_at text; printf '%s' "$FT_RET")" "2 of 3"
 ft_binder_prev wizard
-check "prev went back"               "$(ft_get wizard currentPage; printf '%s' "$FT_RET")" "welcome"
+check "prev went back"               "$(ft_get wizard currentPage; printf '%s' "$FT_RET")" "main__welcome"
 check "…and says so"                 "$(ft_get wizard__nav_at text; printf '%s' "$FT_RET")" "1 of 3"
 check "…with prev now disabled"      "$(ft_get wizard__nav_prev disabled; printf '%s' "$FT_RET")" "true"
 ft_binder_prev wizard
-check "a binder is not a carousel"   "$(ft_get wizard currentPage; printf '%s' "$FT_RET")" "welcome"
+check "a binder is not a carousel"   "$(ft_get wizard currentPage; printf '%s' "$FT_RET")" "main__welcome"
 ft_binder_next wizard; ft_binder_next wizard; ft_binder_next wizard
-check "…at the other end either"     "$(ft_get wizard currentPage; printf '%s' "$FT_RET")" "fin"
+check "…at the other end either"     "$(ft_get wizard currentPage; printf '%s' "$FT_RET")" "main__fin"
 check "…and next is disabled there"  "$(ft_get wizard__nav_next disabled; printf '%s' "$FT_RET")" "true"
 
 note "the pager's buttons are ordinary controls running ordinary code"
 ft_set wizard currentPage=login
 ft_activate wizard__nav_prev
-check "pressing ◀ turned the page"   "$(ft_get wizard currentPage; printf '%s' "$FT_RET")" "welcome"
+check "pressing ◀ turned the page"   "$(ft_get wizard currentPage; printf '%s' "$FT_RET")" "main__welcome"
 
 note "naming a page that is not one is refused, and nothing moves"
 ft_set wizard currentPage=login
 no  "a page that does not exist"     ft_set wizard currentPage=nope
-check "…and the binder did not move" "$(ft_get wizard currentPage; printf '%s' "$FT_RET")" "login"
+check "…and the binder did not move" "$(ft_get wizard currentPage; printf '%s' "$FT_RET")" "main__login"
 err ft_set wizard currentPage=email
-check "…a control that is not a page is named" "$ERR" "wizard: no page named email"
-check "…and it still did not move"   "$(ft_get wizard currentPage; printf '%s' "$FT_RET")" "login"
+check "…a control that is not a page is named" "$ERR" "main__wizard: no page named main__login__email"
+check "…and it still did not move"   "$(ft_get wizard currentPage; printf '%s' "$FT_RET")" "main__login"
 
 note "every route that writes currentPage turns the page"
-_ft_setprop wizard currentPage fin          # exactly what a state restore does
+# A restore writes REAL names — that is what a state file holds — so it goes straight to
+# _ft_setprop with the qualified name, which is the route that bypasses ft_set entirely.
+_ft_setprop main__wizard currentPage main__fin
 check "the restore turned it"        "$(ft_get fin display; printf '%s' "$FT_RET")" "flex"
 ft-binder name=ctor currentPage=second parent=main
     ft-page name=first;  ft-label name=c1 text="1"; end_ft_page
@@ -92,6 +96,10 @@ end_ft_binder
 check "…and so does the DSL"         "$(ft_get second display; printf '%s' "$FT_RET")" "flex"
 ft_remove ctor
 
+# SCOPING IS LEXICAL: a name is qualified by the scope it is WRITTEN inside, not by where
+# `parent=` later attaches it. This binder is declared at top level and parented into the
+# screen, so its pages keep their bare names — which is what you want, because the name you
+# wrote is the name you can address.
 note "navigator=tabs marks where you are"
 ft-binder name=tb navigator=tabs navigatorSide=top parent=main
     ft-page name=t1 title="One"; ft-button name=tb1 text="1"; end_ft_page

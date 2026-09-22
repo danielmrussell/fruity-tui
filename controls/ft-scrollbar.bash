@@ -88,7 +88,7 @@ ft_prototype_scrollbar() {
 # A for= bar whose content currently fits draws nothing — focus must skip it
 # too, or Tab lands on an invisible control.
 _ft_scrollbar_focus_skip() {    # name → 0 = skip
-    _ft_get_raw "$1" for
+    _ft_ctl_prop "$1" for
     [[ -z "$FT_RET" ]] && return 1
     _ft_sb_state "$1"
     (( FT_SCROLLBAR_TOTAL <= FT_SCROLLBAR_CLIENT ))
@@ -145,7 +145,7 @@ _ft_destroy_scrollbar() { _ft_scrollbar_retarget "$1" ""; }
 # declaration order, so a target declared before its bar is already sized).
 _ft_preferred_width_scrollbar()  { FT_RET=1; }
 _ft_height_scrollbar() {
-    _ft_get_raw "$1" for
+    _ft_ctl_prop "$1" for
     if [[ -n "$FT_RET" && -n "${FT_MEASURED_HEIGHT[$FT_RET]:-}" ]]; then
         FT_RET=${FT_MEASURED_HEIGHT[$FT_RET]}
     else
@@ -219,7 +219,7 @@ _ft_sb_state() {                # name
     FT_SCROLLBAR_TRACK=$(( len - FT_SCROLLBAR_INDICATOR_ROW ))
     (( FT_SCROLLBAR_TRACK < 1 )) && FT_SCROLLBAR_TRACK=1
     FT_SCROLLBAR_POSITION_PROP=$posP
-    _ft_get_raw "$name" for; FT_SCROLLBAR_TARGET=$FT_RET
+    _ft_ctl_prop "$name" for; FT_SCROLLBAR_TARGET=$FT_RET
     if [[ -n "$FT_SCROLLBAR_TARGET" && -n "${FT_TYPE[$FT_SCROLLBAR_TARGET]:-}" ]]; then
         _ft_sb_target_extent "$FT_SCROLLBAR_TARGET"     # sets FT_SCROLLBAR_TOTAL / FT_SCROLLBAR_CLIENT
     else

@@ -170,6 +170,20 @@ _ft_css_compact() {             # drop cached style for every node that is gone
 # runs the EXACT SAME match/specificity/source-order logic over that short list. Without this every
 # lookup walks every rule — measured perfectly LINEAR in rule count (~0.2ms/rule), i.e. an app with
 # a real stylesheet grinds to a halt. Rebuilt wholesale on any (re)registration (rare, not hot).
+# _ft_css_id_tails NAME → FT_CSS_ID_TAILS: the name and every TAIL of it on a `__` boundary,
+# longest first — `main__login__email` gives itself, `login__email`, `email`.
+#
+# A NAME IS A PATH (a page is a naming scope), and an id selector matches a tail of it: `#email`
+# reaches the email field on every page, `#login__email` reaches one. Less specific, more
+# controls — which is what a selector is for. The rule index buckets rules by the id they NAME,
+# so a control has to look in the bucket for each of its tails or a broad rule is never even
+# considered. Usually two or three lookups; a control outside any scope has exactly one.
+FT_CSS_ID_TAILS=()
+_ft_css_id_tails() {            # name
+    FT_CSS_ID_TAILS=("$1")
+    local rest=$1
+    while [[ "$rest" == *__* ]]; do rest=${rest#*__}; FT_CSS_ID_TAILS+=("$rest"); done
+}
 declare -A _FT_CSS_IDX_ID=() _FT_CSS_IDX_CLASS=() _FT_CSS_IDX_TYPE=()
 _FT_CSS_IDX_UNIV=""
 _ft_css_reindex() {             # rebuild the key-selector buckets from every registered sheet
@@ -806,7 +820,10 @@ _ft_css_restyle_matching() {    # (reads _FT_SHEET_*) — dirty every subtree th
     while (( ${#stack[@]} )); do
         n=${stack[-1]}; unset 'stack[-1]'
         matched=0
-        [[ -n "${_FT_SHEET_IDS[$n]:-}" ]] && matched=1
+        if (( ${#_FT_SHEET_IDS[@]} )); then
+            local _t; _ft_css_id_tails "$n"
+            for _t in "${FT_CSS_ID_TAILS[@]}"; do [[ -n "${_FT_SHEET_IDS[$_t]:-}" ]] && { matched=1; break; }; done
+        fi
         (( ! matched )) && [[ -n "${_FT_SHEET_TYPES[${FT_TYPE[$n]:-}]:-}" ]] && matched=1
         if (( ! matched )) && (( ${#_FT_SHEET_CLASSES[@]} )); then
             _ft_get_raw "$n" class
@@ -917,9 +934,22 @@ _ft_css_attr_match() {          # control cond → 0/1
 _ft_css_match_compound() {      # type id classes pseudos attr fn control → 0 if all match
     local type=$1 id=$2 classes=$3 pseudos=$4 attr=$5 fn=$6 c=$7 x
     [[ -n "$type" && "$type" != "${FT_TYPE[$c]:-}" ]] && return 1
-    # #id matches the control's `id` PROPERTY, which DEFAULTS to its name — so `#spec` still matches
-    # a control named spec, but you can also give it an explicit id distinct from its bash handle.
-    if [[ -n "$id" ]]; then _ft_get_raw "$c" id; [[ "$id" != "${FT_RET:-$c}" ]] && return 1; fi
+    # #id matches the control's `id` PROPERTY, which DEFAULTS to its name — so `#spec` still
+    # matches a control named spec, and you can also give it an explicit id distinct from its
+    # bash handle.
+    #
+    # A NAME IS A PATH NOW (`main__login__email`, because a page is a naming scope), and an id
+    # selector matches A TAIL OF IT on a segment boundary. So `#email` reaches the email field
+    # on EVERY page and `#login__email` reaches one — less specific, more controls, which is
+    # what a selector is for. It is the same rule the verbs use, minus their demand that
+    # exactly one control answer: styling several is the point, addressing several is a bug.
+    #
+    # The separator in a selector is `__`, not `.`, because a `.` starts a CLASS here — and a
+    # name has to be a legal bash variable fragment anyway, which a dot is not.
+    if [[ -n "$id" ]]; then
+        _ft_get_raw "$c" id; local _cid=${FT_RET:-$c}
+        [[ "$_cid" == "$id" || "$_cid" == *"__$id" ]] || return 1
+    fi
     for x in $classes; do _ft_css_class_has "$c" "$x" || return 1; done
     for x in $pseudos; do _ft_css_state    "$c" "$x" || return 1; done
     if [[ -n "$attr" ]]; then local a IFS=$'\n'
@@ -975,6 +1005,7 @@ ft_tokenlist_contains() {           # NAME PROP token → 0 iff present
     ft_get "$1" "$2"; case " $FT_RET " in *" $3 "*) return 0 ;; *) return 1 ;; esac
 }
 ft_tokenlist_add() {                # NAME PROP token... — add each token (if absent)
+    _ft_ctl "${1-}" || return 1; set -- "$FT_RET" "${@:2}"    # a path, a tail of one, or a plain name
     local n=$1 p=$2; shift 2
     ft_get "$n" "$p"; local -a all; read -ra all <<< "$FT_RET"
     local c x seen
@@ -985,6 +1016,7 @@ ft_tokenlist_add() {                # NAME PROP token... — add each token (if 
     ft_set "$n" "$p"="${all[*]}"
 }
 ft_tokenlist_remove() {             # NAME PROP token... — remove each token
+    _ft_ctl "${1-}" || return 1; set -- "$FT_RET" "${@:2}"    # a path, a tail of one, or a plain name
     local n=$1 p=$2; shift 2
     ft_get "$n" "$p"; local -a all; read -ra all <<< "$FT_RET"
     local -a out=(); local x c keep
@@ -1000,9 +1032,13 @@ ft_tokenlist_toggle() {             # NAME PROP token → 0 iff the token is now
 }
 # classList — the DOM-familiar name for the `class` token list (thin aliases over ft_tokenlist_*).
 ft_classlist_add()      { local n=$1; shift; ft_tokenlist_add    "$n" class "$@"; }   # classList.add
+    _ft_ctl "${1-}" || return 1; set -- "$FT_RET" "${@:2}"    # a path, a tail of one, or a plain name
 ft_classlist_remove()   { local n=$1; shift; ft_tokenlist_remove "$n" class "$@"; }   # classList.remove
+    _ft_ctl "${1-}" || return 1; set -- "$FT_RET" "${@:2}"    # a path, a tail of one, or a plain name
 ft_classlist_toggle()   { ft_tokenlist_toggle   "$1" class "$2"; }                    # classList.toggle
+    _ft_ctl "${1-}" || return 1; set -- "$FT_RET" "${@:2}"    # a path, a tail of one, or a plain name
 ft_classlist_contains() { ft_tokenlist_contains "$1" class "$2"; }                    # classList.contains
+    _ft_ctl "${1-}" || return 1; set -- "$FT_RET" "${@:2}"    # a path, a tail of one, or a plain name
 # does any descendant of `node` match the compound `selc`?
 _ft_css_has_descendant() {      # node compound → 0/1
     local node=$1 selc=$2 k
@@ -1115,7 +1151,9 @@ _ft_css_query_compute() {       # control prop mode(app|default)
     # only the rules whose key compound could match this element (see _ft_css_reindex)
     _ft_get_raw "$control" class; local xcls=$FT_RET
     _ft_get_raw "$control" id;    local xid=${FT_RET:-$control}   # effective id: the id prop, else the name
-    local xt=${FT_TYPE[$control]:-} cands="${_FT_CSS_IDX_ID[$xid]:-}${_FT_CSS_IDX_UNIV}"
+    local xt=${FT_TYPE[$control]:-} cands="$_FT_CSS_IDX_UNIV"
+    local _tail; _ft_css_id_tails "$xid"
+    for _tail in "${FT_CSS_ID_TAILS[@]}"; do cands+="${_FT_CSS_IDX_ID[$_tail]:-}"; done
     [[ -n "$xt" ]] && cands+="${_FT_CSS_IDX_TYPE[$xt]:-}"   # empty subscript is an error — guard it
     for cl in $xcls; do cands+="${_FT_CSS_IDX_CLASS[$cl]:-}"; done
     # keys hold a TAB (sheet\ti) → split on SPACE only (scoped to read, so IFS is undisturbed)
@@ -1289,7 +1327,9 @@ _ft_css_query_pe_compute() {    # control pe prop mode(app|default) → FT_RET, 
     _QGOT=0; local best="" bestspec=-1 bestord=-1 key val spec ord sheet cl
     _ft_get_raw "$control" class; local xcls=$FT_RET
     _ft_get_raw "$control" id;    local xid=${FT_RET:-$control}   # effective id: the id prop, else the name
-    local xt=${FT_TYPE[$control]:-} cands="${_FT_CSS_IDX_ID[$xid]:-}${_FT_CSS_IDX_UNIV}"
+    local xt=${FT_TYPE[$control]:-} cands="$_FT_CSS_IDX_UNIV"
+    local _tail; _ft_css_id_tails "$xid"
+    for _tail in "${FT_CSS_ID_TAILS[@]}"; do cands+="${_FT_CSS_IDX_ID[$_tail]:-}"; done
     [[ -n "$xt" ]] && cands+="${_FT_CSS_IDX_TYPE[$xt]:-}"   # empty subscript is an error — guard it
     for cl in $xcls; do cands+="${_FT_CSS_IDX_CLASS[$cl]:-}"; done
     # keys hold a TAB (sheet\ti) → split on SPACE only (scoped to read, so IFS is undisturbed)

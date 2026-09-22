@@ -39,24 +39,25 @@ check "the first screen is current"   "$(ft_get a currentScreen; printf '%s' "$F
 check "…and the other is hidden"      "$(ft_get help display; printf '%s' "$FT_RET")" "none"
 
 note "each screen owns its own focus ring"
-check "the ring is the current screen's" "${FT_FOCUS_RING[*]}" "go quit"
+# The ring holds REAL names: a control in a screen is qualified by it.
+check "the ring is the current screen's" "${FT_FOCUS_RING[*]}" "main__go main__quit"
 # NB: dispatch OUTSIDE the $( ), or the focus move happens in a subshell and dies with it —
 # the check then reads the focus that never moved.
 ft_focus go
 ft_dispatch_event TAB
-check "Tab walks it"                     "$FT_FOCUS" "quit"
+check "Tab walks it"                     "$FT_FOCUS" "main__quit"
 # The two buttons sit side by side (a screen lays out as a row), so LEFT is the arrow that
 # moves between them — the arrows are SPATIAL, which is why they exist as well as Tab.
 ft_dispatch_event LEFT
-check "…and the arrows do too"           "$FT_FOCUS" "go"
+check "…and the arrows do too"           "$FT_FOCUS" "main__go"
 
 note "navigation is a property, not a verb"
 ft_set a currentScreen=help
 check "the new screen is shown"       "$(ft_get help display; printf '%s' "$FT_RET")" "flex"
 check "…the old one is hidden"        "$(ft_get main display; printf '%s' "$FT_RET")" "none"
-check "…and the ring is the new one's" "${FT_FOCUS_RING[*]}" "back"
+check "…and the ring is the new one's" "${FT_FOCUS_RING[*]}" "help__back"
 ft_set a currentScreen=main
-check "going back restores the ring"   "${FT_FOCUS_RING[*]}" "go quit"
+check "going back restores the ring"   "${FT_FOCUS_RING[*]}" "main__go main__quit"
 # A hidden screen KEEPS ITS STATE — that is the whole reason pages do not need rebuilding.
 ft_set back text="Return"
 ft_set a currentScreen=help
@@ -69,7 +70,7 @@ no "naming a screen that does not exist is refused" ft_set a currentScreen=nope
 check "…and the app still points at a real screen" "$(ft_get a currentScreen; printf '%s' "$FT_RET")" "main"
 
 note "an accessKey is scoped to the SCREEN"
-check "the registry is keyed by screen" "${FT_ACCEL_LIST["main"$'\x1f'"G"]:-missing}" "go"
+check "the registry is keyed by screen" "${FT_ACCEL_LIST["main"$'\x1f'"G"]:-missing}" "main__go"
 HIT=""; _ft_accel_dispatch main G
 check "…and the letter activates it"    "$HIT" "went"
 # The legend reaches a scope's caps BY TYPE (`_ft_caps_<type>`), so a screen needed its own
@@ -95,8 +96,8 @@ end_ft_form
 FT_ROOT=dlg; ft_layout dlg; ft_focus ok
 check "the modal has its own ring"    "${FT_FOCUS_RING[*]}" "ok"
 ft_modal_pop
-check "…and the screen's ring is back" "${FT_FOCUS_RING[*]}" "go quit"
-check "…with the focus it had"         "$FT_FOCUS" "quit"
+check "…and the screen's ring is back" "${FT_FOCUS_RING[*]}" "main__go main__quit"
+check "…with the focus it had"         "$FT_FOCUS" "main__quit"
 ft_remove dlg
 
 note "an app that holds no screens says so"
@@ -127,7 +128,7 @@ ft_set a currentScreen=main
 _ft_setprop a currentScreen help          # exactly what a state restore does
 check "the restore switched screens"  "$(ft_get help display; printf '%s' "$FT_RET")" "flex"
 check "…and hid the other"            "$(ft_get main display; printf '%s' "$FT_RET")" "none"
-check "…and moved the ring"           "${FT_FOCUS_RING[*]}" "back"
+check "…and moved the ring"           "${FT_FOCUS_RING[*]}" "help__back"
 ft_set a currentScreen=main
 # The construction DSL is the third route.
 ft-app name=ctor currentScreen=second

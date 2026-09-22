@@ -640,6 +640,7 @@ _ft_setprop() {                 # name prop value
 # back to its prototype default / the stylesheet. Handles subscripted props and custom properties
 # (--x) via _ft_propkey, and invalidates the cascade when the property could affect a style.
 ft_unset() {         # NAME PROP
+    _ft_ctl "${1-}" || return 1; set -- "$FT_RET" "${@:2}"    # a path, a tail of one, or a plain name
     local name=$1
     # `on<Event>` IS NOT A PROPERTY — _ft_setprop intercepts it and the listeners live on the
     # eventListeners plist — so unsetting one removed nothing and said nothing, which is the
@@ -727,6 +728,7 @@ ft_unset() {         # NAME PROP
 #     ft_get cbBeep value beep;   [[ $beep == true ]] && ...   # into your var
 #     ft_get cbBeep value;        [[ $FT_RET == true ]] && ... # or via FT_RET
 ft_get() {
+    _ft_ctl "${1-}" || return 1; set -- "$FT_RET" "${@:2}"    # a path, a tail of one, or a plain name
     # A store-backed `text`/`value` may be deferred; materialise it before handing it out. The
     # case test costs nothing for every other property, and the array probe only runs for these.
     case $2 in text|value) [[ "${_FT_TEXT_STALE[$1]:-}" == "$2" ]] && _ft_text_join "$1" ;; esac
@@ -2263,6 +2265,50 @@ _ft_is_ancestor() {             # ancestor node
     done
     return 1
 }
+# ── Addressing a control ─────────────────────────────────────────────────────
+# _ft_ctl NAME → FT_RET: the real control NAME wants to talk about.
+#
+# A name written in app code may be the full path (`main__login__email`), any tail of it
+# (`login.email`, `email`), and may spell the separator as `.` — which is what a person writes
+# and what the design calls for. THE RULE IS ONE RULE: a name matches a control whose full name
+# ENDS WITH IT on a segment boundary, and for a VERB exactly one match is required. Two pages
+# that both hold an `email` make a bare `email` ambiguous, and an error that names the
+# candidates is the only honest answer — the alternative is acting on whichever one happened to
+# be declared first.
+#
+# The exact hit comes first and costs one array lookup, which is what these callers were going
+# to do anyway; the search only runs for a name that is not already a control.
+_ft_ctl() {                     # name → FT_RET (real name); 1 if ambiguous
+    local want=${1//./__}
+    if [[ -n "${FT_TYPE[${want:-__none}]:-}" ]]; then FT_RET=$want; return 0; fi
+    local n hit="" count=0 cands=""
+    for n in "${!FT_TYPE[@]}"; do
+        [[ "$n" == *"__$want" ]] || continue
+        hit=$n; cands+=" $n"; (( ++count > 1 )) && break
+    done
+    if (( count == 1 )); then FT_RET=$hit; return 0; fi
+    if (( count > 1 )); then
+        # Name every candidate: "it is ambiguous" without them is a puzzle, not a message.
+        cands=""
+        for n in "${!FT_TYPE[@]}"; do [[ "$n" == *"__$want" ]] && cands+=" $n"; done
+        printf 'ft: "%s" names more than one control:%s\n' "$1" "$cands" >&2
+        FT_RET=$1; return 1
+    fi
+    FT_RET=$1                   # no match: hand it back, and let the caller report it as before
+    return 0
+}
+
+# A PROPERTY WHOSE VALUE NAMES A CONTROL has to resolve the same way a name written in a verb
+# does — `startPage=login` inside a screen means the page whose real name is `main__login`, and
+# an unresolved one silently picks something else (the binder opened on its first page instead
+# of the one it was told). `for=`, `target=`, `startPage=`, `currentPage=` and `currentScreen=`
+# are all this shape.
+_ft_ctl_prop() {                # name prop → FT_RET (the control that property names, or "")
+    _ft_get_raw "$1" "$2"
+    [[ -n "$FT_RET" ]] || return 0
+    _ft_ctl "$FT_RET"
+}
+
 # ── The focus scope ──────────────────────────────────────────────────────────
 # A FOCUS SCOPE is the thing that owns a focus ring: the controls Tab walks between, the
 # letters an accessKey is scoped to, and the container the navigation keys live on. There is
@@ -2347,6 +2393,29 @@ ft_new() {                      # TYPE args...
         printf 'ft: %s: "%s" is not a usable control name (letters, digits and _ only, not starting with a digit)\n' \
                "$type" "$name" >&2
         return 1
+    fi
+    # ── A PAGE (OR SCREEN) IS A NAMING SCOPE ─────────────────────────────────
+    # A control declared inside one is qualified with its scope's name, and because a scope's
+    # own name is already qualified, the chain builds the full path by itself:
+    #
+    #     ft-screen name=main / ft-page name=login / ft-textfield name=email
+    #        → the control's real name is  main__login__email
+    #
+    # so TWO PAGES MAY EACH HAVE AN `email`, which is the whole point of pages being scopes.
+    # You address it as `login.email`, `email`, or the full path — see _ft_ctl.
+    #
+    # THE SEPARATOR IS `__`, NOT `.`, AND THAT IS NOT A PREFERENCE. A name becomes part of a
+    # bash VARIABLE name (`_ftp_<name>_<prop>`), and a dot is not legal in one — the writes
+    # would fail, a dozen at a time, onto the alt screen. `__` is legal there and is an ordinary
+    # character in a CSS id, so `#login__email` needs no escaping either.
+    if [[ "$name" != *__* ]]; then
+        local _sc _scname=""
+        for (( _sc=${#FT_NEST_STACK[@]}-1; _sc>=0; _sc-- )); do
+            case ${FT_TYPE[${FT_NEST_STACK[$_sc]}]:-} in
+                page|screen) _scname=${FT_NEST_STACK[$_sc]}; break ;;
+            esac
+        done
+        [[ -n "$_scname" ]] && name="${_scname}__${name}"
     fi
     FT_TYPE[$name]="$type"
     # A NAME MAY HAVE BEEN SOMETHING ELSE. Its type decides its prototype defaults, and the rebuild
@@ -2528,6 +2597,7 @@ _FT_SETPROP_REFUSED=""
 # _ft_app_show NAME SCREEN — make SCREEN the one that is visible, and give it the ring.
 _ft_app_show() {                # app screen
     local app=$1 want=$2 kid
+    _ft_ctl "$want"; want=$FT_RET
     [[ -n "$want" && -n "${FT_TYPE[$want]:-}" ]] || {
         printf 'ft: %s: no screen named %s\n' "$app" "${want:-<nothing>}" >&2; return 1; }
     for kid in ${FT_KIDS[$app]:-}; do
@@ -2877,6 +2947,7 @@ _ft_prop_owed_pay() {           # name — settle what _ft_prop_owed recorded
 }
 
 ft_set() {                   # name args...
+    _ft_ctl "${1-}" || return 1; set -- "$FT_RET" "${@:2}"    # a path, a tail of one, or a plain name
     local name=$1; shift
     local arg key val rejected=0
     local -a _kf=()
@@ -2916,6 +2987,7 @@ ft_set() {                   # name args...
 #     end_ft_form                          # close app again (rebuilds focus)
 #     ft_refresh
 ft_empty() {                     # name
+    _ft_ctl "${1-}" || return 1; set -- "$FT_RET" "${@:2}"    # a path, a tail of one, or a plain name
     local name=$1 kid
     for kid in ${FT_KIDS[$name]:-}; do ft_remove "$kid"; done
     FT_KIDS[$name]=""
@@ -2985,6 +3057,7 @@ _ft_insert_at() {               # par child ref before|after — splice child ne
 # design: eventListeners is an ordinary property here, so listeners COPY with the clone.
 _FT_CLONE_N=0
 ft_clone() {                    # SRC DST [deep] → FT_RET=DST
+    _ft_ctl "${1-}" || return 1; set -- "$FT_RET" "${@:2}"    # a path, a tail of one, or a plain name
     local src=$1 dst=$2 deep=${3:-}
     [[ -z "${FT_TYPE[$src]:-}" || -z "$dst" ]] && return 1
     FT_TYPE[$dst]=${FT_TYPE[$src]}
@@ -3018,6 +3091,7 @@ ft_clone() {                    # SRC DST [deep] → FT_RET=DST
 # ANCESTOR of it: either makes a ring, and every upward walk then spins forever (see
 # _ft_focus_scope_of). The DOM raises HierarchyRequestError for the same move.
 ft_append()       { _ft_is_ancestor "$2" "$1" && return 1
+    _ft_ctl "${1-}" || return 1; set -- "$FT_RET" "${@:2}"    # a path, a tail of one, or a plain name
                     _ft_detach "$2"; FT_PARENT[$2]=$1; FT_KIDS[$1]="${FT_KIDS[$1]:+${FT_KIDS[$1]} }$2"
                     _ft_reparented "$2"; }
 ft_before()       { local p=${FT_PARENT[$1]:-}; [[ -n "$p" ]] || return 1; _ft_detach "$2"; _ft_insert_at "$p" "$2" "$1" before || return 1; _ft_reparented "$2"; }  # ref.before(node)
@@ -3025,6 +3099,7 @@ ft_after()        { local p=${FT_PARENT[$1]:-}; [[ -n "$p" ]] || return 1; _ft_d
 ft_replace_with() { ft_before "$1" "$2"; ft_remove "$1"; }                                                # old.replaceWith(new)
 
 ft_remove() {                   # name — el.remove(): detach from the tree + free the node's state
+    _ft_ctl "${1-}" || return 1; set -- "$FT_RET" "${@:2}"    # a path, a tail of one, or a plain name
     local name=$1 kid prop
     # ONE DAMAGE WALK PER REMOVAL, not one per node. ft_remove recurses into its children, and
     # ft_damage_subtree walks a subtree — so damaging in every frame of the recursion is O(N²)
@@ -3216,6 +3291,7 @@ ft_has_errors()   { (( ${#FT_ERRORS[@]} > 0 )); }
 # 101µs → 62µs per read. (`ft_prop` outlived that inlining as a public name with no engine
 # caller and is gone; ft_resolve is the uncoerced read it wrapped.)
 ft_resolved_prop() {
+    _ft_ctl "${1-}" || return 1; set -- "$FT_RET" "${@:2}"    # a path, a tail of one, or a plain name
     # THE MEMO, first, because it is the whole read: the four conditions that decided whether to
     # store are settled on the miss path, so a hit is one key, one compare and the default. The
     # note beside _ft_resolve_inval says what an entry depends on and every route that drops one.
@@ -5245,6 +5321,7 @@ ft_paint_depends_none() {       # dependent — forget every source it was regis
 # points back at its own source settles after one hop instead of hanging the app, and a local
 # counter cannot see mutual recursion anyway (reference: cycles hang or segfault).
 ft_dirty()      { FT_DIRTY[$1]=1; unset "FT_RETAINED_TOKEN[$1]" "FT_RETAINED_BLOCK[$1]"
+    _ft_ctl "${1-}" || return 1; set -- "$FT_RET" "${@:2}"    # a path, a tail of one, or a plain name
                   (( _FT_PAINT_DEPS_N )) || return 0
                   local _d
                   for _d in ${FT_PAINT_DEPENDENTS[$1]:-}; do
@@ -5252,7 +5329,7 @@ ft_dirty()      { FT_DIRTY[$1]=1; unset "FT_RETAINED_TOKEN[$1]" "FT_RETAINED_BLO
                   done
                   return 0; }
 ft_clean()      { unset 'FT_DIRTY[$1]'; }
-ft_is_dirty()   { [[ -n "${FT_DIRTY[$1]:-}" ]]; }
+ft_is_dirty()   { _ft_ctl "${1-}" || return 1; [[ -n "${FT_DIRTY[$FT_RET]:-}" ]]; }
 # (ft_dirty_list stood here: a public accessor with no caller anywhere in the tree, whose only
 # return channel was stdout — so consuming it in-process needed the `$(...)` fork this file
 # forbids beside ft_get, and calling it unwrapped in a running app would have printed control
@@ -6670,6 +6747,7 @@ _ft_damage_enlist() {           # node   (was _ft_damage_dirty_multi, which name
 # (_ft_repair_subtree is its damage-path twin: same walk, the other set, for the reason given
 # there — a repair has not changed anybody's content.)
 ft_dirty_subtree() {           # name
+    _ft_ctl "${1-}" || return 1; set -- "$FT_RET" "${@:2}"    # a path, a tail of one, or a plain name
     local n=$1 kid
     # CALLS ft_dirty RATHER THAN REPEATING IT. This used to be `FT_DIRTY[$n]=1` plus the two
     # unsets, under a comment reading "same predicate as ft_dirty" — true when it was written,
@@ -7990,6 +8068,7 @@ _ft_scrollable_ancestor() {     # NAME → FT_RET = nearest self-or-ancestor tha
 # (the DOM's block:'nearest'). Called automatically when focus lands on a control, so keyboard
 # navigation reveals off-screen controls just like a browser.
 ft_scroll_into_view() {         # NAME — both axes, minimal (block/inline: 'nearest')
+    _ft_ctl "${1-}" || return 1; set -- "$FT_RET" "${@:2}"    # a path, a tail of one, or a plain name
     local n=$1 a=${FT_PARENT[$1]:-}
     while [[ -n "$a" ]]; do
         ft_get "$a" scrollHeight
@@ -8025,6 +8104,7 @@ ft_scroll_into_view() {         # NAME — both axes, minimal (block/inline: 'ne
     return 0
 }
 ft_focus() {                # name → 1 if the control can't be focused
+    _ft_ctl "${1-}" || return 1; set -- "$FT_RET" "${@:2}"    # a path, a tail of one, or a plain name
     local name=$1
     # HONOUR THAT CONTRACT. The Tab ring skips anything hidden, under a hidden ancestor, or
     # disabled — but this entry point did not, so `ft_focus x` on such a control returned 0 and
@@ -8756,11 +8836,13 @@ _ft_run_code() {                # code name detail…  (the detail lands in the 
 # They no longer go through ft_tokenlist_add: that splits on SPACES, which is the whole reason
 # a listener could not hold code.
 ft_add_listener() {             # NAME event=code… | NAME event code
+    _ft_ctl "${1-}" || return 1; set -- "$FT_RET" "${@:2}"    # a path, a tail of one, or a plain name
     local __n=$1; shift; [[ "$1" != *=* ]] && set -- "$1=$2"
     local __p
     for __p in "$@"; do _ft_listener_store "$__n" "${__p%%=*}" "${__p#*=}"; done
 }
 ft_remove_listener() {          # NAME event=code… | NAME event code
+    _ft_ctl "${1-}" || return 1; set -- "$FT_RET" "${@:2}"    # a path, a tail of one, or a plain name
     local __n=$1; shift; [[ "$1" != *=* ]] && set -- "$1=$2"
     local __lk="_ftp_${__n}_eventListeners"               # NB: separate line — same-statement local
     local __US=$'\x1f' __p __tok __out
@@ -8775,6 +8857,7 @@ ft_remove_listener() {          # NAME event=code… | NAME event code
     done
 }
 ft_has_listener() {             # NAME EVENT → 0 iff a listener is registered for it
+    _ft_ctl "${1-}" || return 1; set -- "$FT_RET" "${@:2}"    # a path, a tail of one, or a plain name
     local __lk="_ftp_${1}_eventListeners"                 # NB: separate line — same-statement local
     local __ls=${!__lk-} __tok
     local __oldIFS=$IFS; IFS=$'\x1f'
@@ -8784,6 +8867,7 @@ ft_has_listener() {             # NAME EVENT → 0 iff a listener is registered 
 }
 
 ft_activate() {
+    _ft_ctl "${1-}" || return 1; set -- "$FT_RET" "${@:2}"    # a path, a tail of one, or a plain name
     local target=$1
     [[ -z "${FT_TYPE[$target]:-}" ]] && return 0
     ft_resolved_prop "$target" disabled false
