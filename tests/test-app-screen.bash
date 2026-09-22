@@ -138,6 +138,32 @@ end_ft_app
 check "the DSL chose the screen too" "$(ft_get second display; printf '%s' "$FT_RET")" "flex"
 ft_remove ctor
 
+# THINGS ONLY A RUNNING APP FINDS. Every one of these was invisible to 116 test files, because
+# a test builds a tree and calls ft_layout itself — an APP does neither.
+note "ft_run lays the app out before it paints it"
+# Every demo in this tree passed a `_setup` callback whose whole body was `ft_layout app`.
+# Ceremony the framework was asking for and could do itself — and an app that forgot it drew
+# NOTHING, in silence, which is the least debuggable failure a UI can have.
+_body=$(declare -f ft_run)
+_lay=$(printf '%s\n' "$_body" | grep -n 'ft_layout "\$root"'   | head -1 | cut -d: -f1)
+_pnt=$(printf '%s\n' "$_body" | grep -n 'ft_redraw_all "\$root"' | head -1 | cut -d: -f1)
+check "ft_run lays out BEFORE the first paint" "$(( _lay > 0 && _lay < _pnt ))" "1"
+
+note "a screen stacks its children; a form is a row"
+# Inheriting `row` from form gave a heading and a status bar ZERO WIDTH and stood them beside
+# the body. A screen is a heading, a body and a status bar, one above the other.
+ft-app name=stackapp
+    ft-screen name=stk
+        ft-heading name=head text="Title"
+        ft-label   name=body text="Body"
+    end_ft_screen
+end_ft_app
+FT_ROOT=stackapp; ft_layout stackapp
+check "the screen is a column"   "$(ft_resolved_prop stk flexDirection ''; printf '%s' "$FT_RET")" "column"
+check "…so the heading has width" "$(( ${FT_MEASURED_WIDTH[stk__head]:-0} > 0 ))" "1"
+check "…and the body is below it" "$(( ${FT_ABSOLUTE_Y[stk__body]:-0} > ${FT_ABSOLUTE_Y[stk__head]:-0} ))" "1"
+ft_remove stackapp; FT_ROOT=a
+
 note "asking which scope is live before there is one says nothing"
 _sv_root=$FT_ROOT
 _e=$(mktemp "${TMPDIR:-/tmp}/ft-scope.XXXXXX")

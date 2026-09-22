@@ -84,6 +84,11 @@ _ft_binder_show() {             # binder page
     # re-arranges them. (Found by test-incremental: 42 cells of the old page still standing
     # after an incremental repaint that a full one did not draw.)
     ft_reflow "$b"
+    # A PAGE TURN IS AN EVENT. ft-tabs has always fired one; a binder that did not left an app
+    # with nowhere to hang "recompute the summary when we land on the review page" except a
+    # handler on every button that might have got there. The detail is the page's real name, so
+    # `onChange='[[ "$1" == *review ]] && summarise'` reads the way everything else does.
+    _ft_hook "$b" on_change "$want"
     return 0
 }
 
@@ -183,7 +188,7 @@ _ft_binder_setprop() {          # name prop value  (see ft-app's: every route mu
 ft_prototype_binder() {
     ft_prototype extends=ft_control \
         setProp=_ft_binder_setprop \
-        defaults="display=flex flexDirection=column navigator=none navigatorSide=bottom"
+        defaults="display=flex flexDirection=column flexGrow=1 navigator=none navigatorSide=bottom"
     ft_prop_kind_set currentPage layout        # turning a page re-lays what appears
     ft_prop_kind_set startPage   layout
     ft_prop_kind_set navigator   layout

@@ -2527,7 +2527,14 @@ ft_prototype_screen() {
     # Everything a root form does, because that is what a screen has always been: the same draw
     # (fills its box with the screen colour), the same fillsBackground contract, and the same
     # navigation keymap — Tab, Shift-Tab, the arrows, Esc and `.`.
-    ft_prototype extends=form
+    #
+    # BUT IT STACKS. A form defaults to a ROW, which is right for a row of fields and wrong for
+    # a whole terminal view: a screen is a heading, a body and a status bar, one above the
+    # other. Inheriting `row` gave the heading and the status bar ZERO WIDTH and put them
+    # side by side with the body — a wizard that had built its tree correctly rendered two
+    # labels and nothing else. Every app would have written flexDirection=column on every
+    # screen; the prototype says it once.
+    ft_prototype extends=form defaults="flexDirection=column"
 }
 # THROUGH setProp=, NOT the ft_set route alone. `currentScreen` names the state, so writing it
 # must SWITCH the screen — and it can arrive three ways: ft_set, the construction DSL
@@ -9027,6 +9034,16 @@ ft_run() {
     ft_input_ctl keys '*'
 
     [[ -n "$setup" ]] && "$setup"
+
+    # LAY THE APP OUT BEFORE PAINTING IT. Nothing else can: geometry comes from ft_layout, and
+    # ft_run is the one place that knows a paint is about to happen. Every demo in this tree
+    # passes a `_setup` callback whose whole body is `ft_layout app` — ceremony the framework
+    # was asking for and could have done itself, and an app that forgot it drew NOTHING, in
+    # silence, which is the least debuggable failure a UI can have. (Found by writing a new
+    # app: 119 bytes came out of a wizard that had built its whole tree correctly.)
+    # A screen or an app is sized to the terminal first; anything else keeps what it was given.
+    case ${FT_TYPE[${root:-__none}]:-} in app|screen) _ft_fit_to_terminal "$root" ;; esac
+    ft_layout "$root"
 
     # Put the user back where they left off (see ft-state.bash). After setup, so it applies
     # onto the UI the app just built; before the first paint, so the opening frame already

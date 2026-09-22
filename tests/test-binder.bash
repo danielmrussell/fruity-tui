@@ -76,6 +76,22 @@ ft_set wizard currentPage=login
 ft_activate wizard__nav_prev
 check "pressing ◀ turned the page"   "$(ft_get wizard currentPage; printf '%s' "$FT_RET")" "main__welcome"
 
+# A PAGE TURN IS AN EVENT. Without one an app has nowhere to hang "recompute the summary when
+# we land on the review page" except a handler on every button that might have got there.
+note "turning a page fires change, with the page as the detail"
+SEEN=""
+ft_set wizard currentPage=welcome        # start somewhere known…
+ft_set wizard onChange='SEEN="$1"'
+ft_set wizard currentPage=fin            # …so this really is a turn
+check "the handler ran with the page"  "$SEEN" "main__fin"
+# Landing where you already are is not a turn, and must not fire.
+SEEN=""; ft_set wizard currentPage=fin
+check "…and standing still does not"   "${SEEN:-nothing}" "nothing"
+ft_set wizard currentPage=welcome
+SEEN=""; ft_binder_next wizard
+check "…and the pager's buttons fire it too" "$SEEN" "main__login"
+ft_unset wizard onChange
+
 note "naming a page that is not one is refused, and nothing moves"
 ft_set wizard currentPage=login
 no  "a page that does not exist"     ft_set wizard currentPage=nope
